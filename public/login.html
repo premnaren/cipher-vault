@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher Vault | Access Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #050508; color: #e2e8f0; font-family: 'Orbitron', sans-serif; }
+        .glow { box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); border: 1px solid #1e293b; }
+        .cyber-input { background: #0f1015; border: 1px solid #1e293b; color: #00f3ff; font-family: monospace; }
+        .cyber-input:focus { border-color: #00f3ff; outline: none; box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center bg-[radial-gradient(circle_at_center,_#1e293b_1px,_transparent_1px)] bg-[length:20px_20px]">
+
+    <div class="w-96 p-8 bg-black/90 backdrop-blur rounded-xl glow text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff]"></div>
+
+        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-widest">CIPHER VAULT</h1>
+        <p class="text-[10px] text-gray-500 mb-8 font-mono">SECURE ACCESS TERMINAL</p>
+        
+        <form id="authForm" class="space-y-4">
+            <input type="text" id="username" placeholder="AGENT ID" required 
+                   class="w-full p-3 rounded cyber-input">
+            
+            <input type="password" id="password" placeholder="PASSCODE" required 
+                   class="w-full p-3 rounded cyber-input">
+            
+            <button type="submit" 
+                    class="w-full py-3 bg-[#00f3ff] text-black font-bold hover:bg-white transition-all tracking-widest clip-path-polygon">
+                AUTHENTICATE
+            </button>
+            
+            <p id="message" class="text-xs text-red-500 font-mono min-h-[20px]"></p>
+
+            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full">
+                :: NEW AGENT? INITIALIZE REGISTRATION ::
+            </button>
+        </form>
+    </div>
+
+    <script>
+        let isLogin = true;
+        const form = document.getElementById('authForm');
+        const msg = document.getElementById('message');
+        
+        // Toggle betwen Login and Register modes
+        document.getElementById('toggleAuth').onclick = (e) => {
+            isLogin = !isLogin;
+            e.target.innerText = isLogin ? ":: NEW AGENT? INITIALIZE REGISTRATION ::" : ":: HAVE ID? LOGIN ::";
+            document.querySelector('button[type="submit"]').innerText = isLogin ? "AUTHENTICATE" : "REGISTER IDENTITY";
+            msg.innerText = "";
+        };
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const endpoint = isLogin ? '/api/user/login' : '/api/user/register';
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
+                });
+
+                const data = await res.json();
+                
+                if(!res.ok) {
+                    msg.innerText = "ERROR: " + (data.error || "Access Denied");
+                    msg.className = "text-xs text-red-500 font-mono mt-2";
+                } else {
+                    if(data.token) {
+                        // Success: Save token and redirect
+                        localStorage.setItem('auth-token', data.token);
+                        window.location.href = '/index.html';
+                    } else {
+                        // Registered successfully
+                        msg.innerText = "IDENTITY CREATED. PLEASE LOGIN.";
+                        msg.className = "text-xs text-[#00f3ff] font-mono mt-2";
+                        // Auto-switch back to login
+                        setTimeout(() => document.getElementById('toggleAuth').click(), 1500);
+                    }
+                }
+            } catch (err) {
+                msg.innerText = "SYSTEM FAILURE: SERVER UNREACHABLE";
+            }
+        };
+    </script>
+</body>
+</html>
