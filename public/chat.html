@@ -1,42 +1,374 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="void">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Chat Space</title>
-    <link rel="stylesheet" href="css/chat.css">
+    <title>Cipher Chat | Secure Channel</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap');
+
+        :root {
+            --bg-body: #050508;
+            --bg-panel: #0f1015;
+            --primary: #00f3ff;
+            --accent: #bc13fe;
+            --text-main: #e2e8f0;
+            --border: #1e293b;
+            --glow: 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            background-image: radial-gradient(var(--border) 1px, transparent 1px);
+            background-size: 30px 30px;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mono { font-family: 'Space Mono', monospace; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* ANIMATIONS */
+        .message-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-item.active {
+            background: rgba(0, 243, 255, 0.1);
+            border-left: 3px solid var(--primary);
+        }
+        
+        .encrypted-text {
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 1px;
+        }
+    </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="sidebar">
-            <h3>Cipher Users</h3>
-            <div id="user-list">
-                <div class="user-item" onclick="joinGlobalChat()">Global Room</div>
-            </div>
-        </div>
 
-        <div class="chat-main">
-            <div class="chat-header">
-                <h3 id="current-room-name">Global Room</h3>
-                <small>End-to-End Encrypted</small>
-            </div>
-            
-            <div id="messages-area" class="messages-area">
+    <nav class="h-16 border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20">
+        <div class="flex items-center gap-4">
+            <a href="/" class="text-xs font-bold text-gray-500 hover:text-white transition-colors flex items-center gap-2">
+                <span>←</span> BACK TO VAULT
+            </a>
+            <div class="h-6 w-px bg-[var(--border)]"></div>
+            <h1 class="orbitron text-xl font-bold tracking-widest text-[var(--primary)]">CIPHER <span class="text-white">CHAT</span></h1>
+        </div>
+        <div class="text-xs mono text-gray-500" id="currentUserDisplay">CONNECTING...</div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-72 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10">
+            <div class="p-4 pb-2 border-b border-[var(--border)] space-y-3">
+                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Active Agents</h2>
+                
+                <div class="relative group">
+                    <span class="absolute left-3 top-2.5 text-gray-500 text-xs">🔍</span>
+                    <input type="text" id="userSearch" placeholder="SEARCH AGENT ID..." 
+                        class="w-full bg-black border border-[var(--border)] text-xs text-white rounded pl-8 pr-3 py-2 outline-none font-mono focus:border-[var(--primary)] focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all uppercase placeholder-gray-700">
                 </div>
 
-            <div class="chat-input">
-                <select id="cipher-select">
-                    <option value="Plain">No Encryption</option>
-                    <option value="AES">AES (Advanced)</option>
-                    <option value="Caesar">Caesar Cipher</option>
-                </select>
-                <input type="text" id="message-input" placeholder="Type a secure message...">
-                <button onclick="sendMessage()">Send</button>
+                <div class="text-[9px] text-[var(--primary)] animate-pulse pt-1">● ENCRYPTED LINK ESTABLISHED</div>
             </div>
-        </div>
+
+            <div id="usersList" class="flex-1 overflow-y-auto p-2 space-y-1">
+                <div class="text-center text-xs text-gray-600 mt-10 mono">SCANNING NETWORK...</div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col relative bg-black/20">
+            
+            <div id="chatHeader" class="h-14 border-b border-[var(--border)] flex items-center px-6 justify-between bg-[var(--bg-body)]/50 backdrop-blur hidden">
+                <div class="flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]"></div>
+                    <div>
+                        <div class="text-sm font-bold text-white orbitron tracking-wide" id="chatPartnerName">Select a User</div>
+                        <div class="text-[10px] mono text-gray-500">SECURE CHANNEL ACTIVE</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+                <div class="text-4xl mb-4 opacity-20">📡</div>
+                <p class="mono text-xs tracking-widest">SELECT AN AGENT TO INITIALIZE UPLINK</p>
+            </div>
+
+            <div id="messagesArea" class="flex-1 overflow-y-auto p-6 space-y-4 hidden scroll-smooth">
+                </div>
+
+            <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
+                <div class="flex gap-2 mb-2 items-center">
+                    <span class="text-[10px] text-gray-500 font-bold mono">ENCRYPTION PROTOCOL:</span>
+                    <select id="cipherSelect" class="bg-black border border-[var(--border)] text-[10px] text-[var(--primary)] rounded px-2 py-1 outline-none font-mono focus:border-[var(--primary)] cursor-pointer">
+                        <option value="none">OFF (PLAIN)</option>
+                        <option value="caesar">CAESAR CIPHER</option>
+                        <option value="vigenere">VIGENÈRE CIPHER</option>
+                    </select>
+                    <input type="text" id="cipherKey" placeholder="KEY (e.g. 3)" class="bg-black border border-[var(--border)] text-[10px] text-white rounded px-2 py-1 w-24 outline-none font-mono focus:border-[var(--primary)]">
+                </div>
+                
+                <form id="chatForm" class="flex gap-2">
+                    <input type="text" id="msgInput" autocomplete="off" placeholder="Type a secure message..." 
+                           class="flex-1 bg-black border border-[var(--border)] text-sm text-white rounded p-3 outline-none focus:border-[var(--primary)] transition-colors font-mono placeholder-gray-700">
+                    <button type="submit" class="bg-[var(--primary)] text-black font-bold px-6 rounded hover:bg-[var(--accent)] hover:text-white transition-all orbitron tracking-wider text-sm shadow-[0_0_15px_rgba(0,243,255,0.2)]">
+                        SEND
+                    </button>
+                </form>
+            </div>
+        </main>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="js/chat-client.js"></script>
+    <script>
+        // --- 1. AUTH & SETUP ---
+        const token = localStorage.getItem('auth-token');
+        if (!token) window.location.href = '/login.html';
+
+        // Decode JWT
+        function parseJwt(token) {
+            try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; }
+        }
+        const myUser = parseJwt(token);
+        const myId = myUser ? myUser.userId : null;
+        document.getElementById('currentUserDisplay').innerText = `ID: ${myUser.username}`;
+
+        // Connect Socket
+        const socket = io();
+
+        // --- 2. STATE ---
+        let currentReceiver = null;
+        const usersListEl = document.getElementById('usersList');
+        const messagesArea = document.getElementById('messagesArea');
+        const emptyState = document.getElementById('emptyState');
+        const inputArea = document.getElementById('inputArea');
+        const chatHeader = document.getElementById('chatHeader');
+        const searchInput = document.getElementById('userSearch');
+
+        // --- 3. ALGORITHMS (Client-Side) ---
+        const Algorithms = {
+            caesar: (t, k, m) => { 
+                const s = parseInt(k) || 0; const shift = m === 'encrypt' ? s : -s; 
+                return t.replace(/[a-zA-Z]/g, c => { 
+                    const b = c >= 'a' ? 97 : 65; 
+                    return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26 + 26) % 26 + b); 
+                }); 
+            },
+            vigenere: (t, k, m) => { 
+                const key = k.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0; 
+                return t.replace(/[a-zA-Z]/g, c => { 
+                    const b = c >= 'a' ? 97 : 65; 
+                    const charCode = c.toUpperCase().charCodeAt(0) - 65; 
+                    const keyCode = key[ki++ % key.length].charCodeAt(0) - 65; 
+                    let result = m === 'encrypt' ? (charCode + keyCode) % 26 : (charCode - keyCode + 26) % 26; 
+                    return String.fromCharCode(result + b); 
+                }); 
+            }
+        };
+
+        // --- 4. FETCH USERS ---
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                usersListEl.innerHTML = '';
+                
+                users.forEach(user => {
+                    if (user._id === myId) return; // Don't show myself
+
+                    const div = document.createElement('div');
+                    // Added 'user-card' class for searching
+                    div.className = 'user-card user-item p-3 cursor-pointer hover:bg-white/5 transition-colors flex items-center gap-3 border-l-2 border-transparent';
+                    // Added 'data-name' for searching
+                    div.setAttribute('data-name', user.username.toLowerCase());
+                    
+                    div.innerHTML = `
+                        <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron shadow-[0_0_5px_rgba(0,0,0,0.5)]">
+                            ${user.username.substring(0,2).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-gray-300 username-text">${user.username}</div>
+                            <div class="text-[9px] text-gray-600 mono status-text">OFFLINE</div>
+                        </div>
+                    `;
+                    div.onclick = () => selectUser(user, div);
+                    usersListEl.appendChild(div);
+                });
+            } catch (e) { console.error(e); }
+        }
+        fetchUsers();
+
+        // 🔥 NEW: SEARCH FUNCTIONALITY 🔥
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.user-card');
+            
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name');
+                if(name.includes(term)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+
+        // --- 5. SELECT USER ---
+        function selectUser(user, element) {
+            currentReceiver = user;
+            
+            // UI Updates
+            document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            emptyState.classList.add('hidden');
+            chatHeader.classList.remove('hidden');
+            messagesArea.classList.remove('hidden');
+            inputArea.classList.remove('hidden');
+            
+            document.getElementById('chatPartnerName').innerText = user.username;
+
+            // Socket Join Room
+            socket.emit("join_room", { senderId: myId, receiverId: user._id });
+
+            // Fetch History
+            loadHistory(user._id);
+            
+            // Focus input
+            document.getElementById('msgInput').focus();
+        }
+
+        async function loadHistory(partnerId) {
+            messagesArea.innerHTML = '<div class="text-center text-xs text-gray-600 mt-4 animate-pulse">DECRYPTING ARCHIVES...</div>';
+            try {
+                const res = await fetch(`/api/messages/${myId}/${partnerId}`);
+                const msgs = await res.json();
+                messagesArea.innerHTML = '';
+                if(msgs.length === 0) {
+                     messagesArea.innerHTML = '<div class="text-center text-xs text-gray-700 mt-10 mono">// CHANNEL EMPTY. BEGIN TRANSMISSION.</div>';
+                }
+                msgs.forEach(displayMessage);
+                scrollToBottom();
+            } catch (e) { console.error(e); }
+        }
+
+        // --- 6. SEND MESSAGE ---
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msgInput');
+            const cipherType = document.getElementById('cipherSelect').value;
+            const key = document.getElementById('cipherKey').value;
+            let text = input.value;
+            
+            if (!text.trim() || !currentReceiver) return;
+
+            // 1. ENCRYPT CLIENT SIDE BEFORE SENDING
+            let cipherText = text;
+            if (cipherType !== 'none' && Algorithms[cipherType]) {
+                cipherText = Algorithms[cipherType](text, key, 'encrypt');
+            }
+
+            const messageData = {
+                senderId: myId,
+                receiverId: currentReceiver._id,
+                text: cipherText, // Send the ENCRYPTED text
+                cipherType: cipherType,
+                originalText: text, // Only for my own view immediately (optional)
+                timestamp: new Date()
+            };
+
+            // Emit to server
+            socket.emit("private_message", messageData);
+
+            // Show on my screen immediately
+            displayMessage({
+                sender: myId,
+                text: cipherText,
+                cipherType: cipherType,
+                isSelf: true
+            });
+
+            input.value = '';
+            scrollToBottom();
+        });
+
+        // --- 7. RECEIVE MESSAGE ---
+        socket.on("receive_message", (data) => {
+            if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
+                displayMessage({
+                    sender: data.senderId || data.sender, 
+                    text: data.text,
+                    cipherType: data.cipherType,
+                    isSelf: false
+                });
+                scrollToBottom();
+            }
+        });
+
+        // --- 8. RENDER MESSAGE ---
+        function displayMessage(msg) {
+            // Remove "Empty" message if it exists
+            if(messagesArea.innerHTML.includes('CHANNEL EMPTY')) messagesArea.innerHTML = '';
+
+            const isMe = (msg.sender === myId || msg.isSelf);
+            
+            const div = document.createElement('div');
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-in mb-4`;
+            
+            let contentHtml = '';
+            
+            // If encrypted, show Lock UI
+            if (msg.cipherType && msg.cipherType !== 'none') {
+                contentHtml = `
+                    <div class="mb-2 text-[9px] ${isMe ? 'text-right' : 'text-left'} text-gray-500 mono uppercase tracking-widest border-b border-white/10 pb-1">
+                        🔒 ${msg.cipherType}
+                    </div>
+                    <div class="encrypted-text break-all text-sm mb-2" id="text-${msg._id || Date.now()}">${msg.text}</div>
+                    ${!isMe ? `<button onclick="decryptMsg(this, '${msg.text}', '${msg.cipherType}')" class="text-[10px] bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 px-3 py-1.5 rounded transition-all mono w-full flex items-center justify-center gap-2 group"><span>UNLOCK DATA</span> <span class="group-hover:rotate-90 transition-transform">🔓</span></button>` : ''}
+                `;
+            } else {
+                contentHtml = `<div class="break-all text-sm">${msg.text}</div>`;
+            }
+
+            div.innerHTML = `
+                <div class="max-w-[75%] rounded-lg p-4 shadow-lg ${isMe ? 'bg-[var(--primary)] text-black font-bold' : 'bg-[#12141a] border border-[var(--border)] text-gray-300'}">
+                    ${contentHtml}
+                </div>
+            `;
+            
+            messagesArea.appendChild(div);
+        }
+
+        // --- 9. DECRYPT INTERACTION ---
+        window.decryptMsg = (btn, cipherText, type) => {
+            const key = prompt(`ENTER DECRYPTION KEY FOR [${type.toUpperCase()}]:`);
+            if (!key) return;
+
+            if (Algorithms[type]) {
+                const plainText = Algorithms[type](cipherText, key, 'decrypt');
+                const textEl = btn.previousElementSibling;
+                textEl.innerText = plainText;
+                textEl.classList.remove('encrypted-text');
+                textEl.classList.add('text-green-400', 'font-bold', 'mono'); // Hacker Success style
+                btn.remove();
+            }
+        };
+
+        function scrollToBottom() {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+    </script>
 </body>
 </html>
