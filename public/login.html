@@ -58,7 +58,7 @@
             e.preventDefault();
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
-            const endpoint = isLogin ? '/api/user/login' : '/api/user/register';
+            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
             try {
                 const res = await fetch(endpoint, {
