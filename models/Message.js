@@ -1,15 +1,28 @@
 const mongoose = require("mongoose");
 
 const MessageSchema = new mongoose.Schema({
-  conversationId: { type: String, required: true },
-  sender: { type: String, required: true },
-  text: { type: String, required: true },
-  
-  // Educational Feature: Shows which cipher was used (AES, Caesar, etc.)
-  cipherType: { 
-    type: String, 
-    default: "Plain" 
-  }
-}, { timestamps: true });
+  sender: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  receiver: {
+    type: mongoose.Schema.Types.ObjectId, // <--- NEW: Who receives it?
+    ref: "User",
+    required: true,
+  },
+  text: {
+    type: String,
+    required: true,
+  },
+  cipherType: {
+    type: String,
+    default: "none", // <--- NEW: Stores the encryption type (e.g., 'caesar')
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 module.exports = mongoose.model("Message", MessageSchema);

@@ -1,74 +1,102 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
-const http = require("http"); // New
-const { Server } = require("socket.io"); // New
-const Message = require("./models/Message"); // Import Message Model
+const http = require("http");
+const { Server } = require("socket.io");
+const Message = require("./models/Message"); // Import the new model
+const User = require("./models/User");       // Import User model
 
-// Load Config
 dotenv.config();
 
 const app = express();
-const server = http.createServer(app); // Wrap Express
-const io = new Server(server); // Init Socket
+const server = http.createServer(app);
+const io = new Server(server);
 
-// Middleware
+app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
 
-// Database Connection
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("MongoDB Connected"))
-    .catch((err) => console.log(err));
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/vault", require("./routes/vault"));
-app.use("/api/chat", require("./routes/chatRoutes")); // New Chat Route
 
-// ------------------------------------------
-// 🔥 SOCKET.IO REAL-TIME LOGIC
-// ------------------------------------------
-io.on("connection", (socket) => {
-    console.log(`User Connected: ${socket.id}`);
-
-    // Join a specific room (Global or Private)
-    socket.on("join_room", (room) => {
-        socket.join(room);
-    });
-
-    // Handle sending messages
-    socket.on("send_message", async (data) => {
-        // 1. Save to Database (So it's there when you reload)
-        try {
-            const newMessage = new Message({
-                conversationId: data.room,
-                sender: data.sender,
-                text: data.text,
-                cipherType: data.cipherType
-            });
-            await newMessage.save();
-        } catch (err) {
-            console.error("Error saving message:", err);
-        }
-
-        // 2. Send to everyone else in that room
-        socket.to(data.room).emit("receive_message", data);
-    });
-
-    socket.on("disconnect", () => {
-        console.log("User Disconnected", socket.id);
-    });
+// --- NEW: API TO GET ALL USERS (CONTACT LIST) ---
+app.get("/api/users", async (req, res) => {
+    try {
+        // Return id and username of all users
+        const users = await User.find({}, "username _id"); 
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
 });
-// ------------------------------------------
+
+// --- NEW: API TO GET CHAT HISTORY BETWEEN TWO USERS ---
+app.get("/api/messages/:user1/:user2", async (req, res) => {
+    try {
+        const { user1, user2 } = req.params;
+        const messages = await Message.find({
+            $or: [
+                { sender: user1, receiver: user2 },
+                { sender: user2, receiver: user1 }
+            ]
+        }).sort({ timestamp: 1 });
+        res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch history" });
+    }
+});
 
 // Serve HTML pages
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/index.html")));
-app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.html"))); // New Page
+app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.html")));
+app.use(express.static(path.join(__dirname, "public")));
 
-const PORT = process.env.PORT || 5000;
-// IMPORTANT: Change app.listen to server.listen
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// --- UPDATED SOCKET LOGIC FOR PRIVATE CHAT ---
+io.on("connection", (socket) => {
+  console.log("User Connected:", socket.id);
+
+  // 1. Join a Private Room
+  socket.on("join_room", ({ senderId, receiverId }) => {
+    // Create a unique room name by sorting IDs (so A->B and B->A use same room)
+    const roomName = [senderId, receiverId].sort().join("_");
+    socket.join(roomName);
+    console.log(`User ${senderId} joined room: ${roomName}`);
+  });
+
+  // 2. Handle Private Message
+  socket.on("private_message", async (data) => {
+    const { senderId, receiverId, text, cipherType } = data;
+    
+    // Save to Database
+    try {
+        const newMessage = new Message({ 
+            sender: senderId, 
+            receiver: receiverId, 
+            text, 
+            cipherType 
+        });
+        await newMessage.save();
+
+        // Send to the specific room
+        const roomName = [senderId, receiverId].sort().join("_");
+        io.to(roomName).emit("receive_message", data);
+        
+    } catch (err) {
+        console.error("Error saving message:", err);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User Disconnected", socket.id);
+  });
 });
+
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
