@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher Chat Space</title>
+    <link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="sidebar">
+            <h3>Cipher Users</h3>
+            <div id="user-list">
+                <div class="user-item" onclick="joinGlobalChat()">Global Room</div>
+            </div>
+        </div>
+
+        <div class="chat-main">
+            <div class="chat-header">
+                <h3 id="current-room-name">Global Room</h3>
+                <small>End-to-End Encrypted</small>
+            </div>
+            
+            <div id="messages-area" class="messages-area">
+                </div>
+
+            <div class="chat-input">
+                <select id="cipher-select">
+                    <option value="Plain">No Encryption</option>
+                    <option value="AES">AES (Advanced)</option>
+                    <option value="Caesar">Caesar Cipher</option>
+                </select>
+                <input type="text" id="message-input" placeholder="Type a secure message...">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/chat-client.js"></script>
+</body>
+</html>
