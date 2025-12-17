@@ -133,17 +133,40 @@
     </div>
 
     <script>
-        // --- 1. AUTH & SETUP ---
+        // --- 1. ROBUST AUTH & SETUP ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
 
-        // Decode JWT
+        // Robust JWT Decoder to fix "ID: undefined"
         function parseJwt(token) {
-            try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; }
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error("Token decode failed", e);
+                return null;
+            }
         }
-        const myUser = parseJwt(token);
-        const myId = myUser ? myUser.userId : null;
-        document.getElementById('currentUserDisplay').innerText = `ID: ${myUser.username}`;
+
+        const decoded = parseJwt(token);
+        
+        // Handle different database formats (support .user.id, ._id, .id, etc.)
+        const userData = decoded.user || decoded; 
+        const myId = userData._id || userData.id || userData.userId;
+        const myName = userData.username || userData.name || "Agent";
+
+        // Update UI
+        document.getElementById('currentUserDisplay').innerText = `ID: ${myName}`;
+
+        if (!myId) {
+            alert("SYSTEM ERROR: Invalid ID. Please Logout and Login again.");
+            localStorage.removeItem('auth-token');
+            window.location.href = '/login.html';
+        }
 
         // Connect Socket
         const socket = io();
@@ -210,7 +233,7 @@
         }
         fetchUsers();
 
-        // 🔥 NEW: SEARCH FUNCTIONALITY 🔥
+        // 🔥 SEARCH FUNCTIONALITY
         searchInput.addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
             const cards = document.querySelectorAll('.user-card');
@@ -240,7 +263,7 @@
             
             document.getElementById('chatPartnerName').innerText = user.username;
 
-            // Socket Join Room
+            // Socket Join Room (Uses Correct IDs now)
             socket.emit("join_room", { senderId: myId, receiverId: user._id });
 
             // Fetch History
@@ -306,7 +329,11 @@
 
         // --- 7. RECEIVE MESSAGE ---
         socket.on("receive_message", (data) => {
-            if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
+            // Check if this message is for the current conversation
+            // We compare IDs to ensure we don't show messages from wrong users
+            if (currentReceiver && 
+               (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
+                
                 displayMessage({
                     sender: data.senderId || data.sender, 
                     text: data.text,
