@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
-const Message = require("./models/Message"); // Import the new model
+const Message = require("./models/Message"); // Import Message model
 const User = require("./models/User");       // Import User model
 
 dotenv.config();
@@ -26,21 +26,12 @@ mongoose.connect(process.env.MONGO_URI)
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/vault", require("./routes/vault"));
 
-// --- NEW: API TO GET ALL USERS (CONTACT LIST) ---
-app.get("/api/users", async (req, res) => {
-    try {
-        // Return id and username of all users
-        const users = await User.find({}, "username _id"); 
-        res.json(users);
-    } catch (err) {
-        res.status(500).json({ error: "Failed to fetch users" });
-    }
-});
-
-// --- UPDATED: GET ALL USERS (PLUS THEIR PUBLIC KEYS) ---
+// --- 1. API TO GET ALL USERS (CORRECTED) ---
+// We merged the duplicate routes into ONE single correct route
 app.get("/api/users", async (req, res) => {
     try {
         // Return id, username, AND publicKey
+        // This fixes the RSA error
         const users = await User.find({}, "username _id publicKey"); 
         res.json(users);
     } catch (err) {
@@ -48,7 +39,7 @@ app.get("/api/users", async (req, res) => {
     }
 });
 
-// --- NEW: UPDATE MY PUBLIC KEY ---
+// --- 2. UPDATE MY PUBLIC KEY ---
 app.post("/api/users/key", async (req, res) => {
     const { userId, publicKey } = req.body;
     try {
@@ -59,23 +50,39 @@ app.post("/api/users/key", async (req, res) => {
     }
 });
 
+// --- 3. GET CHAT HISTORY ---
+// (This was missing in your snippet, but the frontend needs it!)
+app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
+    try {
+        const { senderId, receiverId } = req.params;
+        const messages = await Message.find({
+            $or: [
+                { sender: senderId, receiver: receiverId },
+                { sender: receiverId, receiver: senderId }
+            ]
+        }).sort({ timestamp: 1 }); // Oldest first
+        res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch messages" });
+    }
+});
+
 // Serve HTML pages
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/index.html")));
 app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.html")));
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- TRACK ONLINE USERS (New Map) ---
+// --- TRACK ONLINE USERS ---
 let onlineUsers = new Map(); // Stores { userId: socketId }
 
-// --- UPDATED SOCKET LOGIC ---
+// --- SOCKET LOGIC ---
 io.on("connection", (socket) => {
   console.log("User Connected:", socket.id);
 
-  // 1. Handle User Login (Client announces "I am here")
+  // 1. Handle User Login
   socket.on("login", (userId) => {
     if (userId) {
         onlineUsers.set(userId, socket.id);
-        // Broadcast the new list of online user IDs to everyone
         io.emit("get_users", Array.from(onlineUsers.keys()));
         console.log(`User Logged In: ${userId}`);
     }
@@ -89,7 +96,7 @@ io.on("connection", (socket) => {
 
   // 3. Handle Private Message
   socket.on("private_message", async (data) => {
-    const { senderId, receiverId, text, cipherType, isBurn } = data; // <--- Get isBurn flag
+    const { senderId, receiverId, text, cipherType, isBurn } = data;
     
     try {
         const newMessage = new Message({ 
@@ -101,20 +108,16 @@ io.on("connection", (socket) => {
         });
         const savedMsg = await newMessage.save();
 
-        // Add _id so frontend knows what to delete
         const msgData = { ...data, _id: savedMsg._id };
 
-        // Send to the room
         const roomName = [senderId, receiverId].sort().join("_");
         io.to(roomName).emit("receive_message", msgData);
 
-        // --- SPY LOGIC: SELF DESTRUCT ---
+        // --- SELF DESTRUCT LOGIC ---
         if (isBurn) {
             console.log(`💣 BURN TIMER STARTED: Message ${savedMsg._id}`);
             setTimeout(async () => {
-                // 1. Delete from Database
                 await Message.deleteOne({ _id: savedMsg._id });
-                // 2. Tell Frontend to remove it
                 io.to(roomName).emit("message_burnt", savedMsg._id);
                 console.log(`💥 BOOM: Message ${savedMsg._id} destroyed.`);
             }, 10000); // 10 Seconds
@@ -127,14 +130,12 @@ io.on("connection", (socket) => {
 
   // 4. Handle Disconnect
   socket.on("disconnect", () => {
-    // Find and remove the user who disconnected
     for (let [id, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
         onlineUsers.delete(id);
         break;
       }
     }
-    // Update everyone's list
     io.emit("get_users", Array.from(onlineUsers.keys()));
     console.log("User Disconnected", socket.id);
   });
