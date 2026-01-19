@@ -37,19 +37,25 @@ app.get("/api/users", async (req, res) => {
     }
 });
 
-// --- NEW: API TO GET CHAT HISTORY BETWEEN TWO USERS ---
-app.get("/api/messages/:user1/:user2", async (req, res) => {
+// --- UPDATED: GET ALL USERS (PLUS THEIR PUBLIC KEYS) ---
+app.get("/api/users", async (req, res) => {
     try {
-        const { user1, user2 } = req.params;
-        const messages = await Message.find({
-            $or: [
-                { sender: user1, receiver: user2 },
-                { sender: user2, receiver: user1 }
-            ]
-        }).sort({ timestamp: 1 });
-        res.json(messages);
+        // Return id, username, AND publicKey
+        const users = await User.find({}, "username _id publicKey"); 
+        res.json(users);
     } catch (err) {
-        res.status(500).json({ error: "Failed to fetch history" });
+        res.status(500).json({ error: "Failed to fetch users" });
+    }
+});
+
+// --- NEW: UPDATE MY PUBLIC KEY ---
+app.post("/api/users/key", async (req, res) => {
+    const { userId, publicKey } = req.body;
+    try {
+        await User.findByIdAndUpdate(userId, { publicKey: publicKey });
+        res.json({ message: "Key Updated Successfully" });
+    } catch (err) {
+        res.status(500).json({ error: "Failed to update key" });
     }
 });
 

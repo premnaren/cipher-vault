@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, minlength: 3 },
     password: { type: String, required: true, minlength: 6 },
+    // --- NEW: STORE THE PUBLIC LOCK ---
+    publicKey: { type: String, default: "" }, 
     createdAt: { type: Date, default: Date.now }
 });
 
