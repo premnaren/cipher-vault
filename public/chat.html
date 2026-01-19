@@ -113,11 +113,12 @@
             <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
                 <div class="flex gap-2 mb-2 items-center">
                     <span class="text-[10px] text-gray-500 font-bold mono">ENCRYPTION PROTOCOL:</span>
-                    <select id="cipherSelect" aria-label="Encryption Protocol" class="bg-black border border-[var(--border)] text-[10px] text-[var(--primary)] rounded px-2 py-1 outline-none font-mono focus:border-[var(--primary)] cursor-pointer">
-                        <option value="none">OFF (PLAIN)</option>
-                        <option value="caesar">CAESAR CIPHER</option>
-                        <option value="vigenere">VIGENÈRE CIPHER</option>
-                    </select>
+                   <select id="cipherSelect" aria-label="Encryption Protocol" class="bg-black border border-[var(--border)] text-[10px] text-[var(--primary)] rounded px-2 py-1 outline-none font-mono focus:border-[var(--primary)] cursor-pointer">
+                         <option value="none">OFF (PLAIN)</option>
+                         <option value="caesar">CAESAR CIPHER</option>
+                         <option value="vigenere">VIGENÈRE CIPHER</option>
+                         <option value="rsa">🔒 RSA (MILITARY GRADE)</option>
+                     </select>
                     <input type="text" id="cipherKey" placeholder="KEY (e.g. 3)" class="bg-black border border-[var(--border)] text-[10px] text-white rounded px-2 py-1 w-24 outline-none font-mono focus:border-[var(--primary)]">
                     
                     <label class="flex items-center gap-1 cursor-pointer ml-4 border border-red-900/50 bg-red-900/10 px-2 py-1 rounded hover:bg-red-900/30 transition-colors">
@@ -138,55 +139,104 @@
     </div>
 
     <script>
-        // --- 1. ROBUST AUTH & SETUP ---
+        // --- 1. CONFIG & AUTH ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
 
-        // Robust JWT Decoder to fix "ID: undefined"
         function parseJwt(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (e) {
-                console.error("Token decode failed", e);
-                return null;
-            }
+            try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; }
         }
 
         const decoded = parseJwt(token);
-        
-        // Handle different database formats (support .user.id, ._id, .id, etc.)
         const userData = decoded.user || decoded; 
         const myId = userData._id || userData.id || userData.userId;
         const myName = userData.username || userData.name || "Agent";
 
-        // Update UI
         document.getElementById('currentUserDisplay').innerText = `ID: ${myName}`;
 
-        if (!myId) {
-            alert("SYSTEM ERROR: Invalid ID. Please Logout and Login again.");
-            localStorage.removeItem('auth-token');
-            window.location.href = '/login.html';
+        const socket = io();
+        socket.emit("login", myId);
+
+        // --- 2. CRYPTO ENGINE (RSA) ---
+        let myKeyPair = null;
+        let partnerPublicKeys = {}; // Stores other users' locks
+
+        async function initCrypto() {
+            try {
+                // Check if we already have keys in storage
+                const storedPriv = localStorage.getItem('rsa-priv');
+                const storedPub = localStorage.getItem('rsa-pub');
+
+                if (storedPriv && storedPub) {
+                    // Import existing keys
+                    const privKey = await window.crypto.subtle.importKey(
+                        "jwk", JSON.parse(storedPriv), 
+                        { name: "RSA-OAEP", hash: "SHA-256" }, true, ["decrypt"]
+                    );
+                    const pubKey = await window.crypto.subtle.importKey(
+                        "jwk", JSON.parse(storedPub), 
+                        { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]
+                    );
+                    myKeyPair = { privateKey: privKey, publicKey: pubKey };
+                } else {
+                    // Generate NEW Keys
+                    myKeyPair = await window.crypto.subtle.generateKey(
+                        { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+                        true, ["encrypt", "decrypt"]
+                    );
+                    // Export and Save
+                    const expPriv = await window.crypto.subtle.exportKey("jwk", myKeyPair.privateKey);
+                    const expPub = await window.crypto.subtle.exportKey("jwk", myKeyPair.publicKey);
+                    localStorage.setItem('rsa-priv', JSON.stringify(expPriv));
+                    localStorage.setItem('rsa-pub', JSON.stringify(expPub));
+                }
+
+                // Upload Public Key to Server so others can text me
+                const exportedPub = await window.crypto.subtle.exportKey("jwk", myKeyPair.publicKey);
+                await fetch('/api/users/key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: myId, publicKey: JSON.stringify(exportedPub) })
+                });
+                console.log("🔐 CRYPTO SYSTEM ONLINE: Keys Loaded & Uploaded");
+            } catch (e) {
+                console.error("Crypto Init Failed:", e);
+            }
+        }
+        initCrypto(); // Start Engine
+
+        // --- 3. HELPER ALGORITHMS ---
+        async function encryptRSA(text, pubKeyJson) {
+            try {
+                // Import partner's public key
+                const pubKey = await window.crypto.subtle.importKey(
+                    "jwk", JSON.parse(pubKeyJson), 
+                    { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]
+                );
+                const enc = new TextEncoder();
+                const encoded = enc.encode(text);
+                const encrypted = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, pubKey, encoded);
+                
+                // Convert to Base64 to send via text
+                return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+            } catch (e) { console.error("Encrypt Error", e); return "[ENCRYPTION FAILED]"; }
         }
 
-        // Connect Socket
-        const socket = io();
-        socket.emit("login", myId); // <--- CHANGE 1: Login Signal Sent
+        async function decryptRSA(cipherText) {
+            try {
+                // Decode Base64
+                const binaryString = atob(cipherText);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
 
-        // --- 2. STATE ---
-        let currentReceiver = null;
-        const usersListEl = document.getElementById('usersList');
-        const messagesArea = document.getElementById('messagesArea');
-        const emptyState = document.getElementById('emptyState');
-        const inputArea = document.getElementById('inputArea');
-        const chatHeader = document.getElementById('chatHeader');
-        const searchInput = document.getElementById('userSearch');
+                const decrypted = await window.crypto.subtle.decrypt(
+                    { name: "RSA-OAEP" }, myKeyPair.privateKey, bytes
+                );
+                const dec = new TextDecoder();
+                return dec.decode(decrypted);
+            } catch (e) { console.error("Decrypt Error", e); return "[DECRYPTION FAILED - WRONG KEY]"; }
+        }
 
-        // --- 3. ALGORITHMS (Client-Side) ---
         const Algorithms = {
             caesar: (t, k, m) => { 
                 const s = parseInt(k) || 0; const shift = m === 'encrypt' ? s : -s; 
@@ -207,21 +257,26 @@
             }
         };
 
-        // --- 4. FETCH USERS ---
+        // --- 4. APP LOGIC ---
+        let currentReceiver = null;
+        const messagesArea = document.getElementById('messagesArea');
+
         async function fetchUsers() {
             try {
                 const res = await fetch('/api/users');
                 const users = await res.json();
-                usersListEl.innerHTML = '';
+                document.getElementById('usersList').innerHTML = '';
                 
                 users.forEach(user => {
-                    if (user._id === myId) return; // Don't show myself
+                    if (user._id === myId) return;
+                    
+                    // STORE PUBLIC KEY
+                    if(user.publicKey) partnerPublicKeys[user._id] = user.publicKey;
 
                     const div = document.createElement('div');
                     div.className = 'user-card user-item p-3 cursor-pointer hover:bg-white/5 transition-colors flex items-center gap-3 border-l-2 border-transparent';
-                    
                     div.setAttribute('data-name', user.username.toLowerCase());
-                    div.setAttribute('data-id', user._id); // <--- CHANGE 2: Added ID Attribute
+                    div.setAttribute('data-id', user._id); 
                     
                     div.innerHTML = `
                         <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron shadow-[0_0_5px_rgba(0,0,0,0.5)]">
@@ -233,49 +288,34 @@
                         </div>
                     `;
                     div.onclick = () => selectUser(user, div);
-                    usersListEl.appendChild(div);
+                    document.getElementById('usersList').appendChild(div);
                 });
             } catch (e) { console.error(e); }
         }
         fetchUsers();
 
-        // 🔥 SEARCH FUNCTIONALITY
-        searchInput.addEventListener('input', (e) => {
+        // Search Filter
+        document.getElementById('userSearch').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.user-card');
-            
-            cards.forEach(card => {
+            document.querySelectorAll('.user-card').forEach(card => {
                 const name = card.getAttribute('data-name');
-                if(name.includes(term)) {
-                    card.classList.remove('hidden');
-                } else {
-                    card.classList.add('hidden');
-                }
+                card.classList.toggle('hidden', !name.includes(term));
             });
         });
 
-        // --- 5. SELECT USER ---
         function selectUser(user, element) {
             currentReceiver = user;
-            
-            // UI Updates
             document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
             element.classList.add('active');
             
-            emptyState.classList.add('hidden');
-            chatHeader.classList.remove('hidden');
-            messagesArea.classList.remove('hidden');
-            inputArea.classList.remove('hidden');
-            
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('messagesArea').classList.remove('hidden');
+            document.getElementById('inputArea').classList.remove('hidden');
             document.getElementById('chatPartnerName').innerText = user.username;
 
-            // Socket Join Room (Uses Correct IDs now)
             socket.emit("join_room", { senderId: myId, receiverId: user._id });
-
-            // Fetch History
             loadHistory(user._id);
-            
-            // Focus input
             document.getElementById('msgInput').focus();
         }
 
@@ -285,28 +325,33 @@
                 const res = await fetch(`/api/messages/${myId}/${partnerId}`);
                 const msgs = await res.json();
                 messagesArea.innerHTML = '';
-                if(msgs.length === 0) {
-                     messagesArea.innerHTML = '<div class="text-center text-xs text-gray-700 mt-10 mono">// CHANNEL EMPTY. BEGIN TRANSMISSION.</div>';
-                }
                 msgs.forEach(displayMessage);
                 scrollToBottom();
             } catch (e) { console.error(e); }
         }
 
-       // --- 6. SEND MESSAGE (UPDATED FOR BURN) ---
-        document.getElementById('chatForm').addEventListener('submit', (e) => {
+        // --- SEND MESSAGE (Now Async for RSA) ---
+        document.getElementById('chatForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const input = document.getElementById('msgInput');
             const cipherType = document.getElementById('cipherSelect').value;
             const key = document.getElementById('cipherKey').value;
-            const isBurn = document.getElementById('burnCheck').checked; // <--- CHECK BOX
+            const isBurn = document.getElementById('burnCheck').checked;
             let text = input.value;
             
             if (!text.trim() || !currentReceiver) return;
 
-            // 1. ENCRYPT CLIENT SIDE BEFORE SENDING
+            // ENCRYPTION LOGIC
             let cipherText = text;
-            if (cipherType !== 'none' && Algorithms[cipherType]) {
+            if (cipherType === 'rsa') {
+                const partnerKey = partnerPublicKeys[currentReceiver._id];
+                if (!partnerKey) {
+                    alert("ERROR: This agent hasn't established a secure key yet. Tell them to login again!");
+                    return;
+                }
+                cipherText = await encryptRSA(text, partnerKey);
+            } 
+            else if (cipherType !== 'none' && Algorithms[cipherType]) {
                 cipherText = Algorithms[cipherType](text, key, 'encrypt');
             }
 
@@ -315,69 +360,82 @@
                 receiverId: currentReceiver._id,
                 text: cipherText, 
                 cipherType: cipherType,
-                isBurn: isBurn, // <--- SEND FLAG TO SERVER
-                originalText: text, 
+                isBurn: isBurn,
                 timestamp: new Date()
             };
 
-            // Emit to server
             socket.emit("private_message", messageData);
 
-            // Show on my screen immediately
             displayMessage({
                 sender: myId,
-                text: cipherText,
+                text: cipherText, // Show encrypted version
                 cipherType: cipherType,
-                isBurn: isBurn, // <--- Pass flag to display
-                isSelf: true
+                isBurn: isBurn,
+                isSelf: true,
+                originalText: text // Pass original so I can see what I wrote
             });
 
             input.value = '';
-            document.getElementById('burnCheck').checked = false; // Reset checkbox
+            document.getElementById('burnCheck').checked = false;
             scrollToBottom();
         });
 
-        // --- 7. RECEIVE MESSAGE ---
+        // --- RECEIVE MESSAGE ---
         socket.on("receive_message", (data) => {
-            // Check if this message is for the current conversation
-            // We compare IDs to ensure we don't show messages from wrong users
-            if (currentReceiver && 
-               (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
-                
+            if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
                 displayMessage({
                     sender: data.senderId || data.sender, 
                     text: data.text,
                     cipherType: data.cipherType,
-                    isSelf: false
+                    isBurn: data.isBurn, // Pass burn flag
+                    isSelf: false,
+                    _id: data._id
                 });
                 scrollToBottom();
             }
         });
 
-        // --- 8. RENDER MESSAGE ---
+        socket.on("message_burnt", (msgId) => {
+            const msgDiv = document.getElementById(`msg-${msgId}`);
+            if (msgDiv) {
+                msgDiv.style.transition = "all 0.5s ease";
+                msgDiv.style.opacity = "0";
+                msgDiv.style.transform = "scale(0.9)";
+                msgDiv.innerHTML = '<div class="text-red-500 font-mono text-xs text-center">💥 MESSAGE SELF-DESTRUCTED 💥</div>';
+                setTimeout(() => msgDiv.remove(), 2000);
+            }
+        });
+
         function displayMessage(msg) {
-            // Remove "Empty" message if it exists
             if(messagesArea.innerHTML.includes('CHANNEL EMPTY')) messagesArea.innerHTML = '';
-
             const isMe = (msg.sender === myId || msg.isSelf);
-            
             const div = document.createElement('div');
-
-            // 1. SET UNIQUE ID (Vital for Burn-on-Read)
+            
+            // Set ID for Burn Logic
             if (msg._id) div.id = `msg-${msg._id}`; 
 
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-in mb-4`;
             
             let contentHtml = '';
             
-            // If encrypted, show Lock UI
+            // LOCK UI
             if (msg.cipherType && msg.cipherType !== 'none') {
+                // If it's ME and I have the original text (for RSA), show it
+                let displayText = (isMe && msg.originalText) ? msg.originalText : msg.text;
+                let isEncrypted = true;
+
+                // If I am the sender, I see plain text (optional, but good UX). 
+                // If I am receiver, I see Cipher text until I unlock.
+                if (isMe && msg.cipherType === 'rsa') isEncrypted = false; 
+
                 contentHtml = `
                     <div class="mb-2 text-[9px] ${isMe ? 'text-right' : 'text-left'} text-gray-500 mono uppercase tracking-widest border-b border-white/10 pb-1">
-                        🔒 ${msg.cipherType}
+                        🔒 ${msg.cipherType.toUpperCase()}
                     </div>
-                    <div class="encrypted-text break-all text-sm mb-2" id="text-${msg._id || Date.now()}">${msg.text}</div>
-                    ${!isMe ? `<button onclick="decryptMsg(this, '${msg.text}', '${msg.cipherType}')" class="text-[10px] bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 px-3 py-1.5 rounded transition-all mono w-full flex items-center justify-center gap-2 group"><span>UNLOCK DATA</span> <span class="group-hover:rotate-90 transition-transform">🔓</span></button>` : ''}
+                    <div class="${isEncrypted ? 'encrypted-text' : 'text-white'} break-all text-sm mb-2" id="text-${msg._id || Date.now()}">
+                        ${displayText}
+                    </div>
+                    ${!isMe ? `<button onclick="attemptDecrypt(this, '${msg.text}', '${msg.cipherType}')" class="text-[10px] bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 px-3 py-1.5 rounded transition-all mono w-full flex items-center justify-center gap-2 group"><span>UNLOCK DATA</span> <span class="group-hover:rotate-90 transition-transform">🔓</span></button>` : ''}
                 `;
             } else {
                 contentHtml = `<div class="break-all text-sm">${msg.text}</div>`;
@@ -388,68 +446,54 @@
                     ${contentHtml}
                 </div>
             `;
-            
             messagesArea.appendChild(div);
         }
 
-        // --- 9. DECRYPT INTERACTION ---
-        window.decryptMsg = (btn, cipherText, type) => {
-            const key = prompt(`ENTER DECRYPTION KEY FOR [${type.toUpperCase()}]:`);
-            if (!key) return;
-
-            if (Algorithms[type]) {
-                const plainText = Algorithms[type](cipherText, key, 'decrypt');
-                const textEl = btn.previousElementSibling;
+        // --- DECRYPT HANDLER ---
+        window.attemptDecrypt = async (btn, cipherText, type) => {
+            const textEl = btn.previousElementSibling;
+            
+            if (type === 'rsa') {
+                textEl.innerText = "DECRYPTING WITH PRIVATE KEY...";
+                const plainText = await decryptRSA(cipherText);
                 textEl.innerText = plainText;
-                textEl.classList.remove('encrypted-text');
-                textEl.classList.add('text-green-400', 'font-bold', 'mono'); // Hacker Success style
-                btn.remove();
+            } 
+            else {
+                // Classic Ciphers
+                const key = prompt(`ENTER DECRYPTION KEY FOR [${type.toUpperCase()}]:`);
+                if (!key) return;
+                if (Algorithms[type]) {
+                    const plainText = Algorithms[type](cipherText, key, 'decrypt');
+                    textEl.innerText = plainText;
+                }
             }
+            
+            textEl.classList.remove('encrypted-text');
+            textEl.classList.add('text-green-400', 'font-bold', 'mono'); 
+            btn.remove();
         };
 
-        function scrollToBottom() {
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-        }
+        function scrollToBottom() { messagesArea.scrollTop = messagesArea.scrollHeight; }
 
-        // --- 10. ONLINE STATUS LISTENER (NEW) ---
+        // --- ONLINE STATUS ---
         socket.on("get_users", (onlineUserIds) => {
             document.querySelectorAll('.user-card').forEach(card => {
                 const userId = card.getAttribute('data-id'); 
                 const statusText = card.querySelector('.status-text');
-                
                 if (onlineUserIds.includes(userId)) {
                     statusText.innerText = "ONLINE";
                     statusText.classList.remove('text-gray-600');
                     statusText.classList.add('text-[var(--primary)]', 'animate-pulse'); 
-                    
-                    // Add a glowing border to the card
                     card.classList.add('border-[var(--primary)]');
                     card.classList.remove('border-transparent');
                 } else {
                     statusText.innerText = "OFFLINE";
                     statusText.classList.add('text-gray-600');
                     statusText.classList.remove('text-[var(--primary)]', 'animate-pulse');
-                    
-                    // Remove border
                     card.classList.remove('border-[var(--primary)]');
                     card.classList.add('border-transparent');
                 }
             });
-        });
-
-        // --- 11. HANDLE EXPLOSIONS (NEW) ---
-        socket.on("message_burnt", (msgId) => {
-            // Find the message div by ID (we need to make sure displayMessage sets IDs correctly)
-            const msgDiv = document.getElementById(`msg-${msgId}`);
-            if (msgDiv) {
-                // Cool explosion animation effect
-                msgDiv.style.transition = "all 0.5s ease";
-                msgDiv.style.opacity = "0";
-                msgDiv.style.transform = "scale(0.9)";
-                msgDiv.innerHTML = '<div class="text-red-500 font-mono text-xs text-center">💥 MESSAGE SELF-DESTRUCTED 💥</div>';
-                
-                setTimeout(() => msgDiv.remove(), 2000); // Remove after animation
-            }
         });
     </script>
 </body>
