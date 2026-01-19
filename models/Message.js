@@ -7,7 +7,7 @@ const MessageSchema = new mongoose.Schema({
     required: true,
   },
   receiver: {
-    type: mongoose.Schema.Types.ObjectId, // <--- NEW: Who receives it?
+    type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
   },
@@ -17,7 +17,12 @@ const MessageSchema = new mongoose.Schema({
   },
   cipherType: {
     type: String,
-    default: "none", // <--- NEW: Stores the encryption type (e.g., 'caesar')
+    default: "none",
+  },
+  // --- NEW: SELF DESTRUCT FLAG ---
+  isBurn: {
+    type: Boolean,
+    default: false
   },
   timestamp: {
     type: Date,

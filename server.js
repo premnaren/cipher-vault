@@ -58,42 +58,78 @@ app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/index.html"
 app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.html")));
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- UPDATED SOCKET LOGIC FOR PRIVATE CHAT ---
+// --- TRACK ONLINE USERS (New Map) ---
+let onlineUsers = new Map(); // Stores { userId: socketId }
+
+// --- UPDATED SOCKET LOGIC ---
 io.on("connection", (socket) => {
   console.log("User Connected:", socket.id);
 
-  // 1. Join a Private Room
-  socket.on("join_room", ({ senderId, receiverId }) => {
-    // Create a unique room name by sorting IDs (so A->B and B->A use same room)
-    const roomName = [senderId, receiverId].sort().join("_");
-    socket.join(roomName);
-    console.log(`User ${senderId} joined room: ${roomName}`);
+  // 1. Handle User Login (Client announces "I am here")
+  socket.on("login", (userId) => {
+    if (userId) {
+        onlineUsers.set(userId, socket.id);
+        // Broadcast the new list of online user IDs to everyone
+        io.emit("get_users", Array.from(onlineUsers.keys()));
+        console.log(`User Logged In: ${userId}`);
+    }
   });
 
-  // 2. Handle Private Message
+  // 2. Join a Private Room
+  socket.on("join_room", ({ senderId, receiverId }) => {
+    const roomName = [senderId, receiverId].sort().join("_");
+    socket.join(roomName);
+  });
+
+  // 3. Handle Private Message
   socket.on("private_message", async (data) => {
-    const { senderId, receiverId, text, cipherType } = data;
+    const { senderId, receiverId, text, cipherType, isBurn } = data; // <--- Get isBurn flag
     
-    // Save to Database
     try {
         const newMessage = new Message({ 
             sender: senderId, 
             receiver: receiverId, 
             text, 
-            cipherType 
+            cipherType,
+            isBurn: isBurn || false 
         });
-        await newMessage.save();
+        const savedMsg = await newMessage.save();
 
-        // Send to the specific room
+        // Add _id so frontend knows what to delete
+        const msgData = { ...data, _id: savedMsg._id };
+
+        // Send to the room
         const roomName = [senderId, receiverId].sort().join("_");
-        io.to(roomName).emit("receive_message", data);
+        io.to(roomName).emit("receive_message", msgData);
+
+        // --- SPY LOGIC: SELF DESTRUCT ---
+        if (isBurn) {
+            console.log(`💣 BURN TIMER STARTED: Message ${savedMsg._id}`);
+            setTimeout(async () => {
+                // 1. Delete from Database
+                await Message.deleteOne({ _id: savedMsg._id });
+                // 2. Tell Frontend to remove it
+                io.to(roomName).emit("message_burnt", savedMsg._id);
+                console.log(`💥 BOOM: Message ${savedMsg._id} destroyed.`);
+            }, 10000); // 10 Seconds
+        }
         
     } catch (err) {
         console.error("Error saving message:", err);
     }
   });
 
+  // 4. Handle Disconnect
   socket.on("disconnect", () => {
+    // Find and remove the user who disconnected
+    for (let [id, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
+        onlineUsers.delete(id);
+        break;
+      }
+    }
+    // Update everyone's list
+    io.emit("get_users", Array.from(onlineUsers.keys()));
     console.log("User Disconnected", socket.id);
   });
 });

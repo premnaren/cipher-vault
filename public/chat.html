@@ -108,17 +108,22 @@
             </div>
 
             <div id="messagesArea" class="flex-1 overflow-y-auto p-6 space-y-4 hidden scroll-smooth">
-                </div>
+            </div>
 
             <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
                 <div class="flex gap-2 mb-2 items-center">
                     <span class="text-[10px] text-gray-500 font-bold mono">ENCRYPTION PROTOCOL:</span>
-                    <select id="cipherSelect" class="bg-black border border-[var(--border)] text-[10px] text-[var(--primary)] rounded px-2 py-1 outline-none font-mono focus:border-[var(--primary)] cursor-pointer">
+                    <select id="cipherSelect" aria-label="Encryption Protocol" class="bg-black border border-[var(--border)] text-[10px] text-[var(--primary)] rounded px-2 py-1 outline-none font-mono focus:border-[var(--primary)] cursor-pointer">
                         <option value="none">OFF (PLAIN)</option>
                         <option value="caesar">CAESAR CIPHER</option>
                         <option value="vigenere">VIGENÈRE CIPHER</option>
                     </select>
                     <input type="text" id="cipherKey" placeholder="KEY (e.g. 3)" class="bg-black border border-[var(--border)] text-[10px] text-white rounded px-2 py-1 w-24 outline-none font-mono focus:border-[var(--primary)]">
+                    
+                    <label class="flex items-center gap-1 cursor-pointer ml-4 border border-red-900/50 bg-red-900/10 px-2 py-1 rounded hover:bg-red-900/30 transition-colors">
+                        <input type="checkbox" id="burnCheck" class="accent-red-500">
+                        <span class="text-[10px] text-red-500 font-bold mono">🔥 BURN-ON-READ</span>
+                    </label>
                 </div>
                 
                 <form id="chatForm" class="flex gap-2">
@@ -170,6 +175,7 @@
 
         // Connect Socket
         const socket = io();
+        socket.emit("login", myId); // <--- CHANGE 1: Login Signal Sent
 
         // --- 2. STATE ---
         let currentReceiver = null;
@@ -212,10 +218,10 @@
                     if (user._id === myId) return; // Don't show myself
 
                     const div = document.createElement('div');
-                    // Added 'user-card' class for searching
                     div.className = 'user-card user-item p-3 cursor-pointer hover:bg-white/5 transition-colors flex items-center gap-3 border-l-2 border-transparent';
-                    // Added 'data-name' for searching
+                    
                     div.setAttribute('data-name', user.username.toLowerCase());
+                    div.setAttribute('data-id', user._id); // <--- CHANGE 2: Added ID Attribute
                     
                     div.innerHTML = `
                         <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron shadow-[0_0_5px_rgba(0,0,0,0.5)]">
@@ -287,12 +293,13 @@
             } catch (e) { console.error(e); }
         }
 
-        // --- 6. SEND MESSAGE ---
+       // --- 6. SEND MESSAGE (UPDATED FOR BURN) ---
         document.getElementById('chatForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const input = document.getElementById('msgInput');
             const cipherType = document.getElementById('cipherSelect').value;
             const key = document.getElementById('cipherKey').value;
+            const isBurn = document.getElementById('burnCheck').checked; // <--- CHECK BOX
             let text = input.value;
             
             if (!text.trim() || !currentReceiver) return;
@@ -306,9 +313,10 @@
             const messageData = {
                 senderId: myId,
                 receiverId: currentReceiver._id,
-                text: cipherText, // Send the ENCRYPTED text
+                text: cipherText, 
                 cipherType: cipherType,
-                originalText: text, // Only for my own view immediately (optional)
+                isBurn: isBurn, // <--- SEND FLAG TO SERVER
+                originalText: text, 
                 timestamp: new Date()
             };
 
@@ -320,10 +328,12 @@
                 sender: myId,
                 text: cipherText,
                 cipherType: cipherType,
+                isBurn: isBurn, // <--- Pass flag to display
                 isSelf: true
             });
 
             input.value = '';
+            document.getElementById('burnCheck').checked = false; // Reset checkbox
             scrollToBottom();
         });
 
@@ -352,6 +362,10 @@
             const isMe = (msg.sender === myId || msg.isSelf);
             
             const div = document.createElement('div');
+
+            // 1. SET UNIQUE ID (Vital for Burn-on-Read)
+            if (msg._id) div.id = `msg-${msg._id}`; 
+
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-in mb-4`;
             
             let contentHtml = '';
@@ -396,6 +410,47 @@
         function scrollToBottom() {
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
+
+        // --- 10. ONLINE STATUS LISTENER (NEW) ---
+        socket.on("get_users", (onlineUserIds) => {
+            document.querySelectorAll('.user-card').forEach(card => {
+                const userId = card.getAttribute('data-id'); 
+                const statusText = card.querySelector('.status-text');
+                
+                if (onlineUserIds.includes(userId)) {
+                    statusText.innerText = "ONLINE";
+                    statusText.classList.remove('text-gray-600');
+                    statusText.classList.add('text-[var(--primary)]', 'animate-pulse'); 
+                    
+                    // Add a glowing border to the card
+                    card.classList.add('border-[var(--primary)]');
+                    card.classList.remove('border-transparent');
+                } else {
+                    statusText.innerText = "OFFLINE";
+                    statusText.classList.add('text-gray-600');
+                    statusText.classList.remove('text-[var(--primary)]', 'animate-pulse');
+                    
+                    // Remove border
+                    card.classList.remove('border-[var(--primary)]');
+                    card.classList.add('border-transparent');
+                }
+            });
+        });
+
+        // --- 11. HANDLE EXPLOSIONS (NEW) ---
+        socket.on("message_burnt", (msgId) => {
+            // Find the message div by ID (we need to make sure displayMessage sets IDs correctly)
+            const msgDiv = document.getElementById(`msg-${msgId}`);
+            if (msgDiv) {
+                // Cool explosion animation effect
+                msgDiv.style.transition = "all 0.5s ease";
+                msgDiv.style.opacity = "0";
+                msgDiv.style.transform = "scale(0.9)";
+                msgDiv.innerHTML = '<div class="text-red-500 font-mono text-xs text-center">💥 MESSAGE SELF-DESTRUCTED 💥</div>';
+                
+                setTimeout(() => msgDiv.remove(), 2000); // Remove after animation
+            }
+        });
     </script>
 </body>
 </html>
