@@ -5,8 +5,8 @@ const dotenv = require("dotenv");
 const path = require("path");
 const http = require("http");
 const { Server } = require("socket.io");
-const Message = require("./models/Message"); // Import Message model
-const User = require("./models/User");       // Import User model
+const Message = require("./models/Message"); 
+const User = require("./models/User");       
 
 dotenv.config();
 
@@ -24,14 +24,12 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/vault", require("./routes/vault"));
+// app.use("/api/vault", require("./routes/vault")); // Commented out if you don't use vault yet
 
-// --- 1. API TO GET ALL USERS (CORRECTED) ---
-// We merged the duplicate routes into ONE single correct route
+// --- 1. API TO GET ALL USERS (The Phonebook) ---
 app.get("/api/users", async (req, res) => {
     try {
         // Return id, username, AND publicKey
-        // This fixes the RSA error
         const users = await User.find({}, "username _id publicKey"); 
         res.json(users);
     } catch (err) {
@@ -39,7 +37,7 @@ app.get("/api/users", async (req, res) => {
     }
 });
 
-// --- 2. UPDATE MY PUBLIC KEY ---
+// --- 2. UPDATE MY PUBLIC KEY (The Sync) ---
 app.post("/api/users/key", async (req, res) => {
     const { userId, publicKey } = req.body;
     try {
@@ -51,7 +49,6 @@ app.post("/api/users/key", async (req, res) => {
 });
 
 // --- 3. GET CHAT HISTORY ---
-// (This was missing in your snippet, but the frontend needs it!)
 app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
     try {
         const { senderId, receiverId } = req.params;
@@ -103,7 +100,7 @@ io.on("connection", (socket) => {
             sender: senderId, 
             receiver: receiverId, 
             text, 
-            cipherType,
+            cipherType, 
             isBurn: isBurn || false 
         });
         const savedMsg = await newMessage.save();
