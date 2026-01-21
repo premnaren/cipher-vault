@@ -141,14 +141,13 @@
             document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
         }
 
-        // --- AUTH & INIT (FIXED CRASH HERE) ---
+        // --- AUTH & INIT ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         
         function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; } }
         
         const userPayload = parseJwt(token);
-        // >>> THE FIX: Handle both token formats <<<
         const userData = userPayload.user || userPayload;
         const myId = userData._id || userData.id; 
 
@@ -163,7 +162,7 @@
         let currentReceiver = null;
         let activeUsersMap = {}; 
         
-        // --- 1. REFACTORED RSA ENGINE (Database Sync) ---
+        // --- 1. REFACTORED RSA ENGINE ---
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
         async function initIdentity() {
@@ -197,6 +196,39 @@
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
         // --- 2. USER SELECTION ---
+        async function selectUser(user, el) {
+            currentReceiver = user;
+            
+            document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
+            el.classList.add('active-user');
+            
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('messagesArea').classList.remove('hidden');
+            document.getElementById('inputArea').classList.remove('hidden');
+            document.getElementById('chatPartnerName').innerText = user.username;
+            
+            // --- ALWAYS FETCH FRESH KEY FROM DB (No Caching) ---
+            try {
+                const res = await fetch('/api/users');
+                const freshUsers = await res.json();
+                const freshUser = freshUsers.find(u => u._id === user._id);
+                if (freshUser) activeUsersMap[user._id] = freshUser;
+                
+                const statusEl = document.getElementById('encryptionStatus');
+                if(freshUser && freshUser.publicKey && freshUser.publicKey.includes("BEGIN PUBLIC KEY")) {
+                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED";
+                    statusEl.className = "text-[9px] mono text-[var(--primary)]";
+                } else {
+                    statusEl.innerText = "⚠️ UNSECURED (PARTNER NEEDS TO RE-LOGIN)";
+                    statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
+                }
+            } catch(e) {}
+
+            document.getElementById('messagesArea').innerHTML = ''; 
+            loadHistory(user._id);
+        }
+
         async function fetchUsers() {
             try {
                 const res = await fetch('/api/users');
@@ -205,8 +237,7 @@
                 list.innerHTML = '';
                 
                 users.forEach(u => {
-                    if (u._id === myId) return; // Hide self
-                    
+                    if (u._id === myId) return; 
                     activeUsersMap[u._id] = u;
 
                     const div = document.createElement('div');
@@ -225,45 +256,6 @@
         }
         fetchUsers();
 
-        async function selectUser(user, el) {
-            currentReceiver = user;
-            
-            // 1. Highlight UI
-            document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
-            el.classList.add('active-user');
-            
-            // 2. Show Chat Area
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('chatHeader').classList.remove('hidden');
-            document.getElementById('messagesArea').classList.remove('hidden');
-            document.getElementById('inputArea').classList.remove('hidden');
-            document.getElementById('chatPartnerName').innerText = user.username;
-            
-            // 3. RE-FETCH USER DATA (The Fix for Stale Keys)
-            try {
-                const res = await fetch('/api/users');
-                const freshUsers = await res.json();
-                const freshUser = freshUsers.find(u => u._id === user._id);
-                
-                // Update our memory with the fresh key from the server
-                if (freshUser) activeUsersMap[user._id] = freshUser;
-                
-                // Check Status
-                const statusEl = document.getElementById('encryptionStatus');
-                if(freshUser && freshUser.publicKey && freshUser.publicKey.includes("BEGIN PUBLIC KEY")) {
-                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED";
-                    statusEl.className = "text-[9px] mono text-[var(--primary)]";
-                } else {
-                    statusEl.innerText = "⚠️ UNSECURED (PARTNER NEEDS TO RE-LOGIN)";
-                    statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
-                }
-            } catch(e) { console.error("Refresh Failed", e); }
-
-            // 4. Load Messages
-            document.getElementById('messagesArea').innerHTML = ''; 
-            loadHistory(user._id);
-        }
-
         // --- 3. SENDING ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
             if(!currentReceiver) return alert("Select a user first!");
@@ -273,12 +265,12 @@
             if (method === 'rsa') {
                 const partnerData = activeUsersMap[currentReceiver._id];
                 if (!partnerData || !partnerData.publicKey) {
-                    return alert("This user hasn't logged in since the update. Ask them to login once to generate keys.");
+                    return alert("User key missing. Ask them to login.");
                 }
                 const encryptor = new JSEncrypt();
                 encryptor.setPublicKey(partnerData.publicKey);
                 cipherText = encryptor.encrypt(text);
-                if(!cipherText) return alert("Message too long for RSA (Max ~100 chars).");
+                if(!cipherText) return alert("Message too long for RSA.");
             } 
             else if (method === 'caesar') {
                 const shift = parseInt(document.getElementById('cipherKey').value) || 3;
@@ -328,7 +320,8 @@
             if (isMe && msg.originalText) content = msg.originalText;
 
             const div = document.createElement('div');
-            const burnId = 'msg-' + Date.now() + Math.random();
+            // >>> FIX: USE SAFE INTEGER IDs (NO DOTS) <<<
+            const burnId = 'msg-' + Date.now() + Math.floor(Math.random() * 100000);
             div.id = burnId;
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             
@@ -372,6 +365,7 @@
             }
         }
         
+        // >>> FIX: SAFE DOM SELECTION (NO querySelector) <<<
         function unlockMessage(id, cipherText) {
             try {
                 const myPriv = localStorage.getItem('rsa_priv');
@@ -383,12 +377,15 @@
                     document.getElementById(`plain-${id}`).innerText = decrypted;
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
-                    const btn = document.querySelector(`#${id} button`);
+                    
+                    // SAFE BUTTON FINDER
+                    const container = document.getElementById(id);
+                    const btn = container ? container.getElementsByTagName('button')[0] : null;
                     if(btn) btn.classList.add('hidden');
                 } else {
-                    alert("Decryption Failed. Keys might have cycled.");
+                    alert("Decryption Failed.");
                 }
-            } catch(e) { console.error(e); alert("Decryption Error"); }
+            } catch(e) { console.error(e); alert("Decryption Error: Check Console"); }
         }
 
         function decryptCaesar(text, shift) {
