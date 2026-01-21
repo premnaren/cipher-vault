@@ -24,7 +24,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-// app.use("/api/vault", require("./routes/vault")); // Commented out if you don't use vault yet
+app.use("/api/vault", require("./routes/vault")); // Commented out if you don't use vault yet
 
 // --- 1. API TO GET ALL USERS (The Phonebook) ---
 app.get("/api/users", async (req, res) => {

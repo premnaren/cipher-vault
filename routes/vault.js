@@ -1,37 +1,26 @@
 const router = require('express').Router();
-const multer = require('multer');       
+const multer = require('multer');        
 const File = require('../models/File'); 
 const jwt = require('jsonwebtoken');    
 const path = require('path');
 const fs = require('fs');
 
-// --- DEBUG MIDDLEWARE: The "Loud Bouncer" ---
+// --- MIDDLEWARE: The Security Guard ---
 const verifyToken = (req, res, next) => {
-    // 1. Log Request
-    console.log("\n--- 🔒 SECURITY CHECK ---");
-    console.log("Request URL:", req.originalUrl);
-    
-    // 2. Look for token in Header OR URL Query (for "Open" links)
     const token = req.header('auth-token') || req.query.token;
-    console.log("Token sent:", token ? "YES (Found)" : "NO (Missing)");
-
-    if(!token) {
-        console.log("❌ Result: ACCESS DENIED (No ID Card)");
-        return res.status(401).send('Access Denied');
-    }
+    if(!token) return res.status(401).send('Access Denied');
 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = verified;
-        console.log("✅ Result: ACCESS GRANTED for User ID:", verified._id);
+        // Handle both token formats ({_id} or {user: {_id}})
+        req.user = verified.user || verified; 
         next();
     } catch (err) {
-        console.log("❌ Result: INVALID TOKEN");
         res.status(400).send('Invalid Token');
     }
 };
 
-// --- STORAGE ENGINE ---
+// --- STORAGE ENGINE (Where files go) ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const dir = './uploads/';
@@ -41,8 +30,8 @@ const storage = multer.diskStorage({
         cb(null, dir);
     },
     filename: (req, file, cb) => {
-        // Secure Rename: fieldname-timestamp.extension
-        cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+        // Secure Rename: Prevent filename hacks
+        cb(null, 'vaultFile-' + Date.now() + path.extname(file.originalname));
     }
 });
 const upload = multer({ storage: storage });
@@ -50,11 +39,10 @@ const upload = multer({ storage: storage });
 // --- ROUTE 1: Upload File ---
 router.post('/upload', verifyToken, upload.single('vaultFile'), async (req, res) => {
     try {
-        console.log("📂 Starting File Upload...");
         if(!req.file) return res.status(400).send({ message: "No file selected" });
 
         const file = new File({
-            user: req.user._id, 
+            user: req.user._id || req.user.id, // Robust ID check
             originalName: req.file.originalname,
             filename: req.file.filename,
             mimetype: req.file.mimetype,
@@ -62,46 +50,45 @@ router.post('/upload', verifyToken, upload.single('vaultFile'), async (req, res)
             size: req.file.size
         });
         await file.save();
-        console.log("💾 File saved to MongoDB!");
-        res.json({ message: "File Encrypted & Stored Successfully" });
+        res.json({ message: "File Encrypted & Stored" });
     } catch(err) {
-        console.log("❌ Upload Error:", err);
         res.status(400).send(err);
     }
 });
 
-// --- ROUTE 2: Get Files ---
+// --- ROUTE 2: List My Files ---
 router.get('/myfiles', verifyToken, async (req, res) => {
-    const files = await File.find({ user: req.user._id }).sort({ uploadDate: -1 });
-    res.json(files);
+    try {
+        const userId = req.user._id || req.user.id;
+        const files = await File.find({ user: userId }).sort({ uploadDate: -1 });
+        res.json(files);
+    } catch(e) { res.json([]); }
 });
 
-// --- ROUTE 3: Download/Open File ---
+// --- ROUTE 3: Download/View File ---
 router.get('/file/:filename', verifyToken, (req, res) => {
     const filePath = path.join(__dirname, '../uploads', req.params.filename);
-    res.sendFile(filePath);
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        res.status(404).send("File Corrupted or Missing");
+    }
 });
 
 // --- ROUTE 4: Delete File ---
 router.delete('/delete/:id', verifyToken, async (req, res) => {
     try {
-        // 1. Find file (ensure user owns it)
-        const file = await File.findOne({ _id: req.params.id, user: req.user._id });
-        if(!file) return res.status(404).json({ message: "File not found or Access Denied" });
+        const userId = req.user._id || req.user.id;
+        const file = await File.findOne({ _id: req.params.id, user: userId });
+        if(!file) return res.status(404).json({ message: "Not found or Access Denied" });
 
-        // 2. Delete from Disk
-        if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-        }
+        // Delete from Disk
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
 
-        // 3. Delete from Database
+        // Delete from DB
         await File.deleteOne({ _id: req.params.id });
-        
-        console.log(`🗑️ File Deleted: ${file.originalName}`);
-        res.json({ message: "File Deleted Permanently" });
-
+        res.json({ message: "File Deleted" });
     } catch(err) {
-        console.log("❌ Delete Error:", err);
         res.status(500).json({ error: "Server Error" });
     }
 });

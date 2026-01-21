@@ -26,6 +26,9 @@
             background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px; transition: background 0.5s ease;
         }
         .mono { font-family: 'Space Mono', monospace; }
+        .orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .text-primary-var { color: var(--primary); }
 
         /* --- MENU BUTTON ANIMATION --- */
         .menu-reactor { position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
@@ -68,14 +71,13 @@
 <body class="min-h-screen flex flex-col">
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
-        
         <div class="flex items-center gap-4">
             <button id="menuBtn" class="flex items-center gap-3 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--accent)] group">
                 <div class="menu-reactor"> <div class="reactor-ring"></div> <div class="reactor-core"></div> </div>
                 <span class="tracking-[0.15em] text-xs font-mono transition-all">LIBRARY</span>
             </button>
             
-            <button id="vaultBtn" class="flex items-center gap-2 text-[var(--accent)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
+            <button id="vaultBtn" onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
                 <span class="text-lg group-hover:animate-pulse">🔒</span>
                 <span class="tracking-[0.15em] text-xs font-mono transition-all">SECURE VAULT</span>
             </button>
@@ -85,7 +87,7 @@
                 <span class="tracking-[0.15em] text-xs font-mono transition-all">SECURE CHAT</span>
             </a>
 
-            <h1 class="text-2xl font-black tracking-widest text-center ml-4 hidden md:block" style="font-family: 'Orbitron', sans-serif;">CIPHER <span style="color: var(--primary)">VAULT</span></h1>
+            <h1 class="text-2xl font-black tracking-widest text-center ml-4 hidden md:block font-orbitron">CIPHER <span class="text-primary-var">VAULT</span></h1>
         </div>
 
         <div class="flex gap-2">
@@ -98,21 +100,21 @@
     
     <div id="vaultModal" class="fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleVault(false)"></div>
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl p-0 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col h-[600px] md:h-auto">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl p-0 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col h-[600px] md:h-auto pointer-events-auto">
             
             <div class="flex justify-between items-center p-6 border-b border-[var(--border)] bg-black/40">
-                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)]" style="font-family: 'Orbitron', sans-serif;">
-                    SECURE STORAGE <span class="text-[var(--primary)]">TERMINAL</span>
+                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] font-orbitron">
+                    SECURE STORAGE <span class="text-primary-var">TERMINAL</span>
                 </h3>
                 <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕ ESC</button>
             </div>
 
             <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-black/20">
                 <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6 flex flex-col justify-center">
-                    <label class="text-xs font-mono text-[var(--primary)] mb-4 block tracking-widest border-b border-[var(--border)] pb-2">INGEST NEW ASSET</label>
+                    <label for="vaultInput" class="text-xs font-mono text-[var(--primary)] mb-4 block tracking-widest border-b border-[var(--border)] pb-2">INGEST NEW ASSET</label>
                     
                     <div class="border-2 border-dashed border-[var(--border)] rounded-lg p-8 text-center hover:border-[var(--accent)] transition-colors group cursor-pointer relative h-40 flex flex-col items-center justify-center">
-                        <input type="file" id="vaultInput" onchange="updateFileName(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <input type="file" id="vaultInput" title="Upload File" aria-label="Upload a file to the vault" onchange="updateFileName(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                         <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">📂</div>
                         <p id="fileNameDisplay" class="text-[10px] text-gray-500 font-mono group-hover:text-[var(--accent)] break-all px-2">DRAG FILE OR CLICK</p>
                     </div>
@@ -152,55 +154,7 @@
                     <div class="viz-box text-center text-[var(--secondary)]">PLAIN: A B C...<br>CIPHER: Z Y X...</div>
                 </div>
             </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">2. CAESAR CIPHER</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Shifts every letter by a fixed Key.</p></div>
-                    <div class="viz-box text-center">[A] → (+1) → [B]</div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">3. PLAYFAIR CIPHER</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Encrypts pairs using a 5x5 grid.</p></div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">4. VIGENÈRE CIPHER</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Polyalphabetic using a Keyword to switch shifts.</p></div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">5. RAIL FENCE</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Transposition. Zig-zags text across rails.</p></div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">6. PIGPEN CIPHER</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Geometric substitution used by Freemasons.</p></div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">7. AES-256 (MODERN)</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">Standard</div><p>Symmetric block cipher used by governments.</p></div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">8. RSA (ASYMMETRIC)</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">RSA</div><p>Uses Public/Private keys and prime factorization.</p></div>
-                </div>
-            </details>
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">9. ECC (ELLIPTIC CURVE)</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Elliptic curve math. Secure and fast.</p></div>
-                </div>
-            </details>
+            <div class="p-4 text-xs text-gray-500 font-mono text-center">... MORE MODULES AVAILABLE IN FULL VERSION ...</div>
         </div>
     </aside>
 
@@ -209,7 +163,7 @@
             
             <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20">
                 <div>
-                    <h2 id="modeTitle" class="text-3xl font-bold tracking-widest" style="font-family: 'Orbitron', sans-serif; color:var(--primary)">ENCRYPTION MODE</h2>
+                    <h2 id="modeTitle" class="text-3xl font-bold tracking-widest font-orbitron text-primary-var">ENCRYPTION MODE</h2>
                     <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY</p>
                 </div>
                 <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
@@ -224,28 +178,28 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
                 <div class="p-6 space-y-6 border-r border-[var(--border)] relative">
                     <div class="relative">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Payload Input</label>
-                        <textarea id="mainInput" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm resize-y focus:border-[var(--primary)] outline-none transition-colors" placeholder="Enter text to process..."></textarea>
+                        <label for="mainInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Payload Input</label>
+                        <textarea id="mainInput" title="Input Text" placeholder="Enter text to process..." class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm resize-y focus:border-[var(--primary)] outline-none transition-colors"></textarea>
                         <div id="visualInput" class="hidden w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded overflow-y-auto flex-wrap gap-1 content-start border-[var(--primary)]"></div>
                     </div>
 
                     <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Strategy</label>
-                        <select id="algoSelect" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
+                        <label for="algoSelect" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Strategy</label>
+                        <select id="algoSelect" title="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
                             <optgroup label="Classical"> <option value="caesar">Caesar Cipher</option> <option value="atbash">Atbash Cipher</option> <option value="playfair">Playfair Cipher</option> <option value="rail_fence">Rail Fence</option> <option value="vigenere">Vigenère Cipher</option> <option value="pigpen">Pigpen (Visual)</option> </optgroup>
                             <optgroup label="Modern"> <option value="aes">AES-256</option> <option value="rsa">RSA (Asymmetric)</option> <option value="ecc">ECC (Elliptic Curve)</option> </optgroup>
                         </select>
                     </div>
 
                     <div id="stdKeySection">
-                        <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex justify-between font-mono"> <span>Secret Key / Shift</span> <button id="aesToggle" class="hidden hover:text-[var(--primary)]">👁️</button> </label>
-                        <input id="keyInput" type="text" value="3" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none">
+                        <label for="keyInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex justify-between font-mono"> <span>Secret Key / Shift</span> <button id="aesToggle" class="hidden hover:text-[var(--primary)]">👁️</button> </label>
+                        <input id="keyInput" type="text" value="3" title="Encryption Key" placeholder="Enter Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none">
                         <p id="keyHint" class="text-[9px] text-gray-500 mt-1 italic"></p>
                     </div>
 
                     <div id="asymKeySection" class="hidden space-y-2">
                         <button id="genKeysBtn" class="w-full py-2 border border-dashed border-[var(--primary)] text-[var(--primary)] text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition-colors rounded font-mono">GENERATE KEYS</button>
-                        <div class="grid grid-cols-2 gap-2"> <textarea id="pubKey" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Public Key"></textarea> <textarea id="privKey" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Private Key"></textarea> </div>
+                        <div class="grid grid-cols-2 gap-2"> <textarea id="pubKey" title="Public Key" aria-label="Public Key" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Public Key"></textarea> <textarea id="privKey" title="Private Key" aria-label="Private Key" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Private Key"></textarea> </div>
                     </div>
 
                     <div id="pigpenKeyboard" class="hidden border-t border-[var(--border)] pt-4">
@@ -253,19 +207,19 @@
                         <div class="flex flex-wrap justify-center gap-1 max-h-40 overflow-y-auto" id="ppKeysContainer"></div>
                     </div>
 
-                    <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all duration-300 transform hover:-translate-y-1" style="font-family: 'Orbitron', sans-serif;">ENCRYPT DATA</button>
+                    <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all duration-300 transform hover:-translate-y-1 font-orbitron">ENCRYPT DATA</button>
                 </div>
 
                 <div class="p-6 bg-black/20 flex flex-col h-full relative">
                     <div class="flex justify-between items-center mb-4"> 
-                        <label class="text-[10px] font-bold text-gray-500 uppercase block font-mono">Terminal Output</label> 
+                        <label for="outputArea" class="text-[10px] font-bold text-gray-500 uppercase block font-mono">Terminal Output</label> 
                         <button id="copyBtn" class="flex items-center gap-2 px-3 py-1 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all rounded text-[10px] font-bold font-mono tracking-widest group">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                             <span>COPY OUTPUT</span>
                         </button>
                     </div>
                     <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm overflow-y-auto text-[var(--accent)] break-all whitespace-pre-wrap relative">
-                        <textarea id="outputArea" readonly class="w-full h-full bg-transparent resize-none outline-none" placeholder="// System Idle..."></textarea>
+                        <textarea id="outputArea" title="Output Area" readonly class="w-full h-full bg-transparent resize-none outline-none" placeholder="// System Idle..."></textarea>
                         <div id="visualOutput" class="hidden w-full h-full absolute top-0 left-0 bg-[var(--bg-body)] p-4 flex-wrap content-start gap-2 overflow-y-auto"></div>
                     </div>
                 </div>
@@ -285,7 +239,28 @@
 
         // --- STATE & DOM ---
         let mode = 'encrypt'; let pigpenBuffer = "";
-        const DOM = { card: document.getElementById('mainCard'), input: document.getElementById('mainInput'), visInput: document.getElementById('visualInput'), output: document.getElementById('outputArea'), visOutput: document.getElementById('visualOutput'), algo: document.getElementById('algoSelect'), key: document.getElementById('keyInput'), stdKeySec: document.getElementById('stdKeySection'), asymKeySec: document.getElementById('asymKeySection'), ppKeys: document.getElementById('ppKeysContainer'), ppBoard: document.getElementById('pigpenKeyboard'), ppDelete: document.getElementById('ppDelete'), processBtn: document.getElementById('processBtn'), modeTitle: document.getElementById('modeTitle'), swapBtnText: document.getElementById('swapBtnText'), genKey: document.getElementById('genKeysBtn'), pub: document.getElementById('pubKey'), priv: document.getElementById('privKey'), aesEye: document.getElementById('aesToggle'), keyHint: document.getElementById('keyHint') };
+        const DOM = { 
+            card: document.getElementById('mainCard'), 
+            input: document.getElementById('mainInput'), 
+            visInput: document.getElementById('visualInput'), 
+            output: document.getElementById('outputArea'), 
+            visOutput: document.getElementById('visualOutput'), 
+            algo: document.getElementById('algoSelect'), 
+            key: document.getElementById('keyInput'), 
+            stdKeySec: document.getElementById('stdKeySection'), 
+            asymKeySec: document.getElementById('asymKeySection'), 
+            ppKeys: document.getElementById('ppKeysContainer'), 
+            ppBoard: document.getElementById('pigpenKeyboard'), 
+            ppDelete: document.getElementById('ppDelete'), 
+            processBtn: document.getElementById('processBtn'), 
+            modeTitle: document.getElementById('modeTitle'), 
+            swapBtnText: document.getElementById('swapBtnText'), 
+            genKey: document.getElementById('genKeysBtn'), 
+            pub: document.getElementById('pubKey'), 
+            priv: document.getElementById('privKey'), 
+            aesEye: document.getElementById('aesToggle'), 
+            keyHint: document.getElementById('keyHint') 
+        };
 
         // --- TOGGLE VAULT MODAL ---
         const vaultModal = document.getElementById('vaultModal');
@@ -304,7 +279,7 @@
                 setTimeout(() => vaultModal.classList.add('hidden'), 300);
             }
         }
-        vaultBtn.onclick = () => toggleVault(true);
+        // vaultBtn.onclick = () => toggleVault(true); // Handled inline now
 
         // --- NEW: UPDATE FILE NAME ON SELECT ---
         function updateFileName(input) {
@@ -371,7 +346,7 @@
                 if(res.ok) { 
                     alert("SUCCESS: " + data.message); 
                     input.value = ''; 
-                    updateFileName(input); // Reset text
+                    updateFileName(input); 
                     loadFiles(); 
                 } 
                 else { alert("ERROR: " + data.message); }
@@ -388,8 +363,10 @@
             } catch(e) { alert("DELETE FAILED"); }
         }
 
-        // --- ALGORITHMS & UI HELPERS (Standard) ---
-        DOM.key.addEventListener('input', (e) => { const algo = DOM.algo.value; const val = e.target.value; if (algo === 'caesar' || algo === 'rail_fence') e.target.value = val.replace(/[^0-9]/g, ''); else if (algo === 'vigenere' || algo === 'playfair') e.target.value = val.replace(/[^a-zA-Z]/g, ''); });
+        // --- ALGORITHMS & UI HELPERS ---
+        if(DOM.key) {
+            DOM.key.addEventListener('input', (e) => { const algo = DOM.algo.value; const val = e.target.value; if (algo === 'caesar' || algo === 'rail_fence') e.target.value = val.replace(/[^0-9]/g, ''); else if (algo === 'vigenere' || algo === 'playfair') e.target.value = val.replace(/[^a-zA-Z]/g, ''); });
+        }
         
         const Algorithms = {
             caesar: (t, k, m) => { const s = parseInt(k) || 0; const shift = m === 'encrypt' ? s : -s; return t.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26 + 26) % 26 + b); }); },
@@ -418,7 +395,6 @@
         
         DOM.processBtn.onclick = async () => { const algo = DOM.algo.value; const txt = DOM.input.value; if(algo === 'pigpen') { if(mode === 'encrypt') updatePigpenVisuals(txt, DOM.visOutput); else DOM.output.value = pigpenBuffer; return; } const res = Algorithms[algo](txt, DOM.key.value, mode); await runSlotAnimation(res); };
         
-        // --- UPDATED COPY BUTTON LOGIC ---
         document.getElementById('copyBtn').onclick = (e) => {
             navigator.clipboard.writeText(DOM.output.value);
             const btn = e.currentTarget;
