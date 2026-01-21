@@ -225,28 +225,41 @@
         }
         fetchUsers();
 
-        function selectUser(user, el) {
+        async function selectUser(user, el) {
             currentReceiver = user;
+            
+            // 1. Highlight UI
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
             
+            // 2. Show Chat Area
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');
             document.getElementById('chatPartnerName').innerText = user.username;
             
-            const partnerData = activeUsersMap[user._id];
-            const statusEl = document.getElementById('encryptionStatus');
-            
-            if(partnerData && partnerData.publicKey && partnerData.publicKey.length > 10) {
-                statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED";
-                statusEl.className = "text-[9px] mono text-[var(--primary)]";
-            } else {
-                statusEl.innerText = "⚠️ UNSECURED (PARTNER HAS NO KEY)";
-                statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
-            }
+            // 3. RE-FETCH USER DATA (The Fix for Stale Keys)
+            try {
+                const res = await fetch('/api/users');
+                const freshUsers = await res.json();
+                const freshUser = freshUsers.find(u => u._id === user._id);
+                
+                // Update our memory with the fresh key from the server
+                if (freshUser) activeUsersMap[user._id] = freshUser;
+                
+                // Check Status
+                const statusEl = document.getElementById('encryptionStatus');
+                if(freshUser && freshUser.publicKey && freshUser.publicKey.includes("BEGIN PUBLIC KEY")) {
+                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED";
+                    statusEl.className = "text-[9px] mono text-[var(--primary)]";
+                } else {
+                    statusEl.innerText = "⚠️ UNSECURED (PARTNER NEEDS TO RE-LOGIN)";
+                    statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
+                }
+            } catch(e) { console.error("Refresh Failed", e); }
 
+            // 4. Load Messages
             document.getElementById('messagesArea').innerHTML = ''; 
             loadHistory(user._id);
         }
