@@ -141,28 +141,35 @@
             document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
         }
 
-        // --- AUTH & INIT ---
+        // --- AUTH & INIT (FIXED CRASH HERE) ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         
         function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; } }
+        
         const userPayload = parseJwt(token);
-        const myId = userPayload.user.id || userPayload.user._id; 
+        // >>> THE FIX: Handle both token formats <<<
+        const userData = userPayload.user || userPayload;
+        const myId = userData._id || userData.id; 
+
+        if (!myId) {
+            console.error("Token Invalid - No ID found");
+            localStorage.removeItem('auth-token');
+            window.location.href = '/login.html';
+        }
+
         const socket = io({ auth: { token } });
         
         let currentReceiver = null;
-        let activeUsersMap = {}; // Will store { userId: { username, publicKey } }
+        let activeUsersMap = {}; 
         
         // --- 1. REFACTORED RSA ENGINE (Database Sync) ---
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
-        // Auto-Run on Load
         async function initIdentity() {
-            // A. Check LocalStorage
             let storedPriv = localStorage.getItem('rsa_priv');
             let storedPub = localStorage.getItem('rsa_pub');
 
-            // B. If missing, Generate New
             if(!storedPriv || !storedPub) {
                 document.getElementById('keyGenStatus').innerText = "GENERATING NEW IDENTITY...";
                 myRSA.getKey();
@@ -172,11 +179,9 @@
                 localStorage.setItem('rsa_pub', storedPub);
             }
             
-            // Set for current session
             myRSA.setPrivateKey(storedPriv);
             
-            // C. SYNC WITH SERVER (The Phonebook)
-            // We always upload our key on login to ensure the database is current
+            // Sync with Server
             try {
                 await fetch('/api/users/key', {
                     method: 'POST',
@@ -185,15 +190,13 @@
                 });
                 document.getElementById('keyGenStatus').innerText = "IDENTITY SECURED & SYNCED.";
                 document.getElementById('keyGenStatus').className = "mono text-[10px] text-[var(--primary)] mt-2";
-            } catch(e) {
-                console.error("Key Sync Failed", e);
-            }
+            } catch(e) { console.error("Key Sync Failed", e); }
         }
         setTimeout(initIdentity, 100);
 
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- 2. USER SELECTION (Fetch from Phonebook) ---
+        // --- 2. USER SELECTION ---
         async function fetchUsers() {
             try {
                 const res = await fetch('/api/users');
@@ -202,9 +205,8 @@
                 list.innerHTML = '';
                 
                 users.forEach(u => {
-                    if (u._id === myId) return;
+                    if (u._id === myId) return; // Hide self
                     
-                    // Store user data (including Public Key) in memory map
                     activeUsersMap[u._id] = u;
 
                     const div = document.createElement('div');
@@ -219,13 +221,12 @@
                     div.onclick = () => selectUser(u, div);
                     list.appendChild(div);
                 });
-            } catch(e) { console.error(e); }
+            } catch(e) { console.error("User Fetch Error", e); }
         }
         fetchUsers();
 
         function selectUser(user, el) {
             currentReceiver = user;
-            
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
             
@@ -235,8 +236,6 @@
             document.getElementById('inputArea').classList.remove('hidden');
             document.getElementById('chatPartnerName').innerText = user.username;
             
-            // Check Encryption Status
-            // We check the 'activeUsersMap' populated from the Database
             const partnerData = activeUsersMap[user._id];
             const statusEl = document.getElementById('encryptionStatus');
             
@@ -252,25 +251,20 @@
             loadHistory(user._id);
         }
 
-        // --- 3. SENDING (Using Database Keys) ---
+        // --- 3. SENDING ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
             if(!currentReceiver) return alert("Select a user first!");
             const method = forcedMethod || document.getElementById('cipherMethod').value;
-            
             let cipherText = text;
 
             if (method === 'rsa') {
-                // Get Key from Memory Map (Source: Database)
                 const partnerData = activeUsersMap[currentReceiver._id];
-                
                 if (!partnerData || !partnerData.publicKey) {
-                    return alert("This user has not established a secure identity yet.\nAsk them to login to the app once.");
+                    return alert("This user hasn't logged in since the update. Ask them to login once to generate keys.");
                 }
-                
                 const encryptor = new JSEncrypt();
                 encryptor.setPublicKey(partnerData.publicKey);
                 cipherText = encryptor.encrypt(text);
-                
                 if(!cipherText) return alert("Message too long for RSA (Max ~100 chars).");
             } 
             else if (method === 'caesar') {
@@ -306,8 +300,6 @@
 
         // --- 4. RECEIVING ---
         socket.on("receive_message", (data) => {
-            // No more hidden System messages! 
-            // Just pure message handling.
             if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
                 displayMessage(data);
             }
@@ -367,7 +359,6 @@
             }
         }
         
-        // --- 5. DECRYPTION (Using LocalStorage Private Key) ---
         function unlockMessage(id, cipherText) {
             try {
                 const myPriv = localStorage.getItem('rsa_priv');
