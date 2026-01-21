@@ -3,495 +3,420 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Chat | Secure Channel</title>
+    <title>Cipher Vault | Secure Channel</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
-    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap');
-
-        :root {
-            --bg-body: #050508;
-            --bg-panel: #0f1015;
-            --primary: #00f3ff;
-            --accent: #bc13fe;
-            --text-main: #e2e8f0;
-            --border: #1e293b;
-            --glow: 0 0 20px rgba(0, 243, 255, 0.1);
-        }
-
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            background-image: radial-gradient(var(--border) 1px, transparent 1px);
-            background-size: 30px 30px;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .mono { font-family: 'Space Mono', monospace; }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-
-        /* SCROLLBAR */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
-        /* ANIMATIONS */
-        .message-in { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .user-item.active {
-            background: rgba(0, 243, 255, 0.1);
-            border-left: 3px solid var(--primary);
+        
+        :root { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; }
+        
+        body { 
+            background-color: var(--bg-body); color: #e2e8f0; font-family: 'Inter', sans-serif; 
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px; 
         }
         
-        .encrypted-text {
-            color: var(--accent);
-            font-family: 'Space Mono', monospace;
-            letter-spacing: 1px;
-        }
+        .orbitron { font-family: 'Orbitron', sans-serif; } 
+        .mono { font-family: 'Space Mono', monospace; }
+        
+        ::-webkit-scrollbar { width: 6px; } 
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; } 
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        .active-user { border-left: 2px solid var(--primary); background: rgba(0, 243, 255, 0.05); }
+        .msg-enter { animation: slideIn 0.2s ease-out forwards; } 
+        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .burn-anim { animation: burnOut 1.5s forwards; }
+        @keyframes burnOut { 0% { opacity: 1; filter: blur(0); } 100% { opacity: 0; filter: blur(10px); transform: scale(0.9); } }
+
+        .encrypted-text { color: #bc13fe; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: -0.5px; opacity: 0.7; }
+        
+        /* Drawer Animation */
+        #spyTools { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
+        #spyTools.open { max-height: 200px; opacity: 1; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <nav class="h-16 border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20">
+    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20">
         <div class="flex items-center gap-4">
-            <a href="/" class="text-xs font-bold text-gray-500 hover:text-white transition-colors flex items-center gap-2">
-                <span>←</span> BACK TO VAULT
-            </a>
-            <div class="h-6 w-px bg-[var(--border)]"></div>
-            <h1 class="orbitron text-xl font-bold tracking-widest text-[var(--primary)]">CIPHER <span class="text-white">CHAT</span></h1>
+            <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition">← TERMINAL</a>
+            <h1 class="orbitron text-lg font-bold tracking-widest text-white hidden md:block">SECURE <span class="text-[var(--primary)]">UPLINK</span></h1>
         </div>
-        <div class="text-xs mono text-gray-500" id="currentUserDisplay">CONNECTING...</div>
+        <div class="flex items-center gap-4">
+            <div id="statusIndicator" class="flex items-center gap-2 text-[10px] font-mono text-gray-500 uppercase">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></span>
+                <span id="statusText">OFFLINE</span>
+            </div>
+            <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
+        </div>
     </nav>
 
     <div class="flex flex-1 overflow-hidden">
         
-        <aside class="w-72 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10">
-            <div class="p-4 pb-2 border-b border-[var(--border)] space-y-3">
-                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Active Agents</h2>
-                
-                <div class="relative group">
-                    <span class="absolute left-3 top-2.5 text-gray-500 text-xs">🔍</span>
-                    <input type="text" id="userSearch" placeholder="SEARCH AGENT ID..." 
-                        class="w-full bg-black border border-[var(--border)] text-xs text-white rounded pl-8 pr-3 py-2 outline-none font-mono focus:border-[var(--primary)] focus:shadow-[0_0_10px_rgba(0,243,255,0.2)] transition-all uppercase placeholder-gray-700">
-                </div>
-
-                <div class="text-[9px] text-[var(--primary)] animate-pulse pt-1">● ENCRYPTED LINK ESTABLISHED</div>
+        <aside class="w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10 hidden md:flex">
+            <div class="p-4 border-b border-[var(--border)]">
+                <label for="userSearch" class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
+                <input type="text" id="userSearch" title="Search Users" aria-label="Search Agents" placeholder="SEARCH ID..." class="w-full bg-black border border-[var(--border)] text-xs text-white p-2 rounded outline-none focus:border-[var(--primary)]">
             </div>
-
             <div id="usersList" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <div class="text-center text-xs text-gray-600 mt-10 mono">SCANNING NETWORK...</div>
+                <div class="text-center text-[10px] text-gray-600 mt-10 mono">SCANNING NETWORK...</div>
             </div>
         </aside>
 
         <main class="flex-1 flex flex-col relative bg-black/20">
             
-            <div id="chatHeader" class="h-14 border-b border-[var(--border)] flex items-center px-6 justify-between bg-[var(--bg-body)]/50 backdrop-blur hidden">
+            <div id="chatHeader" class="h-12 border-b border-[var(--border)] flex items-center px-4 justify-between bg-[var(--bg-panel)] hidden">
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]"></div>
                     <div>
-                        <div class="text-sm font-bold text-white orbitron tracking-wide" id="chatPartnerName">Select a User</div>
-                        <div class="text-[10px] mono text-gray-500">SECURE CHANNEL ACTIVE</div>
+                        <div class="text-xs font-bold text-white orbitron tracking-wide" id="chatPartnerName">Unknown</div>
+                        <div class="text-[9px] mono text-gray-500" id="encryptionStatus">UNSECURED</div>
                     </div>
                 </div>
             </div>
 
             <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
-                <div class="text-4xl mb-4 opacity-20">📡</div>
-                <p class="mono text-xs tracking-widest">SELECT AN AGENT TO INITIALIZE UPLINK</p>
+                <div class="text-4xl mb-2 opacity-20">📡</div>
+                <p class="mono text-xs tracking-widest">SELECT AN AGENT TO BEGIN</p>
+                <p class="mono text-[10px] text-green-500 mt-2" id="keyGenStatus">INITIALIZING ENGINES...</p>
             </div>
 
-            <div id="messagesArea" class="flex-1 overflow-y-auto p-6 space-y-4 hidden scroll-smooth">
-            </div>
+            <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4 hidden pb-20"></div>
 
             <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
-                <div class="flex gap-2 mb-2 items-center">
-                    <span class="text-[10px] text-gray-500 font-bold mono">ENCRYPTION PROTOCOL:</span>
-                   <select id="cipherSelect" aria-label="Encryption Protocol" class="bg-black border border-[var(--border)] text-[10px] text-[var(--primary)] rounded px-2 py-1 outline-none font-mono focus:border-[var(--primary)] cursor-pointer">
-                         <option value="none">OFF (PLAIN)</option>
-                         <option value="caesar">CAESAR CIPHER</option>
-                         <option value="vigenere">VIGENÈRE CIPHER</option>
-                         <option value="rsa">🔒 RSA (MILITARY GRADE)</option>
-                     </select>
-                    <input type="text" id="cipherKey" placeholder="KEY (e.g. 3)" class="bg-black border border-[var(--border)] text-[10px] text-white rounded px-2 py-1 w-24 outline-none font-mono focus:border-[var(--primary)]">
+                <div class="max-w-4xl mx-auto relative">
                     
-                    <label class="flex items-center gap-1 cursor-pointer ml-4 border border-red-900/50 bg-red-900/10 px-2 py-1 rounded hover:bg-red-900/30 transition-colors">
-                        <input type="checkbox" id="burnCheck" class="accent-red-500">
-                        <span class="text-[10px] text-red-500 font-bold mono">🔥 BURN-ON-READ</span>
-                    </label>
-                </div>
-                
-                <form id="chatForm" class="flex gap-2">
-                    <input type="text" id="msgInput" autocomplete="off" placeholder="Type a secure message..." 
-                           class="flex-1 bg-black border border-[var(--border)] text-sm text-white rounded p-3 outline-none focus:border-[var(--primary)] transition-colors font-mono placeholder-gray-700">
-                    <button type="submit" class="bg-[var(--primary)] text-black font-bold px-6 rounded hover:bg-[var(--accent)] hover:text-white transition-all orbitron tracking-wider text-sm shadow-[0_0_15px_rgba(0,243,255,0.2)]">
-                        SEND
+                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-white transition-colors flex items-center gap-2">
+                        <span>⚙️ ENCRYPTION SETTINGS</span>
+                        <span id="toolArrow">▼</span>
                     </button>
-                </form>
+
+                    <div id="spyTools" class="bg-black/50 border border-[var(--border)] rounded-lg p-3 mb-2">
+                        <div class="flex flex-col md:flex-row gap-3">
+                            <div class="flex-1">
+                                <label for="cipherMethod" class="text-[9px] text-[var(--primary)] font-bold block mb-1">PROTOCOL</label>
+                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[#050508] border border-[var(--border)] text-[10px] text-gray-300 p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase">
+                                    <option value="rsa" selected>1. RSA (MILITARY GRADE)</option>
+                                    <option value="caesar">2. CAESAR (BASIC)</option>
+                                    <option value="plain">3. PLAINTEXT (NONE)</option>
+                                </select>
+                            </div>
+
+                            <div class="flex-[1.5]" id="cipherKeyContainer">
+                                <label for="cipherKey" class="text-[9px] text-[var(--accent)] font-bold block mb-1">MANUAL KEY (NON-RSA)</label>
+                                <input id="cipherKey" title="Manual Key" aria-label="Secret Key" type="text" placeholder="Not needed for RSA" class="w-full bg-[#050508] border border-[var(--border)] text-[10px] text-gray-500 p-2 rounded focus:border-[var(--accent)] outline-none font-mono">
+                            </div>
+
+                            <div class="flex items-end">
+                                <label class="flex items-center gap-2 cursor-pointer border border-red-900/50 bg-red-900/10 px-3 py-2 rounded hover:bg-red-900/20 h-[34px]">
+                                    <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3">
+                                    <span class="text-[9px] text-red-500 font-bold orbitron">BURN</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="chatForm" class="flex gap-2 items-center">
+                        <div class="w-8 h-8 rounded-full bg-[var(--border)] flex items-center justify-center text-gray-500 text-xs" id="lockIcon">🔒</div>
+                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type a secure message..." autocomplete="off" class="flex-grow bg-black border border-[var(--border)] p-3 rounded text-sm text-white focus:border-[var(--primary)] outline-none font-mono">
+                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[0_0_15px_rgba(0,243,255,0.3)] transition-all text-xs">SEND</button>
+                    </form>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        // --- 1. CONFIG & AUTH ---
-        const token = localStorage.getItem('auth-token');
-        if (!token) window.location.href = '/login.html';
-
-        function parseJwt(token) {
-            try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; }
+        // --- UI LOGIC ---
+        function toggleSpyTools() {
+            const el = document.getElementById('spyTools');
+            el.classList.toggle('open');
+            document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
         }
 
-        const decoded = parseJwt(token);
-        const userData = decoded.user || decoded; 
-        const myId = userData._id || userData.id || userData.userId;
-        const myName = userData.username || userData.name || "Agent";
+        // --- AUTH & INIT ---
+        const token = localStorage.getItem('auth-token');
+        if (!token) window.location.href = '/login.html';
+        
+        function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; } }
+        const userPayload = parseJwt(token);
+        const myId = userPayload.user.id || userPayload.user._id; 
+        const socket = io({ auth: { token } });
+        
+        let currentReceiver = null;
+        let activeUsersMap = {}; // Will store { userId: { username, publicKey } }
+        
+        // --- 1. REFACTORED RSA ENGINE (Database Sync) ---
+        const myRSA = new JSEncrypt({ default_key_size: 1024 });
+        
+        // Auto-Run on Load
+        async function initIdentity() {
+            // A. Check LocalStorage
+            let storedPriv = localStorage.getItem('rsa_priv');
+            let storedPub = localStorage.getItem('rsa_pub');
 
-        document.getElementById('currentUserDisplay').innerText = `ID: ${myName}`;
-
-        const socket = io();
-        socket.emit("login", myId);
-
-        // --- 2. CRYPTO ENGINE (RSA) ---
-        let myKeyPair = null;
-        let partnerPublicKeys = {}; // Stores other users' locks
-
-        async function initCrypto() {
+            // B. If missing, Generate New
+            if(!storedPriv || !storedPub) {
+                document.getElementById('keyGenStatus').innerText = "GENERATING NEW IDENTITY...";
+                myRSA.getKey();
+                storedPriv = myRSA.getPrivateKey();
+                storedPub = myRSA.getPublicKey();
+                localStorage.setItem('rsa_priv', storedPriv);
+                localStorage.setItem('rsa_pub', storedPub);
+            }
+            
+            // Set for current session
+            myRSA.setPrivateKey(storedPriv);
+            
+            // C. SYNC WITH SERVER (The Phonebook)
+            // We always upload our key on login to ensure the database is current
             try {
-                // Check if we already have keys in storage
-                const storedPriv = localStorage.getItem('rsa-priv');
-                const storedPub = localStorage.getItem('rsa-pub');
-
-                if (storedPriv && storedPub) {
-                    // Import existing keys
-                    const privKey = await window.crypto.subtle.importKey(
-                        "jwk", JSON.parse(storedPriv), 
-                        { name: "RSA-OAEP", hash: "SHA-256" }, true, ["decrypt"]
-                    );
-                    const pubKey = await window.crypto.subtle.importKey(
-                        "jwk", JSON.parse(storedPub), 
-                        { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]
-                    );
-                    myKeyPair = { privateKey: privKey, publicKey: pubKey };
-                } else {
-                    // Generate NEW Keys
-                    myKeyPair = await window.crypto.subtle.generateKey(
-                        { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
-                        true, ["encrypt", "decrypt"]
-                    );
-                    // Export and Save
-                    const expPriv = await window.crypto.subtle.exportKey("jwk", myKeyPair.privateKey);
-                    const expPub = await window.crypto.subtle.exportKey("jwk", myKeyPair.publicKey);
-                    localStorage.setItem('rsa-priv', JSON.stringify(expPriv));
-                    localStorage.setItem('rsa-pub', JSON.stringify(expPub));
-                }
-
-                // Upload Public Key to Server so others can text me
-                const exportedPub = await window.crypto.subtle.exportKey("jwk", myKeyPair.publicKey);
                 await fetch('/api/users/key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: myId, publicKey: JSON.stringify(exportedPub) })
+                    body: JSON.stringify({ userId: myId, publicKey: storedPub })
                 });
-                console.log("🔐 CRYPTO SYSTEM ONLINE: Keys Loaded & Uploaded");
-            } catch (e) {
-                console.error("Crypto Init Failed:", e);
+                document.getElementById('keyGenStatus').innerText = "IDENTITY SECURED & SYNCED.";
+                document.getElementById('keyGenStatus').className = "mono text-[10px] text-[var(--primary)] mt-2";
+            } catch(e) {
+                console.error("Key Sync Failed", e);
             }
         }
-        initCrypto(); // Start Engine
+        setTimeout(initIdentity, 100);
 
-        // --- 3. HELPER ALGORITHMS ---
-        async function encryptRSA(text, pubKeyJson) {
-            try {
-                // Import partner's public key
-                const pubKey = await window.crypto.subtle.importKey(
-                    "jwk", JSON.parse(pubKeyJson), 
-                    { name: "RSA-OAEP", hash: "SHA-256" }, true, ["encrypt"]
-                );
-                const enc = new TextEncoder();
-                const encoded = enc.encode(text);
-                const encrypted = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, pubKey, encoded);
-                
-                // Convert to Base64 to send via text
-                return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
-            } catch (e) { console.error("Encrypt Error", e); return "[ENCRYPTION FAILED]"; }
-        }
+        function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        async function decryptRSA(cipherText) {
-            try {
-                // Decode Base64
-                const binaryString = atob(cipherText);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-
-                const decrypted = await window.crypto.subtle.decrypt(
-                    { name: "RSA-OAEP" }, myKeyPair.privateKey, bytes
-                );
-                const dec = new TextDecoder();
-                return dec.decode(decrypted);
-            } catch (e) { console.error("Decrypt Error", e); return "[DECRYPTION FAILED - WRONG KEY]"; }
-        }
-
-        const Algorithms = {
-            caesar: (t, k, m) => { 
-                const s = parseInt(k) || 0; const shift = m === 'encrypt' ? s : -s; 
-                return t.replace(/[a-zA-Z]/g, c => { 
-                    const b = c >= 'a' ? 97 : 65; 
-                    return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26 + 26) % 26 + b); 
-                }); 
-            },
-            vigenere: (t, k, m) => { 
-                const key = k.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0; 
-                return t.replace(/[a-zA-Z]/g, c => { 
-                    const b = c >= 'a' ? 97 : 65; 
-                    const charCode = c.toUpperCase().charCodeAt(0) - 65; 
-                    const keyCode = key[ki++ % key.length].charCodeAt(0) - 65; 
-                    let result = m === 'encrypt' ? (charCode + keyCode) % 26 : (charCode - keyCode + 26) % 26; 
-                    return String.fromCharCode(result + b); 
-                }); 
-            }
-        };
-
-        // --- 4. APP LOGIC ---
-        let currentReceiver = null;
-        const messagesArea = document.getElementById('messagesArea');
-
+        // --- 2. USER SELECTION (Fetch from Phonebook) ---
         async function fetchUsers() {
             try {
                 const res = await fetch('/api/users');
                 const users = await res.json();
-                document.getElementById('usersList').innerHTML = '';
+                const list = document.getElementById('usersList');
+                list.innerHTML = '';
                 
-                users.forEach(user => {
-                    if (user._id === myId) return;
+                users.forEach(u => {
+                    if (u._id === myId) return;
                     
-                    // STORE PUBLIC KEY
-                    if(user.publicKey) partnerPublicKeys[user._id] = user.publicKey;
+                    // Store user data (including Public Key) in memory map
+                    activeUsersMap[u._id] = u;
 
                     const div = document.createElement('div');
-                    div.className = 'user-card user-item p-3 cursor-pointer hover:bg-white/5 transition-colors flex items-center gap-3 border-l-2 border-transparent';
-                    div.setAttribute('data-name', user.username.toLowerCase());
-                    div.setAttribute('data-id', user._id); 
-                    
+                    div.className = 'user-card p-3 cursor-pointer hover:bg-white/5 flex items-center gap-3 border-l-2 border-transparent transition-all';
                     div.innerHTML = `
-                        <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron shadow-[0_0_5px_rgba(0,0,0,0.5)]">
-                            ${user.username.substring(0,2).toUpperCase()}
-                        </div>
+                        <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron">${u.username.substring(0,2).toUpperCase()}</div>
                         <div>
-                            <div class="text-sm font-bold text-gray-300 username-text">${user.username}</div>
-                            <div class="text-[9px] text-gray-600 mono status-text">OFFLINE</div>
+                            <div class="text-sm font-bold text-gray-300">${u.username}</div>
+                            <div class="text-[9px] text-gray-600 mono status-text" data-id="${u._id}">OFFLINE</div>
                         </div>
                     `;
-                    div.onclick = () => selectUser(user, div);
-                    document.getElementById('usersList').appendChild(div);
+                    div.onclick = () => selectUser(u, div);
+                    list.appendChild(div);
                 });
-            } catch (e) { console.error(e); }
+            } catch(e) { console.error(e); }
         }
         fetchUsers();
 
-        // Search Filter
-        document.getElementById('userSearch').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            document.querySelectorAll('.user-card').forEach(card => {
-                const name = card.getAttribute('data-name');
-                card.classList.toggle('hidden', !name.includes(term));
-            });
-        });
-
-        function selectUser(user, element) {
+        function selectUser(user, el) {
             currentReceiver = user;
-            document.querySelectorAll('.user-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
+            
+            document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
+            el.classList.add('active-user');
             
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');
             document.getElementById('chatPartnerName').innerText = user.username;
-
-            socket.emit("join_room", { senderId: myId, receiverId: user._id });
-            loadHistory(user._id);
-            document.getElementById('msgInput').focus();
-        }
-
-        async function loadHistory(partnerId) {
-            messagesArea.innerHTML = '<div class="text-center text-xs text-gray-600 mt-4 animate-pulse">DECRYPTING ARCHIVES...</div>';
-            try {
-                const res = await fetch(`/api/messages/${myId}/${partnerId}`);
-                const msgs = await res.json();
-                messagesArea.innerHTML = '';
-                msgs.forEach(displayMessage);
-                scrollToBottom();
-            } catch (e) { console.error(e); }
-        }
-
-        // --- SEND MESSAGE (Now Async for RSA) ---
-        document.getElementById('chatForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('msgInput');
-            const cipherType = document.getElementById('cipherSelect').value;
-            const key = document.getElementById('cipherKey').value;
-            const isBurn = document.getElementById('burnCheck').checked;
-            let text = input.value;
             
-            if (!text.trim() || !currentReceiver) return;
-
-            // ENCRYPTION LOGIC
-            let cipherText = text;
-            if (cipherType === 'rsa') {
-                const partnerKey = partnerPublicKeys[currentReceiver._id];
-                if (!partnerKey) {
-                    alert("ERROR: This agent hasn't established a secure key yet. Tell them to login again!");
-                    return;
-                }
-                cipherText = await encryptRSA(text, partnerKey);
-            } 
-            else if (cipherType !== 'none' && Algorithms[cipherType]) {
-                cipherText = Algorithms[cipherType](text, key, 'encrypt');
+            // Check Encryption Status
+            // We check the 'activeUsersMap' populated from the Database
+            const partnerData = activeUsersMap[user._id];
+            const statusEl = document.getElementById('encryptionStatus');
+            
+            if(partnerData && partnerData.publicKey && partnerData.publicKey.length > 10) {
+                statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED";
+                statusEl.className = "text-[9px] mono text-[var(--primary)]";
+            } else {
+                statusEl.innerText = "⚠️ UNSECURED (PARTNER HAS NO KEY)";
+                statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
             }
 
-            const messageData = {
+            document.getElementById('messagesArea').innerHTML = ''; 
+            loadHistory(user._id);
+        }
+
+        // --- 3. SENDING (Using Database Keys) ---
+        function sendMessage(text, forcedMethod = null, isBurn = false) {
+            if(!currentReceiver) return alert("Select a user first!");
+            const method = forcedMethod || document.getElementById('cipherMethod').value;
+            
+            let cipherText = text;
+
+            if (method === 'rsa') {
+                // Get Key from Memory Map (Source: Database)
+                const partnerData = activeUsersMap[currentReceiver._id];
+                
+                if (!partnerData || !partnerData.publicKey) {
+                    return alert("This user has not established a secure identity yet.\nAsk them to login to the app once.");
+                }
+                
+                const encryptor = new JSEncrypt();
+                encryptor.setPublicKey(partnerData.publicKey);
+                cipherText = encryptor.encrypt(text);
+                
+                if(!cipherText) return alert("Message too long for RSA (Max ~100 chars).");
+            } 
+            else if (method === 'caesar') {
+                const shift = parseInt(document.getElementById('cipherKey').value) || 3;
+                cipherText = text.replace(/[a-zA-Z]/g, c => {
+                    const b = c >= 'a' ? 97 : 65;
+                    return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26) + b);
+                });
+            }
+
+            const payload = {
                 senderId: myId,
                 receiverId: currentReceiver._id,
-                text: cipherText, 
-                cipherType: cipherType,
+                text: cipherText,
+                cipherType: method,
                 isBurn: isBurn,
                 timestamp: new Date()
             };
 
-            socket.emit("private_message", messageData);
+            socket.emit("private_message", payload);
+            displayMessage({ ...payload, sender: myId, originalText: text }); 
+        }
 
-            displayMessage({
-                sender: myId,
-                text: cipherText, // Show encrypted version
-                cipherType: cipherType,
-                isBurn: isBurn,
-                isSelf: true,
-                originalText: text // Pass original so I can see what I wrote
-            });
-
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msgInput');
+            const burn = document.getElementById('burnCheck').checked;
+            if(!input.value) return;
+            sendMessage(input.value, null, burn);
             input.value = '';
             document.getElementById('burnCheck').checked = false;
-            scrollToBottom();
         });
 
-        // --- RECEIVE MESSAGE ---
+        // --- 4. RECEIVING ---
         socket.on("receive_message", (data) => {
+            // No more hidden System messages! 
+            // Just pure message handling.
             if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
-                displayMessage({
-                    sender: data.senderId || data.sender, 
-                    text: data.text,
-                    cipherType: data.cipherType,
-                    isBurn: data.isBurn, // Pass burn flag
-                    isSelf: false,
-                    _id: data._id
-                });
-                scrollToBottom();
-            }
-        });
-
-        socket.on("message_burnt", (msgId) => {
-            const msgDiv = document.getElementById(`msg-${msgId}`);
-            if (msgDiv) {
-                msgDiv.style.transition = "all 0.5s ease";
-                msgDiv.style.opacity = "0";
-                msgDiv.style.transform = "scale(0.9)";
-                msgDiv.innerHTML = '<div class="text-red-500 font-mono text-xs text-center">💥 MESSAGE SELF-DESTRUCTED 💥</div>';
-                setTimeout(() => msgDiv.remove(), 2000);
+                displayMessage(data);
             }
         });
 
         function displayMessage(msg) {
-            if(messagesArea.innerHTML.includes('CHANNEL EMPTY')) messagesArea.innerHTML = '';
-            const isMe = (msg.sender === myId || msg.isSelf);
+            const area = document.getElementById('messagesArea');
+            const isMe = (msg.sender === myId || msg.senderId === myId);
+            let content = msg.text || msg.cipherText;
+            const method = msg.cipherType || 'plain';
+            const isBurn = msg.isBurn;
+            
+            if (isMe && msg.originalText) content = msg.originalText;
+
             const div = document.createElement('div');
+            const burnId = 'msg-' + Date.now() + Math.random();
+            div.id = burnId;
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             
-            // Set ID for Burn Logic
-            if (msg._id) div.id = `msg-${msg._id}`; 
+            const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
+            const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
-            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-in mb-4`;
+            // RSA UNLOCK UI
+            let contentHtml = `<div class="text-xs font-mono break-all">${content}</div>`;
             
-            let contentHtml = '';
-            
-            // LOCK UI
-            if (msg.cipherType && msg.cipherType !== 'none') {
-                // If it's ME and I have the original text (for RSA), show it
-                let displayText = (isMe && msg.originalText) ? msg.originalText : msg.text;
-                let isEncrypted = true;
-
-                // If I am the sender, I see plain text (optional, but good UX). 
-                // If I am receiver, I see Cipher text until I unlock.
-                if (isMe && msg.cipherType === 'rsa') isEncrypted = false; 
-
+            if (!isMe && method === 'rsa') {
                 contentHtml = `
-                    <div class="mb-2 text-[9px] ${isMe ? 'text-right' : 'text-left'} text-gray-500 mono uppercase tracking-widest border-b border-white/10 pb-1">
-                        🔒 ${msg.cipherType.toUpperCase()}
-                    </div>
-                    <div class="${isEncrypted ? 'encrypted-text' : 'text-white'} break-all text-sm mb-2" id="text-${msg._id || Date.now()}">
-                        ${displayText}
-                    </div>
-                    ${!isMe ? `<button onclick="attemptDecrypt(this, '${msg.text}', '${msg.cipherType}')" class="text-[10px] bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 px-3 py-1.5 rounded transition-all mono w-full flex items-center justify-center gap-2 group"><span>UNLOCK DATA</span> <span class="group-hover:rotate-90 transition-transform">🔓</span></button>` : ''}
+                    <div class="encrypted-text mb-2 break-all" id="cipher-${burnId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
+                    <button onclick="unlockMessage('${burnId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                        <span>🔓 UNLOCK DATA</span>
+                    </button>
+                    <div id="plain-${burnId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
                 `;
-            } else {
-                contentHtml = `<div class="break-all text-sm">${msg.text}</div>`;
             }
+
+            const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
 
             div.innerHTML = `
-                <div class="max-w-[75%] rounded-lg p-4 shadow-lg ${isMe ? 'bg-[var(--primary)] text-black font-bold' : 'bg-[#12141a] border border-[var(--border)] text-gray-300'}">
+                <div class="max-w-[75%] rounded-lg p-3 border ${color} ${bg} shadow-lg relative" ${clickAction}>
+                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4">
+                        <span>${isMe ? 'YOU' : currentReceiver.username}</span>
+                        <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
+                    </div>
                     ${contentHtml}
+                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase">🔒 ${method}</div>` : ''}
                 </div>
             `;
-            messagesArea.appendChild(div);
+            
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+
+            if(isBurn) {
+                setTimeout(() => {
+                    const el = document.getElementById(burnId);
+                    if(el) { el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
+                }, 10000);
+            }
+        }
+        
+        // --- 5. DECRYPTION (Using LocalStorage Private Key) ---
+        function unlockMessage(id, cipherText) {
+            try {
+                const myPriv = localStorage.getItem('rsa_priv');
+                const decryptor = new JSEncrypt();
+                decryptor.setPrivateKey(myPriv);
+                const decrypted = decryptor.decrypt(cipherText);
+                
+                if (decrypted) {
+                    document.getElementById(`plain-${id}`).innerText = decrypted;
+                    document.getElementById(`plain-${id}`).classList.remove('hidden');
+                    document.getElementById(`cipher-${id}`).classList.add('hidden');
+                    const btn = document.querySelector(`#${id} button`);
+                    if(btn) btn.classList.add('hidden');
+                } else {
+                    alert("Decryption Failed. Keys might have cycled.");
+                }
+            } catch(e) { console.error(e); alert("Decryption Error"); }
         }
 
-        // --- DECRYPT HANDLER ---
-        window.attemptDecrypt = async (btn, cipherText, type) => {
-            const textEl = btn.previousElementSibling;
-            
-            if (type === 'rsa') {
-                textEl.innerText = "DECRYPTING WITH PRIVATE KEY...";
-                const plainText = await decryptRSA(cipherText);
-                textEl.innerText = plainText;
-            } 
-            else {
-                // Classic Ciphers
-                const key = prompt(`ENTER DECRYPTION KEY FOR [${type.toUpperCase()}]:`);
-                if (!key) return;
-                if (Algorithms[type]) {
-                    const plainText = Algorithms[type](cipherText, key, 'decrypt');
-                    textEl.innerText = plainText;
-                }
-            }
-            
-            textEl.classList.remove('encrypted-text');
-            textEl.classList.add('text-green-400', 'font-bold', 'mono'); 
-            btn.remove();
-        };
+        function decryptCaesar(text, shift) {
+             const s = (26 - parseInt(shift)) % 26;
+             return text.replace(/[a-zA-Z]/g, c => {
+                const b = c >= 'a' ? 97 : 65;
+                return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b);
+            });
+        }
 
-        function scrollToBottom() { messagesArea.scrollTop = messagesArea.scrollHeight; }
+        async function loadHistory(partnerId) {
+            try {
+                const res = await fetch(`/api/messages/${myId}/${partnerId}`);
+                const msgs = await res.json();
+                msgs.forEach(displayMessage);
+            } catch(e) {}
+        }
 
-        // --- ONLINE STATUS ---
-        socket.on("get_users", (onlineUserIds) => {
-            document.querySelectorAll('.user-card').forEach(card => {
-                const userId = card.getAttribute('data-id'); 
-                const statusText = card.querySelector('.status-text');
-                if (onlineUserIds.includes(userId)) {
-                    statusText.innerText = "ONLINE";
-                    statusText.classList.remove('text-gray-600');
-                    statusText.classList.add('text-[var(--primary)]', 'animate-pulse'); 
-                    card.classList.add('border-[var(--primary)]');
-                    card.classList.remove('border-transparent');
+        socket.on('connect', () => {
+            socket.emit("login", myId);
+            document.getElementById('statusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]";
+            document.getElementById('statusText').innerText = "ONLINE";
+            document.getElementById('statusText').className = "text-green-500";
+        });
+        
+        socket.on('get_users', (onlineIds) => {
+            document.querySelectorAll('.status-text').forEach(el => {
+                const uid = el.getAttribute('data-id');
+                if(onlineIds.includes(uid)) {
+                    el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]');
                 } else {
-                    statusText.innerText = "OFFLINE";
-                    statusText.classList.add('text-gray-600');
-                    statusText.classList.remove('text-[var(--primary)]', 'animate-pulse');
-                    card.classList.remove('border-[var(--primary)]');
-                    card.classList.add('border-transparent');
+                    el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600');
                 }
             });
         });
