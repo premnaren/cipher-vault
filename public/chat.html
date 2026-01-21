@@ -152,7 +152,6 @@
         const myId = userData._id || userData.id; 
 
         if (!myId) {
-            console.error("Token Invalid - No ID found");
             localStorage.removeItem('auth-token');
             window.location.href = '/login.html';
         }
@@ -165,6 +164,22 @@
         // --- 1. REFACTORED RSA ENGINE ---
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
+        // >>> NEW: LOCAL CACHE FOR SENT MESSAGES <<<
+        function saveToLocalCache(cipher, plain) {
+            try {
+                let cache = JSON.parse(localStorage.getItem('sent_cache') || '{}');
+                cache[cipher] = plain;
+                localStorage.setItem('sent_cache', JSON.stringify(cache));
+            } catch(e) {}
+        }
+        
+        function getFromLocalCache(cipher) {
+            try {
+                let cache = JSON.parse(localStorage.getItem('sent_cache') || '{}');
+                return cache[cipher];
+            } catch(e) { return null; }
+        }
+
         async function initIdentity() {
             let storedPriv = localStorage.getItem('rsa_priv');
             let storedPub = localStorage.getItem('rsa_pub');
@@ -180,7 +195,6 @@
             
             myRSA.setPrivateKey(storedPriv);
             
-            // Sync with Server
             try {
                 await fetch('/api/users/key', {
                     method: 'POST',
@@ -208,7 +222,6 @@
             document.getElementById('inputArea').classList.remove('hidden');
             document.getElementById('chatPartnerName').innerText = user.username;
             
-            // --- ALWAYS FETCH FRESH KEY FROM DB (No Caching) ---
             try {
                 const res = await fetch('/api/users');
                 const freshUsers = await res.json();
@@ -271,6 +284,9 @@
                 encryptor.setPublicKey(partnerData.publicKey);
                 cipherText = encryptor.encrypt(text);
                 if(!cipherText) return alert("Message too long for RSA.");
+                
+                // >>> SAVE COPY FOR SELF <<<
+                saveToLocalCache(cipherText, text);
             } 
             else if (method === 'caesar') {
                 const shift = parseInt(document.getElementById('cipherKey').value) || 3;
@@ -317,10 +333,21 @@
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
             
-            if (isMe && msg.originalText) content = msg.originalText;
+            // >>> RECOVER PLAIN TEXT FROM CACHE IF IT'S ME <<<
+            if (isMe && method === 'rsa') {
+                const cached = getFromLocalCache(content);
+                if(cached) {
+                    content = cached;
+                    // Force display as plain text for me
+                    msg.originalText = cached; 
+                } else if (msg.originalText) {
+                    content = msg.originalText;
+                }
+            } else if (isMe && msg.originalText) {
+                content = msg.originalText;
+            }
 
             const div = document.createElement('div');
-            // >>> FIX: USE SAFE INTEGER IDs (NO DOTS) <<<
             const burnId = 'msg-' + Date.now() + Math.floor(Math.random() * 100000);
             div.id = burnId;
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
@@ -328,10 +355,16 @@
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
             const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
-            // RSA UNLOCK UI
+            // RSA UNLOCK UI LOGIC
+            // If it's me AND I successfully recovered the cache, show plain text
+            // If it's receiver, always show locked
+            let isLocked = (!isMe && method === 'rsa');
+            // Edge case: If I sent it but cleared my cache, I see locked too (correct behavior)
+            if(isMe && method === 'rsa' && !getFromLocalCache(msg.text) && !msg.originalText) isLocked = true;
+
             let contentHtml = `<div class="text-xs font-mono break-all">${content}</div>`;
             
-            if (!isMe && method === 'rsa') {
+            if (isLocked) {
                 contentHtml = `
                     <div class="encrypted-text mb-2 break-all" id="cipher-${burnId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
                     <button onclick="unlockMessage('${burnId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
@@ -365,7 +398,6 @@
             }
         }
         
-        // >>> FIX: SAFE DOM SELECTION (NO querySelector) <<<
         function unlockMessage(id, cipherText) {
             try {
                 const myPriv = localStorage.getItem('rsa_priv');
@@ -378,14 +410,13 @@
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
                     
-                    // SAFE BUTTON FINDER
                     const container = document.getElementById(id);
                     const btn = container ? container.getElementsByTagName('button')[0] : null;
                     if(btn) btn.classList.add('hidden');
                 } else {
                     alert("Decryption Failed.");
                 }
-            } catch(e) { console.error(e); alert("Decryption Error: Check Console"); }
+            } catch(e) { console.error(e); alert("Decryption Error"); }
         }
 
         function decryptCaesar(text, shift) {
