@@ -13,8 +13,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
 
-        /* THEME VARIABLES */
-        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --text-main: #e2e8f0; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --text-main: #e2e8f0; --border: #1e293b; }
         
         body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px; transition: background 0.5s ease; }
         .mono { font-family: 'Space Mono', monospace; }
@@ -22,25 +21,15 @@
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
         .text-primary-var { color: var(--primary); }
 
-        /* ANIMATIONS */
-        .menu-reactor { position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-        .reactor-ring { position: absolute; width: 100%; height: 100%; border: 2px dashed var(--primary); border-radius: 50%; animation: spin 8s linear infinite; }
-        .reactor-core { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); animation: pulse 2s ease-in-out infinite; }
-        #menuBtn:hover .reactor-ring { animation-duration: 2s; border-color: var(--accent); }
-        #menuBtn:hover .reactor-core { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.7; } }
-
-        /* SIDEBAR STYLES */
+        /* Sidebar & Menu */
         #sidebar { box-shadow: 20px 0 50px rgba(0,0,0,0.8); border-right: 1px solid var(--primary); }
         details { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; } 
         details > summary { list-style: none; outline: none; transition: all 0.3s; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; letter-spacing: 1px; }
         details[open] summary { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
         details[open] summary ~ * { animation: slideDown 0.4s ease-out; }
         @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
-        .viz-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 15px; margin-top: 10px; border-radius: 6px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-main); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
-
-        /* PIGPEN KEYS */
+        
+        /* Pigpen Keyboard */
         .pp-key { width: 45px; height: 45px; border-color: var(--primary); cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .pp-key:hover { background: rgba(255,255,255,0.1); }
         .pp-dot::after { content:''; position: absolute; width:5px; height:5px; background:var(--primary); border-radius:50%; }
@@ -60,16 +49,13 @@
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
             <button id="menuBtn" class="flex items-center gap-3 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--accent)] group">
-                <div class="menu-reactor"> <div class="reactor-ring"></div> <div class="reactor-core"></div> </div>
-                <span class="tracking-[0.15em] text-xs font-mono transition-all">LIBRARY</span>
+                <span class="tracking-[0.15em] text-xs font-mono">📚 LIBRARY</span>
             </button>
             <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
-                <span class="text-lg group-hover:animate-pulse">🔒</span>
-                <span class="tracking-[0.15em] text-xs font-mono transition-all">SECURE VAULT</span>
+                <span class="text-lg">🔒</span><span class="tracking-[0.15em] text-xs font-mono">VAULT</span>
             </button>
             <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black group decoration-0">
-                <span class="text-lg">💬</span>
-                <span class="tracking-[0.15em] text-xs font-mono transition-all">SECURE CHAT</span>
+                <span class="text-lg">💬</span><span class="tracking-[0.15em] text-xs font-mono">CHAT</span>
             </a>
             <h1 class="text-2xl font-black tracking-widest text-center ml-4 hidden md:block font-orbitron">CIPHER <span class="text-primary-var">VAULT</span></h1>
         </div>
@@ -91,12 +77,11 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">1. ATBASH CIPHER</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/sMOZf4GN3oc?start=120" title="Atbash Explanation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/sMOZf4GN3oc" title="Atbash" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">A monoalphabetic substitution cipher originally used to encode Hebrew alphabets. It maps the alphabet to its reverse (A→Z, B→Y).</p>
                     <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
                         <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE:</label>
-                        <input type="text" placeholder="Type to encrypt..." class="w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" oninput="this.nextElementSibling.innerText = Algorithms.atbash(this.value)">
+                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="atbash">
                         <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
                     </div>
                 </div>
@@ -106,12 +91,11 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">2. CAESAR CIPHER</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/sMOZf4GN3oc?start=60" title="Caesar Cipher" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/l615W7f1V9U" title="Caesar" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">One of the simplest and most widely known encryption techniques. Each letter in the plaintext is replaced by a letter some fixed number of positions down the alphabet.</p>
                     <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
                         <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (SHIFT 3):</label>
-                        <input type="text" placeholder="Type to encrypt..." class="w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" oninput="this.nextElementSibling.innerText = Algorithms.caesar(this.value, 3, 'encrypt')">
+                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="caesar" data-key="3">
                         <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
                     </div>
                 </div>
@@ -121,12 +105,11 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">3. PLAYFAIR CIPHER</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/quKhV2_D3v8" title="Playfair Cipher" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/-K6_t3J20jE" title="Playfair" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">Encrypts pairs of letters (digraphs) instead of single letters using a 5x5 grid of letters constructed from a keyword.</p>
                     <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
                         <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (KEY='CIPHER'):</label>
-                        <input type="text" placeholder="Type to encrypt..." class="w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" oninput="this.nextElementSibling.innerText = Algorithms.playfair(this.value, 'CIPHER', 'encrypt')">
+                        <input type="text" placeholder="Type (No J's)..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="playfair" data-key="CIPHER">
                         <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
                     </div>
                 </div>
@@ -136,12 +119,11 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">4. VIGENÈRE CIPHER</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/9zASwVzcD98" title="Vigenere Cipher" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" title="Vigenere" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">A method of encrypting alphabetic text by using a series of interwoven Caesar ciphers based on the letters of a keyword.</p>
                     <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
                         <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (KEY='KEY'):</label>
-                        <input type="text" placeholder="Type to encrypt..." class="w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" oninput="this.nextElementSibling.innerText = Algorithms.vigenere(this.value, 'KEY', 'encrypt')">
+                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="vigenere" data-key="KEY">
                         <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
                     </div>
                 </div>
@@ -151,9 +133,13 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">5. RAIL FENCE</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/nRBbKz5-yZ0" title="Rail Fence" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/K0azZae2J68" title="Rail Fence" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">A transposition cipher that writes message text in a zig-zag pattern across a 'fence' (rails) and reads off row by row.</p>
+                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
+                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (RAILS=3):</label>
+                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="rail_fence" data-key="3">
+                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
+                    </div>
                 </div>
             </details>
 
@@ -161,9 +147,11 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">6. PIGPEN CIPHER</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/J-f8J5X2-8I" title="Pigpen Cipher" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/9X2jZ7z-j3g" title="Pigpen" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">A geometric substitution cipher which exchanges letters for symbols which are fragments of a grid.</p>
+                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
+                        <p class="text-[10px] text-gray-400">Use the visual keyboard in the main terminal for this graphical cipher.</p>
+                    </div>
                 </div>
             </details>
 
@@ -171,9 +159,13 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">7. AES-256 (MODERN)</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/O4xNJs5jvK4" title="AES Encryption" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/O4xNJs5jvK4" title="AES" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">Advanced Encryption Standard. A symmetric block cipher chosen by the U.S. government to protect classified information.</p>
+                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
+                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Key='secret'):</label>
+                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="aes" data-key="secret">
+                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
+                    </div>
                 </div>
             </details>
 
@@ -181,9 +173,9 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">8. RSA (ASYMMETRIC)</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" title="RSA Encryption" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/GSIDS_lvRv4" title="RSA" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">The first practical public-key cryptosystem. The security of RSA is based on the practical difficulty of factoring the product of two large prime numbers.</p>
+                    <p class="text-[10px] text-gray-400">RSA requires Key Pairs. Use the Main Terminal to generate keys first.</p>
                 </div>
             </details>
 
@@ -191,9 +183,13 @@
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">9. ECC (ELLIPTIC CURVE)</summary>
                 <div class="p-4 border-t border-white/5">
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" title="Elliptic Curve" frameborder="0" allowfullscreen></iframe>
+                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/dcvZ8yH1g-4" title="ECC" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">An approach to public-key cryptography based on the algebraic structure of elliptic curves. Requires smaller keys for same security as RSA.</p>
+                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
+                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Simulated):</label>
+                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="ecc">
+                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
+                    </div>
                 </div>
             </details>
 
@@ -203,11 +199,10 @@
                     <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
                         <iframe class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" title="Steganography" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <p class="text-xs text-gray-400 mb-3">The practice of concealing a message within another non-secret message. This tool uses Zero-Width Characters to hide text invisibly.</p>
                     <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
                         <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Payload):</label>
-                        <input type="text" placeholder="Secret text..." class="w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" oninput="this.nextElementSibling.innerText = Algorithms.steganography(this.value, 'System Normal', 'encrypt')">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">Output (Hidden in 'System Normal')...</div>
+                        <input type="text" placeholder="Secret text..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="steganography" data-key="Cover Text">
+                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">Hidden in "Cover Text"</div>
                     </div>
                 </div>
             </details>
@@ -306,34 +301,39 @@
     </main>
 
     <script>
-        // --- 1. SECURITY & CONFIG ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
-
-        // --- THEME ---
-        const themes = ['void', 'matrix', 'crimson', 'amber', 'nebula']; let currTheme = 0; const themeBtn = document.getElementById('themeBtn');
-        themeBtn.onclick = () => { currTheme = (currTheme + 1) % themes.length; const t = themes[currTheme]; document.documentElement.setAttribute('data-theme', t); themeBtn.innerText = `THEME: ${t.toUpperCase()}`; };
 
         // --- DOM REFERENCES ---
         let mode = 'encrypt'; let pigpenBuffer = "";
         const DOM = { card: document.getElementById('mainCard'), input: document.getElementById('mainInput'), visInput: document.getElementById('visualInput'), output: document.getElementById('outputArea'), visOutput: document.getElementById('visualOutput'), algo: document.getElementById('algoSelect'), key: document.getElementById('keyInput'), stdKeySec: document.getElementById('stdKeySection'), asymKeySec: document.getElementById('asymKeySection'), ppKeys: document.getElementById('ppKeysContainer'), ppBoard: document.getElementById('pigpenKeyboard'), ppDelete: document.getElementById('ppDelete'), processBtn: document.getElementById('processBtn'), modeTitle: document.getElementById('modeTitle'), swapBtnText: document.getElementById('swapBtnText'), genKey: document.getElementById('genKeysBtn'), pub: document.getElementById('pubKey'), priv: document.getElementById('privKey'), aesEye: document.getElementById('aesToggle'), keyHint: document.getElementById('keyHint') };
 
-        // --- ALGORITHMS ENGINE ---
+        // --- ALGORITHMS ENGINE (FIXED DECRYPTION) ---
         const Algorithms = {
             caesar: (t, k, m) => { const s = parseInt(k) || 0; const shift = m === 'encrypt' ? s : -s; return t.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26 + 26) % 26 + b); }); },
             atbash: (t) => { const f = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; const r = "ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"; return t.replace(/[a-zA-Z]/g, c => f.indexOf(c) > -1 ? r[f.indexOf(c)] : c); },
-            rail_fence: (t, k, m) => { const r = parseInt(k) || 3; if(r < 2) return t; const len = t.length; if(m==='encrypt') { let f = Array.from({length:r},()=>[]); let row=0, d=1; for(let c of t) { f[row].push(c); row+=d; if(row===0||row===r-1) d=-d; } return f.flat().join(''); } else { let f=Array.from({length:r},()=>new Array(len).fill(null)); let row=0, d=1; for(let i=0;i<len;i++){ f[row][i]='?'; row+=d; if(row===0||row===r-1) d=-d; } let idx=0; for(let i=0;i<r;i++) for(let j=0;j<len;j++) if(f[i][j]=='?' && idx<len) f[i][j]=t[idx++]; let res='', r2=0, d2=1; for(let i=0;i<len;i++){ if(f[r2][i]) res+=f[r2][i]; r2+=d2; if(r2===0||r2===r-1) d2=-d2; } return res; } },
-            vigenere: (t, k, m) => { const key = k.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0; return t.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; const charCode = c.toUpperCase().charCodeAt(0) - 65; const keyCode = key[ki++ % key.length].charCodeAt(0) - 65; let result = m === 'encrypt' ? (charCode + keyCode) % 26 : (charCode - keyCode + 26) % 26; return String.fromCharCode(result + b); }); },
-            // FULLY RESTORED PLAYFAIR LOGIC
+            rail_fence: (t, k, m) => { 
+                const r = parseInt(k) || 3; if(r < 2) return t; const len = t.length; 
+                if(m==='encrypt') { let f = Array.from({length:r},()=>[]); let row=0, d=1; for(let c of t) { f[row].push(c); row+=d; if(row===0||row===r-1) d=-d; } return f.flat().join(''); } 
+                else { let f=Array.from({length:r},()=>new Array(len).fill(null)); let row=0, d=1; for(let i=0;i<len;i++){ f[row][i]='?'; row+=d; if(row===0||row===r-1) d=-d; } let idx=0; for(let i=0;i<r;i++) for(let j=0;j<len;j++) if(f[i][j]=='?' && idx<len) f[i][j]=t[idx++]; let res='', r2=0, d2=1; for(let i=0;i<len;i++){ if(f[r2][i]) res+=f[r2][i]; r2+=d2; if(r2===0||r2===r-1) d2=-d2; } return res; } 
+            },
+            vigenere: (t, k, m) => { 
+                const key = k.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0; 
+                return t.replace(/[a-zA-Z]/g, c => { 
+                    const b = c >= 'a' ? 97 : 65; const charCode = c.toUpperCase().charCodeAt(0) - 65; 
+                    const keyCode = key[ki++ % key.length].charCodeAt(0) - 65; 
+                    let result = m === 'encrypt' ? (charCode + keyCode) % 26 : (charCode - keyCode + 26) % 26; 
+                    return String.fromCharCode(result + b); 
+                }); 
+            },
             playfair: (t, k, m) => { 
                 let key = (k||"KEY").toUpperCase().replace(/[^A-Z]/g,"").replace(/J/g,"I");
                 let matrix=[], seen=new Set();
                 (key+"ABCDEFGHIKLMNOPQRSTUVWXYZ").split('').forEach(c=>{ if(!seen.has(c)){ seen.add(c); matrix.push(c); }});
                 let input = t.toUpperCase().replace(/[^A-Z]/g,"").replace(/J/g,"I");
                 if(m === 'encrypt') {
-                    let pairs=[];
-                    for(let i=0;i<input.length;i+=2){ let a=input[i], b=input[i+1]||'X'; if(a===b){ b='X'; i--; } pairs.push([a,b]); }
+                    let pairs=[]; for(let i=0;i<input.length;i+=2){ let a=input[i], b=input[i+1]||'X'; if(a===b){ b='X'; i--; } pairs.push([a,b]); }
                     return pairs.map(([a,b])=>{ 
                         let i1=matrix.indexOf(a), i2=matrix.indexOf(b);
                         let r1=Math.floor(i1/5), c1=i1%5, r2=Math.floor(i2/5), c2=i2%5;
@@ -342,8 +342,7 @@
                         return matrix[r1*5+c2] + matrix[r2*5+c1];
                     }).join(' ');
                 } else {
-                    let res="";
-                    for(let i=0;i<input.length;i+=2){
+                    let res=""; for(let i=0;i<input.length;i+=2){
                         let a=input[i], b=input[i+1]; if(!b)break;
                         let i1=matrix.indexOf(a), i2=matrix.indexOf(b);
                         let r1=Math.floor(i1/5), c1=i1%5, r2=Math.floor(i2/5), c2=i2%5;
@@ -363,7 +362,7 @@
                 const textToBin = text => text.split('').map(c => zeroPad(c.charCodeAt(0).toString(2))).join(' ');
                 const binToText = bin => bin.split(' ').map(b => String.fromCharCode(parseInt(b, 2))).join('');
                 if (m === 'encrypt') {
-                    const cover = k || "System Status: Normal. All systems operational.";
+                    const cover = k || "System Status: Normal.";
                     const binary = textToBin(t);
                     const hidden = binary.split('').map(b => b === '1' ? '\u200C' : (b === '0' ? '\u200B' : '\u2060')).join('');
                     return cover + hidden;
@@ -376,36 +375,48 @@
             }
         };
 
-        // --- PIGPEN RENDERER ---
+        // --- RENDERERS & EVENT HANDLERS ---
         const renderPigpenSymbol = (char) => { const el = document.createElement('div'); el.className = 'pp-key'; const c = char.toUpperCase(); if("ADGJMPSVY".includes(c)) el.classList.add('pp-r'); if("CFILORUXZ".includes(c)) el.classList.add('pp-l'); if("ABCJKLSTW".includes(c)) el.classList.add('pp-b'); if("GHIPQRVYZ".includes(c)) el.classList.add('pp-t'); if("JKLMNOPQRWXYZ".includes(c)) el.classList.add('pp-dot'); return el; };
         const updatePigpenVisuals = (text, target) => { target.innerHTML = ''; text.split('').forEach(ch => { if(/[a-zA-Z]/.test(ch)) target.appendChild(renderPigpenSymbol(ch)); else { const s=document.createElement('span'); s.innerText=ch; s.className="text-white font-bold p-2"; target.appendChild(s); } }); };
         const initPigpenKeys = () => { DOM.ppKeys.innerHTML = ''; "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(char => { const key = renderPigpenSymbol(char); key.onclick = () => { if(mode === 'encrypt') { DOM.input.value += char; DOM.input.dispatchEvent(new Event('input')); } else { pigpenBuffer += char; updatePigpenVisuals(pigpenBuffer, DOM.visInput); } }; DOM.ppKeys.appendChild(key); }); };
         DOM.ppDelete.onclick = () => { if(mode === 'encrypt') DOM.input.value = DOM.input.value.slice(0, -1); else { pigpenBuffer = pigpenBuffer.slice(0, -1); updatePigpenVisuals(pigpenBuffer, DOM.visInput); } };
 
-        // --- UI & INIT ---
         const updateUI = () => { const algo = DOM.algo.value; const isAsym = ['rsa', 'ecc'].includes(algo); const isPigpen = algo === 'pigpen'; const isSteg = algo === 'steganography'; 
             if(algo === 'caesar' || algo === 'rail_fence') DOM.keyHint.innerText = "Restricted: Numbers Only"; 
             else if(algo === 'vigenere') DOM.keyHint.innerText = "Restricted: Letters Only";
             else if(isSteg) DOM.keyHint.innerText = "Enter Cover Text (Public Message)";
             else DOM.keyHint.innerText = ""; 
-            
             DOM.stdKeySec.classList.toggle('hidden', isAsym || isPigpen); 
             DOM.asymKeySec.classList.toggle('hidden', !isAsym); 
             DOM.ppBoard.classList.toggle('hidden', !isPigpen); 
             DOM.aesEye.classList.toggle('hidden', algo !== 'aes'); 
             DOM.key.type = algo === 'aes' ? "password" : "text"; 
             if(algo==='rsa') DOM.genKey.innerText = "GENERATE RSA KEY PAIR"; if(algo==='ecc') DOM.genKey.innerText = "GENERATE ECC CURVE"; 
-            
             if(isPigpen) { if(mode === 'encrypt') { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.add('hidden'); DOM.visOutput.classList.remove('hidden'); DOM.visOutput.classList.add('flex'); } else { DOM.input.classList.add('hidden'); DOM.visInput.classList.remove('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } } else { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } 
         };
-        const swapMode = () => { gsap.to(DOM.card, { rotationY: 90, duration: 0.3, onComplete: () => { mode = mode === 'encrypt' ? 'decrypt' : 'encrypt'; DOM.input.value = ''; DOM.output.value = ''; pigpenBuffer = ''; DOM.visInput.innerHTML = ''; DOM.visOutput.innerHTML = ''; DOM.pub.value = ''; DOM.priv.value = ''; DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE"; DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; DOM.swapBtnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT"; DOM.processBtn.innerText = mode === 'encrypt' ? "ENCRYPT DATA" : "DECRYPT DATA"; DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; updateUI(); gsap.to(DOM.card, { rotationY: 0, duration: 0.4 }); }}); };
+        
+        const swapMode = () => { gsap.to(DOM.card, { rotationY: 90, duration: 0.3, onComplete: () => { mode = mode === 'encrypt' ? 'decrypt' : 'encrypt'; DOM.input.value = ''; DOM.output.value = ''; pigpenBuffer = ''; DOM.visInput.innerHTML = ''; DOM.visOutput.innerHTML = ''; DOM.pub.value = ''; DOM.priv.value = ''; DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE"; DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; DOM.swapBtnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT"; DOM.processBtn.innerText = mode === 'encrypt' ? "ENCRYPT DATA" : "DECRYPT DATA"; DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; updateUI(); gsap.to(DOM.card, { rotationY: 0, duration: 0.4 }); 
+            // Update Sidebar Tools State
+            document.querySelectorAll('.sidebar-input').forEach(inp => { inp.placeholder = mode==='encrypt' ? 'Type to encrypt...' : 'Type to decrypt...'; inp.value = ''; inp.nextElementSibling.innerText = 'OUTPUT...'; });
+        }}); };
         
         DOM.genKey.onclick = () => { const algo = DOM.algo.value; DOM.genKey.innerText = "COMPUTING..."; setTimeout(() => { if(algo === 'rsa') { const c = new JSEncrypt({default_key_size: 1024}); let pub = c.getPublicKey().replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''); let priv = c.getPrivateKey().replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, ''); DOM.pub.value = pub; DOM.priv.value = priv; DOM.genKey.innerText = "KEYS GENERATED"; } else { DOM.pub.value = "04" + Math.random().toString(16).substr(2) + " (Curve P-256)"; DOM.priv.value = Math.random().toString(16).substr(2); DOM.genKey.innerText = "CURVE GENERATED"; } }, 200); };
         const runSlotAnimation = (finalText) => { return new Promise(resolve => { DOM.output.value = ''; const steps = 30; let i = 0; const interval = setInterval(() => { const progress = i / steps; DOM.output.value = finalText.split('').map((c, idx) => idx < finalText.length * progress ? c : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*36)]).join(''); i++; if(i>steps){ clearInterval(interval); DOM.output.value=finalText; resolve(); } }, 40); }); };
         
         DOM.processBtn.onclick = async () => { const algo = DOM.algo.value; const txt = DOM.input.value; if(algo === 'pigpen') { if(mode === 'encrypt') updatePigpenVisuals(txt, DOM.visOutput); else DOM.output.value = pigpenBuffer; return; } const res = Algorithms[algo](txt, DOM.key.value, mode); await runSlotAnimation(res); };
-        
         document.getElementById('copyBtn').onclick = (e) => { navigator.clipboard.writeText(DOM.output.value); const btn = e.currentTarget; const originalHTML = btn.innerHTML; btn.innerHTML = `<span class="text-xs">✅</span> <span>COPIED!</span>`; btn.classList.add('bg-[var(--primary)]', 'text-black'); setTimeout(() => { btn.innerHTML = originalHTML; btn.classList.remove('bg-[var(--primary)]', 'text-black'); }, 2000); };
+
+        // SIDEBAR MINI-TOOLS LOGIC
+        document.querySelectorAll('.sidebar-input').forEach(input => {
+            input.addEventListener('input', function() {
+                const algo = this.dataset.algo;
+                const key = this.dataset.key || "";
+                try {
+                    const result = Algorithms[algo](this.value, key, mode);
+                    this.nextElementSibling.innerText = result || "waiting...";
+                } catch(e) { this.nextElementSibling.innerText = "Error: Invalid Input"; }
+            });
+        });
 
         const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
         const toggleMenu = (s) => { if(s) { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); setTimeout(()=>ov.classList.remove('opacity-0'),10); } else { sb.classList.add('-translate-x-full'); ov.classList.add('opacity-0'); setTimeout(()=>ov.classList.add('hidden'),300); } };
