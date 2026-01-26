@@ -150,11 +150,80 @@
             <details class="group bg-white/5 border border-white/5 rounded">
                 <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">1. ATBASH CIPHER</summary>
                 <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>A monoalphabetic substitution cipher. Maps alphabet to reverse.</p></div>
-                    <div class="viz-box text-center text-[var(--secondary)]">PLAIN: A B C...<br>CIPHER: Z Y X...</div>
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Reverses the alphabet (A↔Z, B↔Y).</p></div>
+                    <div class="viz-box text-center text-[var(--accent)]">PLAIN: ABC...<br>CIPHER: ZYX...</div>
                 </div>
             </details>
-            <div class="p-4 text-xs text-gray-500 font-mono text-center">... MORE MODULES AVAILABLE IN FULL VERSION ...</div>
+            
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">2. CAESAR CIPHER</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Shifts letters by a fixed numeric key.</p></div>
+                    <div class="viz-box text-center">[A] + Key(1) → [B]</div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">3. PLAYFAIR CIPHER</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Encrypts digraphs (pairs) using a 5x5 grid.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">4. VIGENÈRE CIPHER</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Polyalphabetic substitution using a keyword.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">5. RAIL FENCE</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Writes text in a zig-zag pattern across 'rails'.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">6. PIGPEN CIPHER</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Replaces letters with geometric fragments.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">7. AES-256 (MODERN)</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Standard</div><p>Symmetric block cipher. The global standard.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">8. RSA (ASYMMETRIC)</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Uses Public/Private keys based on prime numbers.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">9. ECC (ELLIPTIC CURVE)</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">Mechanism</div><p>Next-gen crypto using curve mathematics.</p></div>
+                </div>
+            </details>
+
+            <details class="group bg-white/5 border border-white/5 rounded border-l-4 border-l-[var(--accent)]">
+                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--accent)] font-bold">10. STEGANOGRAPHY</summary>
+                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
+                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>Hiding secrets in plain sight.</p></div>
+                    <p class="text-sm mt-2 text-gray-400">Uses invisible Zero-Width Characters to hide a "Payload" text inside a "Cover" message.</p>
+                    <div class="viz-box text-center text-[var(--primary)] mt-2">
+                        Cover: "Hello World"<br>
+                        Payload: "Secret"<br>
+                        Result: "H​e​​l​​l​​o​​ ​W​​o​​r​​l​​d"
+                    </div>
+                </div>
+            </details>
         </div>
     </aside>
 
@@ -188,12 +257,13 @@
                         <select id="algoSelect" title="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
                             <optgroup label="Classical"> <option value="caesar">Caesar Cipher</option> <option value="atbash">Atbash Cipher</option> <option value="playfair">Playfair Cipher</option> <option value="rail_fence">Rail Fence</option> <option value="vigenere">Vigenère Cipher</option> <option value="pigpen">Pigpen (Visual)</option> </optgroup>
                             <optgroup label="Modern"> <option value="aes">AES-256</option> <option value="rsa">RSA (Asymmetric)</option> <option value="ecc">ECC (Elliptic Curve)</option> </optgroup>
+                            <optgroup label="Covert"> <option value="steganography">Steganography (Invisible)</option> </optgroup>
                         </select>
                     </div>
 
                     <div id="stdKeySection">
-                        <label for="keyInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex justify-between font-mono"> <span>Secret Key / Shift</span> <button id="aesToggle" class="hidden hover:text-[var(--primary)]">👁️</button> </label>
-                        <input id="keyInput" type="text" value="3" title="Encryption Key" placeholder="Enter Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none">
+                        <label for="keyInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex justify-between font-mono"> <span>Secret Key / Shift / Cover Text</span> <button id="aesToggle" class="hidden hover:text-[var(--primary)]">👁️</button> </label>
+                        <input id="keyInput" type="text" value="3" title="Encryption Key" placeholder="Enter Key or Cover Text" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none">
                         <p id="keyHint" class="text-[9px] text-gray-500 mt-1 italic"></p>
                     </div>
 
@@ -279,7 +349,6 @@
                 setTimeout(() => vaultModal.classList.add('hidden'), 300);
             }
         }
-        // vaultBtn.onclick = () => toggleVault(true); // Handled inline now
 
         // --- NEW: UPDATE FILE NAME ON SELECT ---
         function updateFileName(input) {
@@ -377,7 +446,27 @@
             aes: (t, k, m) => { try { return m === 'encrypt' ? CryptoJS.AES.encrypt(t, k).toString() : CryptoJS.AES.decrypt(t, k).toString(CryptoJS.enc.Utf8); } catch(e) { return "INVALID KEY OR DATA"; } },
             rsa: (t, _, m) => { const crypt = new JSEncrypt(); try { let pub = DOM.pub.value, priv = DOM.priv.value; if(pub && !pub.includes('BEGIN')) pub = `\n${pub}\n`; if(priv && !priv.includes('BEGIN')) priv = `\n${priv}\n`; if(m === 'encrypt') { crypt.setPublicKey(pub); return crypt.encrypt(t) || "Fail"; } else { crypt.setPrivateKey(priv); return crypt.decrypt(t) || "Fail"; } } catch(e) { return "RSA KEY ERROR"; } },
             ecc: (t, _, m) => { if(m === 'encrypt') return `[ECC]${btoa(t.split('').reverse().join(''))}`; else { try { return atob(t.replace('[ECC]','')).split('').reverse().join(''); } catch(e) { return "ECC ERROR"; } } },
-            pigpen: (t) => t
+            pigpen: (t) => t,
+            // --- NEW: Steganography (Zero Width) ---
+            steganography: (t, k, m) => {
+                const zeroPad = n => '00000000'.slice(String(n).length) + n;
+                const textToBin = text => text.split('').map(c => zeroPad(c.charCodeAt(0).toString(2))).join(' ');
+                const binToText = bin => bin.split(' ').map(b => String.fromCharCode(parseInt(b, 2))).join('');
+                
+                if (m === 'encrypt') {
+                    // Hide 't' (secret) inside 'k' (cover)
+                    const cover = k || "System Status: Normal. All systems operational.";
+                    const binary = textToBin(t);
+                    const hidden = binary.split('').map(b => b === '1' ? '\u200C' : (b === '0' ? '\u200B' : '\u2060')).join('');
+                    return cover + hidden;
+                } else {
+                    // Extract hidden from 't'
+                    const hidden = t.split('').filter(c => ['\u200B', '\u200C', '\u2060'].includes(c)).join('');
+                    if(!hidden) return "NO HIDDEN DATA FOUND";
+                    const bin = hidden.replace(/\u200B/g, '0').replace(/\u200C/g, '1').replace(/\u2060/g, ' ');
+                    return binToText(bin);
+                }
+            }
         };
 
         // --- PIGPEN RENDERER ---
@@ -387,7 +476,28 @@
         DOM.ppDelete.onclick = () => { if(mode === 'encrypt') DOM.input.value = DOM.input.value.slice(0, -1); else { pigpenBuffer = pigpenBuffer.slice(0, -1); updatePigpenVisuals(pigpenBuffer, DOM.visInput); } };
 
         // --- UI & INIT ---
-        const updateUI = () => { const algo = DOM.algo.value; const isAsym = ['rsa', 'ecc'].includes(algo); const isPigpen = algo === 'pigpen'; if(algo === 'caesar' || algo === 'rail_fence') DOM.keyHint.innerText = "Restricted: Numbers Only"; else if(algo === 'vigenere') DOM.keyHint.innerText = "Restricted: Letters Only"; else DOM.keyHint.innerText = ""; DOM.stdKeySec.classList.toggle('hidden', isAsym || isPigpen); DOM.asymKeySec.classList.toggle('hidden', !isAsym); DOM.ppBoard.classList.toggle('hidden', !isPigpen); DOM.aesEye.classList.toggle('hidden', algo !== 'aes'); DOM.key.type = algo === 'aes' ? "password" : "text"; if(algo==='rsa') DOM.genKey.innerText = "GENERATE RSA KEY PAIR"; if(algo==='ecc') DOM.genKey.innerText = "GENERATE ECC CURVE"; if(isPigpen) { if(mode === 'encrypt') { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.add('hidden'); DOM.visOutput.classList.remove('hidden'); DOM.visOutput.classList.add('flex'); } else { DOM.input.classList.add('hidden'); DOM.visInput.classList.remove('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } } else { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } };
+        const updateUI = () => { const algo = DOM.algo.value; const isAsym = ['rsa', 'ecc'].includes(algo); const isPigpen = algo === 'pigpen'; const isSteg = algo === 'steganography'; 
+            if(algo === 'caesar' || algo === 'rail_fence') DOM.keyHint.innerText = "Restricted: Numbers Only"; 
+            else if(algo === 'vigenere') DOM.keyHint.innerText = "Restricted: Letters Only";
+            else if(isSteg) DOM.keyHint.innerText = "Enter Cover Text (Public Message)";
+            else DOM.keyHint.innerText = ""; 
+            
+            DOM.stdKeySec.classList.toggle('hidden', isAsym || isPigpen); 
+            DOM.asymKeySec.classList.toggle('hidden', !isAsym); 
+            DOM.ppBoard.classList.toggle('hidden', !isPigpen); 
+            DOM.aesEye.classList.toggle('hidden', algo !== 'aes'); 
+            DOM.key.type = algo === 'aes' ? "password" : "text"; 
+            
+            if(algo==='rsa') DOM.genKey.innerText = "GENERATE RSA KEY PAIR"; 
+            if(algo==='ecc') DOM.genKey.innerText = "GENERATE ECC CURVE"; 
+            
+            if(isPigpen) { 
+                if(mode === 'encrypt') { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.add('hidden'); DOM.visOutput.classList.remove('hidden'); DOM.visOutput.classList.add('flex'); } 
+                else { DOM.input.classList.add('hidden'); DOM.visInput.classList.remove('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } 
+            } else { 
+                DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); 
+            } 
+        };
         const swapMode = () => { gsap.to(DOM.card, { rotationY: 90, duration: 0.3, onComplete: () => { mode = mode === 'encrypt' ? 'decrypt' : 'encrypt'; DOM.input.value = ''; DOM.output.value = ''; pigpenBuffer = ''; DOM.visInput.innerHTML = ''; DOM.visOutput.innerHTML = ''; DOM.pub.value = ''; DOM.priv.value = ''; DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE"; DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; DOM.swapBtnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT"; DOM.processBtn.innerText = mode === 'encrypt' ? "ENCRYPT DATA" : "DECRYPT DATA"; DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; updateUI(); gsap.to(DOM.card, { rotationY: 0, duration: 0.4 }); }}); };
         
         DOM.genKey.onclick = () => { const algo = DOM.algo.value; DOM.genKey.innerText = "COMPUTING..."; setTimeout(() => { if(algo === 'rsa') { const c = new JSEncrypt({default_key_size: 1024}); let pub = c.getPublicKey().replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''); let priv = c.getPrivateKey().replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, ''); DOM.pub.value = pub; DOM.priv.value = priv; DOM.genKey.innerText = "KEYS GENERATED"; } else { DOM.pub.value = "04" + Math.random().toString(16).substr(2) + " (Curve P-256)"; DOM.priv.value = Math.random().toString(16).substr(2); DOM.genKey.innerText = "CURVE GENERATED"; } }, 200); };
