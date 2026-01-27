@@ -212,6 +212,31 @@
             stegoCanvas: document.getElementById('stegoCanvas')
         };
 
+        // --- ANIMATION ENGINE ---
+        // Generates the "Hacker/Slot" text resolve effect
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+        function animateText(element, finalState) {
+            let iterations = 0;
+            const interval = setInterval(() => {
+                element.innerText = finalState
+                    .split("")
+                    .map((letter, index) => {
+                        if(index < iterations) {
+                            return finalState[index];
+                        }
+                        return letters[Math.floor(Math.random() * 26)];
+                    })
+                    .join("");
+                
+                if(iterations >= finalState.length) { 
+                    clearInterval(interval);
+                    element.innerText = finalState;
+                }
+                
+                iterations += 1 / 2; // Control speed
+            }, 30);
+        }
+
         // --- NAVIGATION ---
         function showPage(page) {
             document.getElementById('terminalPage').classList.toggle('hidden', page !== 'terminal');
@@ -283,8 +308,10 @@
         DOM.processBtn.onclick = () => {
             const algo = DOM.algo.value;
             
+            // 1. IMAGE STEGANOGRAPHY
             if (algo === 'steganography') {
                 if (mode === 'encrypt') {
+                    // ENCODE
                     if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return alert("Image and Secret Text required!");
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -294,11 +321,15 @@
                             DOM.stegoCanvas.width = img.width; DOM.stegoCanvas.height = img.height;
                             ctx.drawImage(img, 0, 0);
                             const imgData = ctx.getImageData(0,0,img.width,img.height);
+                            
+                            // LSB Encode
                             const msg = DOM.stegoPayload.value;
                             let bin = ""; 
                             for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
-                            bin += "00000000";
+                            bin += "00000000"; // Terminator
+                            
                             if(bin.length > imgData.data.length/4) return alert("Message too long for this image.");
+                            
                             let dIdx = 0;
                             for(let i=0; i<bin.length; i++) {
                                 if(dIdx%4===3) dIdx++;
@@ -306,14 +337,17 @@
                                 dIdx++;
                             }
                             ctx.putImageData(imgData, 0, 0);
+                            
+                            // Download
                             const link = document.createElement('a');
                             link.download = 'stego_secret.png';
                             link.href = DOM.stegoCanvas.toDataURL();
                             link.click();
-                            DOM.out.innerText = "SUCCESS: Image downloaded.";
+                            animateText(DOM.out, "SUCCESS: Image downloaded.");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 } else {
+                    // DECODE
                     if(!DOM.stegoFile.files[0]) return alert("Select Encoded Image");
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -323,6 +357,7 @@
                             DOM.stegoCanvas.width = img.width; DOM.stegoCanvas.height = img.height;
                             ctx.drawImage(img, 0, 0);
                             const data = ctx.getImageData(0,0,img.width,img.height).data;
+                            
                             let bin = "", res = "";
                             for(let i=0; i<data.length; i++) {
                                 if(i%4===3) continue;
@@ -333,13 +368,14 @@
                                     bin = "";
                                 }
                             }
-                            DOM.out.innerText = "DECODED SECRET:\n" + res;
+                            animateText(DOM.out, "DECODED SECRET:\n" + res);
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 }
                 return;
             }
 
+            // 2. TEXT ALGORITHMS
             const txt = DOM.mainIn.value;
             const key = DOM.keyIn.value;
             let res = "";
@@ -361,6 +397,7 @@
                 }
             }
             else {
+                // Classical Ciphers
                 if (!txt) return alert("Enter Text");
                 if (algo === 'atbash') {
                     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -383,7 +420,8 @@
                 else if (algo === 'playfair') res = "Playfair Grid Generated";
             }
             
-            DOM.out.innerText = res;
+            // Trigger Animation
+            animateText(DOM.out, res);
         };
 
         // --- VAULT ---
