@@ -64,7 +64,7 @@
             <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20 shrink-0">
                 <div>
                     <h2 id="modeTitle" class="text-3xl font-bold tracking-widest orbitron text-[var(--primary)]">ENCRYPTION MODE</h2>
-                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY</p>
+                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY // AUTO-KEY MEMORY: <span id="memoryStatus" class="text-red-500 font-bold">OFFLINE</span></p>
                 </div>
                 <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
                     <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div><div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div></div>
@@ -147,6 +147,7 @@
                 <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
                 <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
             </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                 <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
                 <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
@@ -192,8 +193,11 @@
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- GLOBAL STATE ---
+        // --- GLOBAL STATE & MEMORY ---
         let mode = 'encrypt';
+        // Auto-Key Memory
+        const keyCache = { rsa: null, aes: null };
+
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -211,7 +215,8 @@
             stegoFile: document.getElementById('stegoFile'),
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
-            stegoCanvas: document.getElementById('stegoCanvas')
+            stegoCanvas: document.getElementById('stegoCanvas'),
+            memStatus: document.getElementById('memoryStatus')
         };
 
         // --- ANIMATION ENGINE ---
@@ -222,9 +227,7 @@
                 element.innerText = finalState
                     .split("")
                     .map((letter, index) => {
-                        if(index < iterations) {
-                            return finalState[index];
-                        }
+                        if(index < iterations) return finalState[index];
                         return letters[Math.floor(Math.random() * 26)];
                     })
                     .join("");
@@ -233,23 +236,32 @@
                     element.innerText = finalState;
                 }
                 iterations += 1;
-            }, 5); // Fast slot animation
+            }, 5);
         }
 
         // --- NAVIGATION ---
         function showPage(page) {
             document.getElementById('terminalPage').classList.toggle('hidden', page !== 'terminal');
             document.getElementById('libraryPage').classList.toggle('hidden', page !== 'library');
-            
             const termBtn = document.getElementById('termBtn');
             const libBtn = document.getElementById('libBtn');
-            
             if(page === 'terminal') {
                 termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all";
                 libBtn.className = "flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
             } else {
                 libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full transition-all";
                 termBtn.className = "flex items-center gap-2 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
+            }
+        }
+
+        // --- UPDATE MEMORY UI ---
+        function updateMemoryStatus() {
+            if (keyCache.rsa || keyCache.aes) {
+                DOM.memStatus.innerText = "ACTIVE";
+                DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
+            } else {
+                DOM.memStatus.innerText = "OFFLINE";
+                DOM.memStatus.className = "text-red-500 font-bold";
             }
         }
 
@@ -275,12 +287,19 @@
                     }
                 }
                 
-                // RSA Logic (Auto-clear output, manage key inputs)
+                // RSA Logic: Update Placeholder for Auto-Decryption
                 if (DOM.algo.value === 'rsa') {
-                    // Update placeholders based on mode
-                    DOM.rsaKeyIn.placeholder = mode === 'encrypt' 
-                        ? "Paste Public Key... (Leave empty to Auto-Generate)" 
-                        : "Paste Private Key to Decrypt...";
+                    if (mode === 'decrypt' && keyCache.rsa) {
+                        DOM.rsaKeyIn.placeholder = "[ACCESSING CACHED PRIVATE KEY...] (Leave empty to use)";
+                    } else {
+                        DOM.rsaKeyIn.placeholder = mode === 'encrypt' 
+                            ? "Paste Public Key... (Leave empty to Auto-Generate)" 
+                            : "Paste Private Key to Decrypt...";
+                    }
+                }
+                // AES Logic: Update Placeholder
+                if (DOM.algo.value === 'aes' && mode === 'decrypt' && keyCache.aes) {
+                    DOM.keyIn.placeholder = "[ACCESSING CACHED KEY...] (Leave empty to use)";
                 }
 
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
@@ -297,11 +316,10 @@
             DOM.stdGroup.classList.toggle('hidden', isStego);
             DOM.stegoGroup.classList.toggle('hidden', !isStego);
             
-            // Key Input Management
-            DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA)); // Hide standard key for stego or ECC
+            DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA));
             if (isRSA) {
-                DOM.keyIn.classList.add('hidden'); // Hide single line key
-                DOM.rsaKeyIn.classList.remove('hidden'); // Show multiline key
+                DOM.keyIn.classList.add('hidden');
+                DOM.rsaKeyIn.classList.remove('hidden');
             } else {
                 DOM.keyIn.classList.remove('hidden');
                 DOM.rsaKeyIn.classList.add('hidden');
@@ -389,48 +407,73 @@
 
             // 2. TEXT ALGORITHMS
             const txt = DOM.mainIn.value;
-            const key = DOM.keyIn.value;
+            let key = DOM.keyIn.value;
             let res = "";
 
             if (algo === 'rsa') {
-                const encryptor = new JSEncrypt({default_key_size: 512}); // Fast for demo
+                const encryptor = new JSEncrypt({default_key_size: 512});
                 const rsaKeyVal = DOM.rsaKeyIn.value.trim();
 
                 if (mode === 'encrypt') {
-                    // Encrypt
+                    // ENCRYPT
                     let pubKey = rsaKeyVal;
                     let privKeyMsg = "";
                     
                     if (!pubKey) {
-                        // Auto-Gen if empty
+                        // AUTO-GENERATE & CACHE
                         pubKey = encryptor.getPublicKey();
                         const privKey = encryptor.getPrivateKey();
-                        privKeyMsg = "\n\n[PRIVATE KEY - SAVE TO DECRYPT]:\n" + privKey;
+                        keyCache.rsa = privKey; // Save to Memory
+                        updateMemoryStatus();
+                        privKeyMsg = "\n\n[PRIVATE KEY SAVED TO MEMORY]";
                         encryptor.setPublicKey(pubKey);
                     } else {
                         encryptor.setPublicKey(pubKey);
                     }
 
                     const encrypted = encryptor.encrypt(txt);
-                    if (!encrypted) res = "ENCRYPTION FAILED. (Text too long for key size?)";
+                    if (!encrypted) res = "ENCRYPTION FAILED.";
                     else res = "CIPHERTEXT:\n" + encrypted + privKeyMsg;
                 } else {
-                    // Decrypt
-                    if (!rsaKeyVal) return alert("Private Key required for decryption!");
-                    encryptor.setPrivateKey(rsaKeyVal);
+                    // DECRYPT
+                    let decryptKey = rsaKeyVal;
+                    
+                    // AUTO-DECRYPT CHECK
+                    if (!decryptKey && keyCache.rsa) {
+                        decryptKey = keyCache.rsa;
+                        res = "// SUCCESS: Decrypted using cached Private Key.\n";
+                    }
+                    
+                    if (!decryptKey) return alert("Private Key required for decryption!");
+                    encryptor.setPrivateKey(decryptKey);
                     const decrypted = encryptor.decrypt(txt);
-                    if (!decrypted) res = "DECRYPTION FAILED. (Invalid Key?)";
-                    else res = "DECRYPTED PLAINTEXT:\n" + decrypted;
+                    if (!decrypted) res = "DECRYPTION FAILED.";
+                    else res += "DECRYPTED PLAINTEXT:\n" + decrypted;
                 }
             }
             else if (algo === 'ecc') {
                 res = "ECC CURVE: secp256k1\nPRIVATE: " + Math.random().toString(16).substr(2);
             }
             else if (algo === 'aes') {
-                if (!txt || !key) return alert("Text and Key required");
-                if (mode === 'encrypt') res = CryptoJS.AES.encrypt(txt, key).toString();
-                else {
-                    try { res = CryptoJS.AES.decrypt(txt, key).toString(CryptoJS.enc.Utf8) || "DECRYPTION FAILED"; } 
+                // AES Caching Logic
+                if (mode === 'encrypt') {
+                    if (!txt || !key) return alert("Text and Key required");
+                    keyCache.aes = key; // Cache it
+                    updateMemoryStatus();
+                    res = CryptoJS.AES.encrypt(txt, key).toString();
+                } else {
+                    // Auto-Decrypt AES
+                    if (!key && keyCache.aes) {
+                        key = keyCache.aes;
+                        res = "// Using cached AES Key...\n";
+                    } else if (!key) {
+                        return alert("Key required");
+                    }
+                    
+                    try { 
+                        let dec = CryptoJS.AES.decrypt(txt, key).toString(CryptoJS.enc.Utf8);
+                        res += dec || "DECRYPTION FAILED"; 
+                    } 
                     catch(e) { res = "INVALID KEY/TEXT"; }
                 }
             }
@@ -451,14 +494,14 @@
                     });
                 }
                 else if (algo === 'rail_fence') {
-                    res = "Rail Fence Output (Simulated for Demo): " + txt.split('').reverse().join('');
+                    res = "Rail Fence Output (Simulated): " + txt.split('').reverse().join('');
                 }
                 else if (algo === 'pigpen') res = "Pigpen Symbols Generated.";
                 else if (algo === 'vigenere') res = "Vigenere Output (Simulated)";
                 else if (algo === 'playfair') res = "Playfair Grid Generated";
             }
             
-            // Trigger Animation
+            // Trigger Animation if not stego
             if(algo !== 'steganography') animateText(DOM.out, res);
         };
 
