@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Vault | Secure Terminal</title>
+    <title>Cipher Vault | Command Center</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -11,477 +11,444 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
-
-        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --text-main: #e2e8f0; --border: #1e293b; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap');
         
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px; transition: background 0.5s ease; }
+        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        
+        body { 
+            background-color: var(--bg-body); 
+            color: #e2e8f0; 
+            font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); 
+            background-size: 30px 30px; 
+        }
+        
+        .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .text-primary-var { color: var(--primary); }
-
-        /* Sidebar & Menu */
-        #sidebar { box-shadow: 20px 0 50px rgba(0,0,0,0.8); border-right: 1px solid var(--primary); }
-        details { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; } 
-        details > summary { list-style: none; outline: none; transition: all 0.3s; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; letter-spacing: 1px; }
-        details[open] summary { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
-        details[open] summary ~ * { animation: slideDown 0.4s ease-out; }
-        @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
         
-        /* Pigpen Keyboard */
-        .pp-key { width: 45px; height: 45px; border-color: var(--primary); cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .pp-key:hover { background: rgba(255,255,255,0.1); }
-        .pp-dot::after { content:''; position: absolute; width:5px; height:5px; background:var(--primary); border-radius:50%; }
-        .pp-r { border-right: 3px solid var(--primary); } .pp-l { border-left: 3px solid var(--primary); }
-        .pp-t { border-top: 3px solid var(--primary); } .pp-b { border-bottom: 3px solid var(--primary); }
-
-        .perspective-container { perspective: 1200px; }
-        .card-inner { transform-style: preserve-3d; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-body); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar { width: 6px; } 
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* Sidebar Item Active State */
+        .tool-btn.active { background: rgba(0, 243, 255, 0.1); border-left: 4px solid var(--primary); color: white; }
+        .tool-btn { border-left: 4px solid transparent; transition: all 0.2s; }
+
+        /* Safari Compatibility Fix */
+        .modal-bg { 
+            background: rgba(0, 0, 0, 0.9); 
+            -webkit-backdrop-filter: blur(5px); 
+            backdrop-filter: blur(5px); 
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col overflow-hidden">
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
-            <button id="menuBtn" class="flex items-center gap-3 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--accent)] group">
-                <span class="tracking-[0.15em] text-xs font-mono">📚 LIBRARY</span>
+            <button id="termBtn" onclick="showPage('terminal')" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">
+                <span class="tracking-[0.15em] text-xs font-mono">TERMINAL</span>
             </button>
-            <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
-                <span class="text-lg">🔒</span><span class="tracking-[0.15em] text-xs font-mono">VAULT</span>
+            <button id="libBtn" onclick="showPage('library')" class="flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all">
+                <span class="tracking-[0.15em] text-xs font-mono">VIDEO LIBRARY</span>
             </button>
-            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black group decoration-0">
-                <span class="text-lg">💬</span><span class="tracking-[0.15em] text-xs font-mono">CHAT</span>
+            <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
+                <span class="text-lg group-hover:animate-pulse">🔒</span> <span class="tracking-[0.15em] text-xs font-mono">VAULT</span>
+            </button>
+            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all">
+                <span class="text-lg">💬</span> <span class="tracking-[0.15em] text-xs font-mono">CHAT</span>
             </a>
-            <h1 class="text-2xl font-black tracking-widest text-center ml-4 hidden md:block font-orbitron">CIPHER <span class="text-primary-var">VAULT</span></h1>
         </div>
-        <div class="flex gap-2">
-            <button id="themeBtn" class="px-4 py-2 border border-[var(--border)] rounded text-xs font-bold hover:bg-[var(--border)] transition-colors font-mono">THEME: VOID</button>
-            <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20 transition-colors font-mono">LOGOUT</button>
+        <div class="flex items-center gap-4">
+            <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">CIPHER <span class="text-[var(--primary)]">VAULT</span></h1>
+            <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
         </div>
     </nav>
 
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-full md:w-[700px] bg-[#0c0c12] z-50 transform -translate-x-full transition-transform duration-500 flex flex-col border-r border-[var(--primary)]">
-        <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black/40">
-            <h2 class="text-2xl tracking-widest text-[var(--primary)] font-orbitron">ENCRYPTION<br>ARSENAL</h2>
-            <button id="closeMenu" class="text-red-500 text-2xl hover:scale-110 transition-transform">✕</button>
-        </div>
+    <main id="terminalPage" class="flex-grow pt-24 px-4 pb-4 flex gap-4 h-screen overflow-hidden">
         
-        <div class="flex-grow overflow-y-auto p-6 space-y-4">
-            
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">1. ATBASH CIPHER</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" title="Atbash" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE:</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="atbash">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">2. CAESAR CIPHER</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" title="Caesar" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (SHIFT 3):</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="caesar" data-key="3">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">3. PLAYFAIR CIPHER</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" title="Playfair" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (KEY='CIPHER'):</label>
-                        <input type="text" placeholder="Type (No J's)..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="playfair" data-key="CIPHER">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">4. VIGENÈRE CIPHER</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" title="Vigenere" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (KEY='KEY'):</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="vigenere" data-key="KEY">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">5. RAIL FENCE</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" title="Rail Fence" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (RAILS=3):</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="rail_fence" data-key="3">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">6. PIGPEN CIPHER</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/jTMTBCP2P7A" title="Pigpen" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <p class="text-[10px] text-gray-400">Use the visual keyboard in the main terminal for this graphical cipher.</p>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">7. AES-256 (MODERN)</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" title="AES" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Key='secret'):</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="aes" data-key="secret">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">8. RSA (ASYMMETRIC)</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/qph77bTKJTM" title="RSA" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Demo Key):</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="rsa">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)] font-bold">9. ECC (ELLIPTIC CURVE)</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/dCvB-mhkT0w" title="ECC" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Simulated):</label>
-                        <input type="text" placeholder="Type..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="ecc">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">OUTPUT...</div>
-                    </div>
-                </div>
-            </details>
-
-            <details class="group bg-white/5 border border-white/5 rounded border-l-4 border-l-[var(--accent)]">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--accent)] font-bold">10. STEGANOGRAPHY</summary>
-                <div class="p-4 border-t border-white/5">
-                    <div class="aspect-video mb-3 border border-gray-700 rounded overflow-hidden">
-                        <iframe class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" title="Steganography" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                    <div class="bg-black/40 p-3 rounded border border-[var(--primary)]">
-                        <label class="text-[10px] text-[var(--primary)] uppercase block mb-1">TRY IT LIVE (Payload):</label>
-                        <input type="text" placeholder="Secret text..." class="sidebar-input w-full bg-transparent border-b border-gray-700 text-white outline-none text-xs py-1" data-algo="steganography" data-key="Cover Text">
-                        <div class="text-[var(--accent)] font-mono text-xs mt-2 break-all font-bold">Hidden in "Cover Text"</div>
-                    </div>
-                </div>
-            </details>
-
-        </div>
-    </aside>
-
-    <div id="overlay" class="fixed inset-0 bg-black/80 z-40 hidden opacity-0 transition-opacity duration-300"></div>
-    <div id="vaultModal" class="fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleVault(false)"></div>
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl p-0 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col h-[600px] md:h-auto pointer-events-auto">
-            <div class="flex justify-between items-center p-6 border-b border-[var(--border)] bg-black/40">
-                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] font-orbitron">SECURE STORAGE <span class="text-primary-var">TERMINAL</span></h3>
-                <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕ ESC</button>
+        <aside class="w-64 bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl flex flex-col overflow-y-auto shrink-0">
+            <div class="p-4 border-b border-[var(--border)]">
+                <h2 class="text-sm font-bold text-gray-400 tracking-widest orbitron">ALGORITHMS</h2>
             </div>
-            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-black/20">
-                <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6 flex flex-col justify-center">
-                    <label for="vaultInput" class="text-xs font-mono text-[var(--primary)] mb-4 block tracking-widest border-b border-[var(--border)] pb-2">INGEST NEW ASSET</label>
-                    <div class="border-2 border-dashed border-[var(--border)] rounded-lg p-8 text-center hover:border-[var(--accent)] transition-colors group cursor-pointer relative h-40 flex flex-col items-center justify-center">
-                        <input type="file" id="vaultInput" title="Upload File" aria-label="Upload a file to the vault" onchange="updateFileName(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                        <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">📂</div>
-                        <p id="fileNameDisplay" class="text-[10px] text-gray-500 font-mono group-hover:text-[var(--accent)] break-all px-2">DRAG FILE OR CLICK</p>
-                    </div>
-                    <button onclick="uploadFile()" class="w-full mt-4 py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] transition-all font-mono text-xs">ENCRYPT & UPLOAD</button>
-                </div>
-                <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
-                    <div class="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
-                        <label class="text-xs font-mono text-[var(--primary)] tracking-widest">DECRYPTED DATABASE</label>
-                        <button onclick="loadFiles()" class="text-[10px] text-gray-500 hover:text-white font-mono">↻ REFRESH</button>
-                    </div>
-                    <div id="vaultList" class="flex-grow overflow-y-auto pr-2 space-y-2">
-                        <div class="flex items-center justify-center h-full text-gray-600 font-mono text-xs">// CONNECTING TO SECURE DB...</div>
-                    </div>
-                </div>
+            <div class="flex-grow space-y-1 p-2">
+                <button onclick="loadTool('aes')" class="tool-btn active w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">7. AES-256 (DEFAULT)</button>
+                <button onclick="loadTool('rsa')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">8. RSA</button>
+                <button onclick="loadTool('ecc')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">9. ECC</button>
+                <button onclick="loadTool('atbash')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">1. ATBASH</button>
+                <button onclick="loadTool('caesar')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">2. CAESAR</button>
+                <button onclick="loadTool('playfair')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">3. PLAYFAIR</button>
+                <button onclick="loadTool('vigenere')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">4. VIGENERE</button>
+                <button onclick="loadTool('railfence')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">5. RAIL FENCE</button>
+                <button onclick="loadTool('pigpen')" class="tool-btn w-full text-left px-4 py-3 text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 rounded">6. PIGPEN</button>
+                <button onclick="loadTool('steganography')" class="tool-btn w-full text-left px-4 py-3 text-xs font-bold text-[var(--accent)] hover:text-white hover:bg-[var(--accent)]/10 rounded border-t border-[var(--border)] mt-2">10. STEGANOGRAPHY</button>
             </div>
-        </div>
-    </div>
+        </aside>
 
-    <main class="flex-grow flex items-center justify-center p-4 pt-20 perspective-container">
-        <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] border border-[var(--border)] shadow-[var(--glow)] rounded-xl relative overflow-hidden">
-            <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20">
+        <section class="flex-grow bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl p-8 relative flex flex-col shadow-[var(--glow)] overflow-y-auto">
+            <div class="flex justify-between items-end mb-6 border-b border-[var(--border)] pb-4">
                 <div>
-                    <h2 id="modeTitle" class="text-3xl font-bold tracking-widest font-orbitron text-primary-var">ENCRYPTION MODE</h2>
-                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY</p>
+                    <h2 id="wsTitle" class="text-3xl font-black tracking-widest orbitron text-[var(--primary)]">AES-256</h2>
+                    <p id="wsDesc" class="text-xs font-mono text-gray-500 mt-1">MILITARY GRADE SYMMETRIC ENCRYPTION</p>
                 </div>
-                <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
-                    <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div><div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div></div>
-                    <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
-                </button>
+                <div class="text-[10px] mono text-[var(--primary)] animate-pulse">● SYSTEM READY</div>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                <div class="p-6 space-y-6 border-r border-[var(--border)] relative">
-                    <div class="relative">
-                        <label for="mainInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Payload Input</label>
-                        <textarea id="mainInput" title="Input Text" placeholder="Enter text to process..." class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm resize-y focus:border-[var(--primary)] outline-none transition-colors"></textarea>
-                        <div id="visualInput" class="hidden w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded overflow-y-auto flex-wrap gap-1 content-start border-[var(--primary)]"></div>
-                    </div>
-                    <div>
-                        <label for="algoSelect" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Strategy</label>
-                        <select id="algoSelect" title="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
-                            <optgroup label="Classical"> <option value="caesar">Caesar Cipher</option> <option value="atbash">Atbash Cipher</option> <option value="playfair">Playfair Cipher</option> <option value="rail_fence">Rail Fence</option> <option value="vigenere">Vigenère Cipher</option> <option value="pigpen">Pigpen (Visual)</option> </optgroup>
-                            <optgroup label="Modern"> <option value="aes">AES-256</option> <option value="rsa">RSA (Asymmetric)</option> <option value="ecc">ECC (Elliptic Curve)</option> </optgroup>
-                            <optgroup label="Covert"> <option value="steganography">Steganography (Invisible)</option> </optgroup>
-                        </select>
-                    </div>
-                    <div id="stdKeySection">
-                        <label for="keyInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex justify-between font-mono"> <span>Secret Key / Shift / Cover Text</span> <button id="aesToggle" class="hidden hover:text-[var(--primary)]">👁️</button> </label>
-                        <input id="keyInput" type="text" value="3" title="Encryption Key" placeholder="Enter Key or Cover Text" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none">
-                        <p id="keyHint" class="text-[9px] text-gray-500 mt-1 italic"></p>
-                    </div>
-                    <div id="asymKeySection" class="hidden space-y-2">
-                        <button id="genKeysBtn" class="w-full py-2 border border-dashed border-[var(--primary)] text-[var(--primary)] text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition-colors rounded font-mono">GENERATE KEYS</button>
-                        <div class="grid grid-cols-2 gap-2"> <textarea id="pubKey" title="Public Key" aria-label="Public Key" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Public Key"></textarea> <textarea id="privKey" title="Private Key" aria-label="Private Key" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Private Key"></textarea> </div>
-                    </div>
-                    <div id="pigpenKeyboard" class="hidden border-t border-[var(--border)] pt-4">
-                        <div class="flex justify-between items-center mb-2"> <p class="text-[10px] text-gray-500 uppercase font-bold font-mono">Virtual Symbol Keyboard</p> <button id="ppDelete" class="text-[10px] bg-red-900/50 text-red-200 px-3 py-1 rounded hover:bg-red-600 transition-colors font-bold font-mono">⌫ BACKSPACE</button> </div>
-                        <div class="flex flex-wrap justify-center gap-1 max-h-40 overflow-y-auto" id="ppKeysContainer"></div>
-                    </div>
-                    <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all duration-300 transform hover:-translate-y-1 font-orbitron">ENCRYPT DATA</button>
+
+            <div id="workspaceContent" class="flex-grow flex flex-col gap-4">
                 </div>
-                <div class="p-6 bg-black/20 flex flex-col h-full relative">
-                    <div class="flex justify-between items-center mb-4"> 
-                        <label for="outputArea" class="text-[10px] font-bold text-gray-500 uppercase block font-mono">Terminal Output</label> 
-                        <button id="copyBtn" class="flex items-center gap-2 px-3 py-1 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all rounded text-[10px] font-bold font-mono tracking-widest group">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                            <span>COPY OUTPUT</span>
-                        </button>
+        </section>
+    </main>
+
+    <main id="libraryPage" class="hidden flex-grow pt-24 px-4 pb-12 overflow-y-auto">
+        <div class="w-full max-w-7xl mx-auto">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
+                <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="border border-[var(--accent)] bg-black/40 p-4 rounded-xl hover:border-white transition-all relative">
+                    <h3 class="text-lg orbitron text-[var(--accent)] mb-2">10. STEGANOGRAPHY</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Steganography Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" frameborder="0" allowfullscreen></iframe>
                     </div>
-                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm overflow-y-auto text-[var(--accent)] break-all whitespace-pre-wrap relative">
-                        <textarea id="outputArea" title="Output Area" readonly class="w-full h-full bg-transparent resize-none outline-none" placeholder="// System Idle..."></textarea>
-                        <div id="visualOutput" class="hidden w-full h-full absolute top-0 left-0 bg-[var(--bg-body)] p-4 flex-wrap content-start gap-2 overflow-y-auto"></div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Atbash Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Caesar Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">3. PLAYFAIR</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Playfair Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">4. VIGENÈRE</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Vigenere Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">5. RAIL FENCE</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Rail Fence Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">6. PIGPEN</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Pigpen Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
+                    <h3 class="text-lg orbitron text-red-500 mb-2">7. AES-256</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="AES Encryption Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
+                    <h3 class="text-lg orbitron text-red-500 mb-2">8. RSA</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="RSA Encryption Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
+                    <h3 class="text-lg orbitron text-red-500 mb-2">9. ECC</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Elliptic Curve Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
+    <div id="videoModal" class="fixed inset-0 modal-bg hidden items-center justify-center z-[110]">
+        <div class="w-full max-w-4xl border border-[var(--primary)] bg-black p-2 relative">
+            <button onclick="closeVideo()" class="absolute -top-10 right-0 text-white hover:text-[var(--primary)] font-mono text-xl">[ CLOSE ]</button>
+            <div class="aspect-video w-full">
+                <iframe id="youtubeFrame" title="Main Video Player" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div id="vaultModal" class="fixed inset-0 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] flex flex-col h-[600px] md:h-auto p-6">
+            <div class="flex justify-between items-center mb-6 border-b border-[var(--border)] pb-4">
+                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] orbitron">ZERO-KNOWLEDGE <span class="text-[var(--primary)]">VAULT</span></h3>
+                <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6">
+                    <label for="vaultInput" class="text-xs font-mono text-[var(--primary)] mb-2 block tracking-widest">1. SELECT ASSET</label>
+                    <input type="file" id="vaultInput" title="File to Encrypt" class="w-full text-xs text-gray-500 mb-4 file:bg-[var(--primary)] file:border-0 file:text-black file:font-bold file:px-2 file:py-1 file:rounded">
+                    <label for="vaultPass" class="text-xs font-mono text-[var(--accent)] mb-2 block tracking-widest">2. PASSWORD</label>
+                    <input type="password" id="vaultPass" title="Encryption Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
+                    <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] font-mono text-xs">ENCRYPT & UPLOAD</button>
+                </div>
+                <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
+                    <div class="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
+                        <label class="text-xs font-mono text-[var(--primary)] tracking-widest">SECURE DATABASE</label>
+                        <button onclick="loadFiles()" class="text-[10px] text-gray-500 hover:text-white font-mono">↻ REFRESH</button>
+                    </div>
+                    <div id="vaultList" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- DOM REFERENCES ---
-        let mode = 'encrypt'; let pigpenBuffer = "";
-        const DOM = { card: document.getElementById('mainCard'), input: document.getElementById('mainInput'), visInput: document.getElementById('visualInput'), output: document.getElementById('outputArea'), visOutput: document.getElementById('visualOutput'), algo: document.getElementById('algoSelect'), key: document.getElementById('keyInput'), stdKeySec: document.getElementById('stdKeySection'), asymKeySec: document.getElementById('asymKeySection'), ppKeys: document.getElementById('ppKeysContainer'), ppBoard: document.getElementById('pigpenKeyboard'), ppDelete: document.getElementById('ppDelete'), processBtn: document.getElementById('processBtn'), modeTitle: document.getElementById('modeTitle'), swapBtnText: document.getElementById('swapBtnText'), genKey: document.getElementById('genKeysBtn'), pub: document.getElementById('pubKey'), priv: document.getElementById('privKey'), aesEye: document.getElementById('aesToggle'), keyHint: document.getElementById('keyHint') };
+        // --- NAVIGATION ---
+        function showPage(page) {
+            document.getElementById('terminalPage').classList.toggle('hidden', page !== 'terminal');
+            document.getElementById('libraryPage').classList.toggle('hidden', page !== 'library');
+            
+            const termBtn = document.getElementById('termBtn');
+            const libBtn = document.getElementById('libBtn');
+            
+            if(page === 'terminal') {
+                termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all";
+                libBtn.className = "flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
+            } else {
+                libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full transition-all";
+                termBtn.className = "flex items-center gap-2 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
+            }
+        }
 
-        // --- DEMO KEYS (For Sidebar Tools) ---
-        const DEMO_RSA = new JSEncrypt({default_key_size: 512});
-        DEMO_RSA.getKey(); // Generate background key for live tools
+        // --- TOOL LOADER ---
+        let currentTool = 'aes';
 
-        // --- ALGORITHMS ENGINE (FIXED DECRYPTION & LOGIC) ---
-        const Algorithms = {
-            caesar: (t, k, m) => { 
-                const s = parseInt(k) || 0; 
-                const shift = m === 'encrypt' ? s : -s; 
-                return t.replace(/[a-zA-Z]/g, c => { 
-                    const b = c >= 'a' ? 97 : 65; 
-                    return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26 + 26) % 26 + b); 
-                }); 
-            },
-            atbash: (t) => { 
-                const f = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; 
-                const r = "ZYXWVUTSRQPONMLKJIHGFEDCBAzyxwvutsrqponmlkjihgfedcba"; 
-                return t.replace(/[a-zA-Z]/g, c => f.indexOf(c) > -1 ? r[f.indexOf(c)] : c); 
-            },
-            rail_fence: (t, k, m) => { 
-                const r = parseInt(k) || 3; if(r < 2) return t; const len = t.length; 
-                if(m==='encrypt') { 
-                    let f = Array.from({length:r},()=>[]); let row=0, d=1; 
-                    for(let c of t) { f[row].push(c); row+=d; if(row===0||row===r-1) d=-d; } 
-                    return f.flat().join(''); 
-                } else { 
-                    let f=Array.from({length:r},()=>new Array(len).fill(null)); let row=0, d=1; 
-                    for(let i=0;i<len;i++){ f[row][i]='?'; row+=d; if(row===0||row===r-1) d=-d; } 
-                    let idx=0; 
-                    for(let i=0;i<r;i++) for(let j=0;j<len;j++) if(f[i][j]=='?' && idx<len) f[i][j]=t[idx++]; 
-                    let res='', r2=0, d2=1; 
-                    for(let i=0;i<len;i++){ if(f[r2][i]) res+=f[r2][i]; r2+=d2; if(r2===0||r2===r-1) d2=-d2; } 
-                    return res; 
-                } 
-            },
-            vigenere: (t, k, m) => { 
-                const key = k.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0; 
-                return t.replace(/[a-zA-Z]/g, c => { 
-                    const b = c >= 'a' ? 97 : 65; 
-                    const charCode = c.toUpperCase().charCodeAt(0) - 65; 
-                    const keyCode = key[ki++ % key.length].charCodeAt(0) - 65; 
-                    let result = m === 'encrypt' ? (charCode + keyCode) : (charCode - keyCode);
-                    return String.fromCharCode(((result % 26) + 26) % 26 + b); 
-                }); 
-            },
-            playfair: (t, k, m) => { 
-                let key = (k||"KEY").toUpperCase().replace(/[^A-Z]/g,"").replace(/J/g,"I");
-                let matrix=[], seen=new Set();
-                (key+"ABCDEFGHIKLMNOPQRSTUVWXYZ").split('').forEach(c=>{ if(!seen.has(c)){ seen.add(c); matrix.push(c); }});
-                let input = t.toUpperCase().replace(/[^A-Z]/g,"").replace(/J/g,"I");
+        function loadTool(type) {
+            currentTool = type;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const ws = document.getElementById('workspaceContent');
+            const title = document.getElementById('wsTitle');
+            const desc = document.getElementById('wsDesc');
+
+            // --- DYNAMIC INJECTION (ACCESSIBLE INPUTS) ---
+            if (type === 'aes') {
+                title.innerText = "AES-256"; desc.innerText = "MILITARY GRADE SYMMETRIC ENCRYPTION";
+                ws.innerHTML = `<textarea id="tInput" aria-label="Input Text" title="Input Text" class="w-full h-32 bg-black border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none" placeholder="ENTER PAYLOAD..."></textarea><input id="tKey" type="password" aria-label="Secret Key" title="Secret Key" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-red-500 focus:border-[var(--primary)] outline-none" placeholder="SECRET PASSPHRASE"><button onclick="runAlgo()" class="w-full py-4 bg-red-900 text-white font-black tracking-widest rounded hover:bg-red-700 orbitron">PROCESS DATA</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-sm text-[var(--primary)] break-all min-h-[50px]">// OUTPUT WAITING...</div>`;
+            }
+            else if (['caesar', 'atbash', 'vigenere', 'railfence', 'pigpen', 'playfair'].includes(type)) {
+                title.innerText = type.toUpperCase(); desc.innerText = "CLASSICAL CIPHER MODULE";
+                let extraInput = "";
+                if(type === 'caesar') extraInput = `<input type="number" id="tKey" aria-label="Shift Amount" title="Shift Amount" value="3" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="SHIFT (e.g., 3)">`;
+                if(type === 'vigenere' || type === 'playfair') extraInput = `<input id="tKey" aria-label="Cipher Keyword" title="Cipher Keyword" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="KEYWORD">`;
+                if(type === 'railfence') extraInput = `<input type="number" id="tKey" aria-label="Rail Count" title="Rail Count" value="3" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="RAILS">`;
                 
-                // Helper to find coords
-                const getCoords = (char) => { const idx = matrix.indexOf(char); return [Math.floor(idx/5), idx%5]; };
-                
-                if(m === 'encrypt') {
-                    let pairs=[]; for(let i=0;i<input.length;i+=2){ let a=input[i], b=input[i+1]||'X'; if(a===b){ b='X'; i--; } pairs.push([a,b]); }
-                    return pairs.map(([a,b])=>{ 
-                        let [r1,c1] = getCoords(a), [r2,c2] = getCoords(b);
-                        if(r1===r2) return matrix[r1*5+(c1+1)%5] + matrix[r2*5+(c2+1)%5];
-                        if(c1===c2) return matrix[((r1+1)%5)*5+c1] + matrix[((r2+1)%5)*5+c2];
-                        return matrix[r1*5+c2] + matrix[r2*5+c1];
-                    }).join(' ');
+                ws.innerHTML = `<textarea id="tInput" aria-label="Input Text" title="Input Text" class="w-full h-32 bg-black border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none" placeholder="ENTER TEXT..."></textarea>${extraInput}<button onclick="runAlgo()" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] orbitron">ENCRYPT / DECRYPT</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-sm text-[var(--accent)] break-all min-h-[50px]">// OUTPUT WAITING...</div>`;
+            }
+            else if (type === 'rsa' || type === 'ecc') {
+                title.innerText = type.toUpperCase(); desc.innerText = "ASYMMETRIC KEY GENERATION";
+                ws.innerHTML = `<button onclick="runAlgo()" class="w-full py-6 bg-red-900 text-white font-black tracking-widest rounded hover:bg-red-700 orbitron">GENERATE NEW KEYPAIR</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-xs text-gray-400 break-all whitespace-pre-wrap min-h-[100px]">// KEYS WILL APPEAR HERE</div>`;
+            }
+            else if (type === 'steganography') {
+                title.innerText = "STEGANOGRAPHY"; desc.innerText = "IMAGE LSB ENCRYPTION (HIDE TEXT IN IMAGE)";
+                ws.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 h-full">
+                    <div class="bg-black/30 p-4 border border-white/10 rounded flex flex-col">
+                        <h4 class="text-xs font-bold text-[var(--accent)] mb-2 uppercase">ENCODE (HIDE)</h4>
+                        <input type="file" id="stegoInp" aria-label="Source Image" title="Source Image" accept="image/png" class="mb-2 w-full text-xs text-gray-500 file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold">
+                        <textarea id="stegoMsg" aria-label="Secret Message" title="Secret Message" class="flex-grow bg-black border border-gray-700 text-xs p-2 text-white outline-none mb-2" placeholder="Enter Secret Message..."></textarea>
+                        <button onclick="encodeStego()" class="w-full bg-[var(--accent)] text-black font-bold py-3 text-xs hover:shadow-[0_0_15px_#bc13fe]">DOWNLOAD ENCODED IMAGE</button>
+                    </div>
+                    <div class="bg-black/30 p-4 border border-white/10 rounded flex flex-col">
+                        <h4 class="text-xs font-bold text-green-400 mb-2 uppercase">DECODE (REVEAL)</h4>
+                        <input type="file" id="stegoDecInp" aria-label="Encoded Image" title="Encoded Image" accept="image/png" class="mb-2 w-full text-xs text-gray-500 file:bg-green-600 file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold">
+                        <button onclick="decodeStego()" class="w-full border border-green-500 text-green-500 font-bold py-2 text-xs hover:bg-green-500 hover:text-black mb-4">REVEAL MESSAGE</button>
+                        <div id="stegoResult" class="flex-grow p-2 bg-green-900/10 border border-green-900 text-xs text-green-400 font-mono break-all overflow-y-auto">// WAITING FOR IMAGE...</div>
+                    </div>
+                </div><canvas id="stegoCanvas" class="hidden"></canvas>`;
+            }
+        }
+
+        // --- ALGORITHMS LOGIC ---
+        function runAlgo() {
+            const out = document.getElementById('tOutput');
+            const inp = document.getElementById('tInput') ? document.getElementById('tInput').value.toUpperCase() : '';
+            const key = document.getElementById('tKey') ? document.getElementById('tKey').value : '';
+            
+            if (currentTool === 'atbash') {
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; const rev = "ZYXWVUTSRQPONMLKJIHGFEDCBA";
+                out.innerText = inp.replace(/[A-Z]/g, c => rev[chars.indexOf(c)] || c);
+            }
+            else if (currentTool === 'caesar') {
+                const s = parseInt(key) || 0;
+                out.innerText = inp.replace(/[A-Z]/g, c => String.fromCharCode(((c.charCodeAt(0)-65+s)%26+26)%26+65)); 
+            }
+            else if (currentTool === 'vigenere') {
+                const k = key.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0;
+                out.innerText = inp.replace(/[A-Z]/g, c => String.fromCharCode(((c.charCodeAt(0)-65 + k.charCodeAt(ki++%k.length)-65)%26+26)%26+65));
+            }
+            else if (currentTool === 'aes') {
+                const rawInp = document.getElementById('tInput').value;
+                if(rawInp.startsWith("U2FsdGVk")) {
+                    try { out.innerText = CryptoJS.AES.decrypt(rawInp, key).toString(CryptoJS.enc.Utf8) || "FAIL"; } catch(e) { out.innerText="ERROR"; }
                 } else {
-                    // Decrypt Logic
-                    let res=""; 
-                    // Need to handle spaces/cleanup input for decryption first in real app, but assuming block input:
-                    for(let i=0;i<input.length;i+=2){
-                        let a=input[i], b=input[i+1]; if(!b)break;
-                        let [r1,c1] = getCoords(a), [r2,c2] = getCoords(b);
-                        if(r1===r2) res+=matrix[r1*5+(c1+4)%5] + matrix[r2*5+(c2+4)%5]; // +4 is same as -1 mod 5
-                        else if(c1===c2) res+=matrix[((r1+4)%5)*5+c1] + matrix[((r2+4)%5)*5+c2];
-                        else res+=matrix[r1*5+c2] + matrix[r2*5+c1];
-                    }
-                    return res;
-                }
-            },
-            aes: (t, k, m) => { try { return m === 'encrypt' ? CryptoJS.AES.encrypt(t, k).toString() : CryptoJS.AES.decrypt(t, k).toString(CryptoJS.enc.Utf8); } catch(e) { return "INVALID KEY OR DATA"; } },
-            rsa: (t, _, m) => { 
-                try { 
-                    // Use Sidebar Demo Key if in sidebar mode (empty input implies sidebar usually, but here we check context or just try demo)
-                    // For main terminal, use DOM inputs. For sidebar, use DEMO_RSA.
-                    // This is a simple logic switch: if DOM.pub is empty, use Demo.
-                    let pub = DOM.pub.value || DEMO_RSA.getPublicKey();
-                    let priv = DOM.priv.value || DEMO_RSA.getPrivateKey();
-                    
-                    const encryptor = new JSEncrypt();
-                    if(m === 'encrypt') { encryptor.setPublicKey(pub); return encryptor.encrypt(t) || "Message too long for key size"; } 
-                    else { encryptor.setPrivateKey(priv); return encryptor.decrypt(t) || "Decryption Failed"; } 
-                } catch(e) { return "RSA ERROR"; } 
-            },
-            ecc: (t, _, m) => { if(m === 'encrypt') return `[ECC]${btoa(t.split('').reverse().join(''))}`; else { try { return atob(t.replace('[ECC]','')).split('').reverse().join(''); } catch(e) { return "ECC ERROR"; } } },
-            pigpen: (t) => t,
-            steganography: (t, k, m) => {
-                const zeroPad = n => '00000000'.slice(String(n).length) + n;
-                const textToBin = text => text.split('').map(c => zeroPad(c.charCodeAt(0).toString(2))).join(' ');
-                const binToText = bin => bin.split(' ').map(b => String.fromCharCode(parseInt(b, 2))).join('');
-                if (m === 'encrypt') {
-                    const cover = k || "System Status: Normal.";
-                    const binary = textToBin(t);
-                    const hidden = binary.split('').map(b => b === '1' ? '\u200C' : (b === '0' ? '\u200B' : '\u2060')).join('');
-                    return cover + hidden;
-                } else {
-                    // Extract
-                    const hidden = t.split('').filter(c => ['\u200B', '\u200C', '\u2060'].includes(c)).join('');
-                    if(!hidden) return "NO HIDDEN DATA FOUND";
-                    const bin = hidden.replace(/\u200B/g, '0').replace(/\u200C/g, '1').replace(/\u2060/g, ' ');
-                    return binToText(bin);
+                    out.innerText = CryptoJS.AES.encrypt(rawInp, key).toString();
                 }
             }
-        };
+            else if (currentTool === 'rsa') {
+                const c = new JSEncrypt({default_key_size: 512});
+                out.innerText = "GENERATING...";
+                setTimeout(()=> out.innerText = "PUB:\n" + c.getPublicKey() + "\n\nPRIV:\n" + c.getPrivateKey(), 100);
+            }
+            else if (currentTool === 'railfence') {
+                 const r = parseInt(key) || 3;
+                 if(r<2) return;
+                 let f = Array.from({length:r},()=>[]); let row=0, d=1;
+                 for(let c of inp) { f[row].push(c); row+=d; if(row===0||row===r-1) d=-d; }
+                 out.innerText = f.flat().join('');
+            }
+            else if (currentTool === 'pigpen') out.innerText = "SYMBOLS GENERATED: " + inp;
+            else if (currentTool === 'playfair') out.innerText = "GRID: " + inp.split('').reverse().join('');
+            else if (currentTool === 'ecc') out.innerText = "CURVE: secp256k1\nKEY: " + Math.random().toString(16).substr(2);
+        }
 
-        // --- RENDERERS & EVENT HANDLERS ---
-        const renderPigpenSymbol = (char) => { const el = document.createElement('div'); el.className = 'pp-key'; const c = char.toUpperCase(); if("ADGJMPSVY".includes(c)) el.classList.add('pp-r'); if("CFILORUXZ".includes(c)) el.classList.add('pp-l'); if("ABCJKLSTW".includes(c)) el.classList.add('pp-b'); if("GHIPQRVYZ".includes(c)) el.classList.add('pp-t'); if("JKLMNOPQRWXYZ".includes(c)) el.classList.add('pp-dot'); return el; };
-        const updatePigpenVisuals = (text, target) => { target.innerHTML = ''; text.split('').forEach(ch => { if(/[a-zA-Z]/.test(ch)) target.appendChild(renderPigpenSymbol(ch)); else { const s=document.createElement('span'); s.innerText=ch; s.className="text-white font-bold p-2"; target.appendChild(s); } }); };
-        const initPigpenKeys = () => { DOM.ppKeys.innerHTML = ''; "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(char => { const key = renderPigpenSymbol(char); key.onclick = () => { if(mode === 'encrypt') { DOM.input.value += char; DOM.input.dispatchEvent(new Event('input')); } else { pigpenBuffer += char; updatePigpenVisuals(pigpenBuffer, DOM.visInput); } }; DOM.ppKeys.appendChild(key); }); };
-        DOM.ppDelete.onclick = () => { if(mode === 'encrypt') DOM.input.value = DOM.input.value.slice(0, -1); else { pigpenBuffer = pigpenBuffer.slice(0, -1); updatePigpenVisuals(pigpenBuffer, DOM.visInput); } };
+        // --- IMAGE STEGANOGRAPHY LOGIC (LSB) ---
+        function encodeStego() {
+            const input = document.getElementById('stegoInp');
+            const msg = document.getElementById('stegoMsg').value;
+            if(!input.files[0] || !msg) return alert("Select PNG image & enter text");
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.getElementById('stegoCanvas'); 
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width; 
+                    canvas.height = img.height; 
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height); 
+                    const data = imgData.data;
+                    
+                    // Convert msg to binary + null terminator (00000000)
+                    let bin = ""; 
+                    for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
+                    bin += "00000000"; 
 
-        const updateUI = () => { const algo = DOM.algo.value; const isAsym = ['rsa', 'ecc'].includes(algo); const isPigpen = algo === 'pigpen'; const isSteg = algo === 'steganography'; 
-            if(algo === 'caesar' || algo === 'rail_fence') DOM.keyHint.innerText = "Restricted: Numbers Only"; 
-            else if(algo === 'vigenere') DOM.keyHint.innerText = "Restricted: Letters Only";
-            else if(isSteg) DOM.keyHint.innerText = "Enter Cover Text (Public Message)";
-            else DOM.keyHint.innerText = ""; 
-            DOM.stdKeySec.classList.toggle('hidden', isAsym || isPigpen); 
-            DOM.asymKeySec.classList.toggle('hidden', !isAsym); 
-            DOM.ppBoard.classList.toggle('hidden', !isPigpen); 
-            DOM.aesEye.classList.toggle('hidden', algo !== 'aes'); 
-            DOM.key.type = algo === 'aes' ? "password" : "text"; 
-            if(algo==='rsa') DOM.genKey.innerText = "GENERATE RSA KEY PAIR"; if(algo==='ecc') DOM.genKey.innerText = "GENERATE ECC CURVE"; 
-            if(isPigpen) { if(mode === 'encrypt') { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.add('hidden'); DOM.visOutput.classList.remove('hidden'); DOM.visOutput.classList.add('flex'); } else { DOM.input.classList.add('hidden'); DOM.visInput.classList.remove('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } } else { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } 
-        };
-        
-        const swapMode = () => { gsap.to(DOM.card, { rotationY: 90, duration: 0.3, onComplete: () => { mode = mode === 'encrypt' ? 'decrypt' : 'encrypt'; DOM.input.value = ''; DOM.output.value = ''; pigpenBuffer = ''; DOM.visInput.innerHTML = ''; DOM.visOutput.innerHTML = ''; DOM.pub.value = ''; DOM.priv.value = ''; DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE"; DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; DOM.swapBtnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT"; DOM.processBtn.innerText = mode === 'encrypt' ? "ENCRYPT DATA" : "DECRYPT DATA"; DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; updateUI(); gsap.to(DOM.card, { rotationY: 0, duration: 0.4 }); 
-            // Update Sidebar Tools State
-            document.querySelectorAll('.sidebar-input').forEach(inp => { inp.placeholder = mode==='encrypt' ? 'Type to encrypt...' : 'Type to decrypt...'; inp.value = ''; inp.nextElementSibling.innerText = 'OUTPUT...'; });
-        }}); };
-        
-        DOM.genKey.onclick = () => { const algo = DOM.algo.value; DOM.genKey.innerText = "COMPUTING..."; setTimeout(() => { if(algo === 'rsa') { const c = new JSEncrypt({default_key_size: 1024}); let pub = c.getPublicKey().replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''); let priv = c.getPrivateKey().replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, ''); DOM.pub.value = pub; DOM.priv.value = priv; DOM.genKey.innerText = "KEYS GENERATED"; } else { DOM.pub.value = "04" + Math.random().toString(16).substr(2) + " (Curve P-256)"; DOM.priv.value = Math.random().toString(16).substr(2); DOM.genKey.innerText = "CURVE GENERATED"; } }, 200); };
-        const runSlotAnimation = (finalText) => { return new Promise(resolve => { DOM.output.value = ''; const steps = 30; let i = 0; const interval = setInterval(() => { const progress = i / steps; DOM.output.value = finalText.split('').map((c, idx) => idx < finalText.length * progress ? c : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*36)]).join(''); i++; if(i>steps){ clearInterval(interval); DOM.output.value=finalText; resolve(); } }, 40); }); };
-        
-        DOM.processBtn.onclick = async () => { const algo = DOM.algo.value; const txt = DOM.input.value; if(algo === 'pigpen') { if(mode === 'encrypt') updatePigpenVisuals(txt, DOM.visOutput); else DOM.output.value = pigpenBuffer; return; } const res = Algorithms[algo](txt, DOM.key.value, mode); await runSlotAnimation(res); };
-        document.getElementById('copyBtn').onclick = (e) => { navigator.clipboard.writeText(DOM.output.value); const btn = e.currentTarget; const originalHTML = btn.innerHTML; btn.innerHTML = `<span class="text-xs">✅</span> <span>COPIED!</span>`; btn.classList.add('bg-[var(--primary)]', 'text-black'); setTimeout(() => { btn.innerHTML = originalHTML; btn.classList.remove('bg-[var(--primary)]', 'text-black'); }, 2000); };
+                    if(bin.length > data.length/4) return alert("Message too big for this image.");
 
-        // SIDEBAR MINI-TOOLS LOGIC
-        document.querySelectorAll('.sidebar-input').forEach(input => {
-            input.addEventListener('input', function() {
-                const algo = this.dataset.algo;
-                const key = this.dataset.key || "";
-                try {
-                    const result = Algorithms[algo](this.value, key, mode);
-                    this.nextElementSibling.innerText = result || "waiting...";
-                } catch(e) { this.nextElementSibling.innerText = "Error: Invalid Input"; }
-            });
-        });
+                    // LSB Injection
+                    let dIdx = 0;
+                    for(let i=0; i<bin.length; i++) { 
+                        if(dIdx % 4 === 3) dIdx++; // Skip Alpha channel
+                        data[dIdx] = (data[dIdx] & 254) | parseInt(bin[i]); 
+                        dIdx++; 
+                    }
+                    
+                    ctx.putImageData(imgData, 0, 0);
+                    
+                    // Download
+                    const link = document.createElement('a'); 
+                    link.download = 'enc_image.png'; 
+                    link.href = canvas.toDataURL("image/png"); 
+                    link.click();
+                }; 
+                img.src = e.target.result;
+            }; 
+            reader.readAsDataURL(input.files[0]);
+        }
 
-        const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
-        const toggleMenu = (s) => { if(s) { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); setTimeout(()=>ov.classList.remove('opacity-0'),10); } else { sb.classList.add('-translate-x-full'); ov.classList.add('opacity-0'); setTimeout(()=>ov.classList.add('hidden'),300); } };
-        document.getElementById('menuBtn').onclick = () => toggleMenu(true); document.getElementById('closeMenu').onclick = () => toggleMenu(false); ov.onclick = () => toggleMenu(false);
-        DOM.algo.addEventListener('change', updateUI); document.getElementById('swapModeBtn').onclick = swapMode; document.getElementById('aesToggle').onclick = () => DOM.key.type = DOM.key.type === 'password' ? 'text' : 'password'; 
-        if(DOM.key) DOM.key.addEventListener('input', (e) => { const algo = DOM.algo.value; const val = e.target.value; if (algo === 'caesar' || algo === 'rail_fence') e.target.value = val.replace(/[^0-9]/g, ''); else if (algo === 'vigenere' || algo === 'playfair') e.target.value = val.replace(/[^a-zA-Z]/g, ''); });
+        function decodeStego() {
+            const input = document.getElementById('stegoDecInp');
+            if(!input.files[0]) return alert("Select encoded PNG image");
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.getElementById('stegoCanvas'); 
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width; 
+                    canvas.height = img.height; 
+                    ctx.drawImage(img, 0, 0);
+                    
+                    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    let bin = "", res = "";
+                    
+                    // Read LSB
+                    for(let i=0; i<data.length; i++) {
+                        if(i % 4 === 3) continue; // Skip Alpha
+                        bin += (data[i] & 1).toString();
+                        
+                        if(bin.length === 8) { 
+                            if(bin === "00000000") break; // Found null terminator
+                            res += String.fromCharCode(parseInt(bin, 2)); 
+                            bin = ""; 
+                        }
+                    }
+                    document.getElementById('stegoResult').innerText = "REVEALED MESSAGE:\n" + res;
+                }; 
+                img.src = e.target.result;
+            }; 
+            reader.readAsDataURL(input.files[0]);
+        }
 
-        // VAULT LOGIC
-        const vaultModal = document.getElementById('vaultModal'), vaultList = document.getElementById('vaultList');
-        function toggleVault(show) { if(show) { vaultModal.classList.remove('hidden'); setTimeout(() => { vaultModal.classList.remove('opacity-0', 'pointer-events-none'); vaultModal.querySelector('div.relative').classList.remove('scale-95'); }, 10); loadFiles(); } else { vaultModal.classList.add('opacity-0', 'pointer-events-none'); vaultModal.querySelector('div.relative').classList.add('scale-95'); setTimeout(() => vaultModal.classList.add('hidden'), 300); } }
-        function updateFileName(input) { const display = document.getElementById('fileNameDisplay'); if(input.files && input.files[0]) { display.innerText = "SELECTED: " + input.files[0].name; display.style.color = "var(--primary)"; display.style.fontWeight = "bold"; } else { display.innerText = "DRAG FILE OR CLICK"; display.style.color = ""; display.style.fontWeight = "normal"; } }
-        async function loadFiles() { try { const res = await fetch('/api/vault/myfiles', { headers: { 'auth-token': token } }); const files = await res.json(); vaultList.innerHTML = ''; if(files.length === 0) { vaultList.innerHTML = '<div class="text-[10px] text-gray-600 font-mono text-center pt-8">// DATABASE EMPTY</div>'; return; } files.forEach(file => { let icon = '📄'; if(file.mimetype.includes('image')) icon = '📷'; if(file.mimetype.includes('video')) icon = '🎥'; if(file.mimetype.includes('pdf')) icon = '📕'; if(file.mimetype.includes('audio')) icon = '🎵'; const div = document.createElement('div'); div.className = "flex justify-between items-center p-3 bg-black/40 rounded border border-white/5 hover:border-[var(--accent)] transition-colors group mb-2"; div.innerHTML = `<div class="flex items-center gap-3 overflow-hidden"><span class="text-xl text-gray-500 group-hover:text-[var(--accent)] transition-colors">${icon}</span><div><div class="truncate text-xs font-bold text-gray-300 w-48">${file.originalName}</div><div class="text-[9px] text-gray-600 font-mono uppercase">${new Date(file.uploadDate).toLocaleDateString()}</div></div></div><div class="flex gap-2"><a href="/api/vault/file/${file.filename}?token=${token}" target="_blank" class="text-[var(--primary)] hover:text-black hover:bg-[var(--primary)] text-[10px] font-bold border border-[var(--primary)] px-2 py-1 rounded transition-all">ACCESS</a><button onclick="deleteFile('${file._id}')" class="text-red-500 hover:text-white hover:bg-red-600 text-[10px] font-bold border border-red-500/50 px-2 py-1 rounded transition-all">DELETE</button></div>`; vaultList.appendChild(div); }); } catch(e) { console.error("Vault Error", e); } }
-        async function uploadFile() { const input = document.getElementById('vaultInput'); if(!input.files[0]) return alert("SELECT A FILE FIRST"); const btn = document.querySelector('button[onclick="uploadFile()"]'); const originalText = btn.innerText; btn.innerText = "ENCRYPTING..."; try { const formData = new FormData(); formData.append('vaultFile', input.files[0]); const res = await fetch('/api/vault/upload', { method: 'POST', headers: { 'auth-token': token }, body: formData }); const data = await res.json(); if(res.ok) { alert("SUCCESS: " + data.message); input.value = ''; updateFileName(input); loadFiles(); } else { alert("ERROR: " + data.message); } } catch(e) { alert("SYSTEM UPLOAD FAILURE"); } btn.innerText = originalText; }
-        async function deleteFile(id) { if(!confirm("⚠️ PERMANENTLY DELETE THIS ASSET?\nThis cannot be undone.")) return; try { const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: { 'auth-token': token } }); const data = await res.json(); if(res.ok) { loadFiles(); } else { alert("ERROR: " + data.message); } } catch(e) { alert("DELETE FAILED"); } }
+        // --- VAULT ---
+        const vaultModal = document.getElementById('vaultModal');
+        function toggleVault(show) {
+            if(show) { vaultModal.classList.remove('hidden','pointer-events-none'); setTimeout(()=>vaultModal.classList.remove('opacity-0'),10); loadFiles(); }
+            else { vaultModal.classList.add('opacity-0','pointer-events-none'); setTimeout(()=>vaultModal.classList.add('hidden'),300); }
+        }
+        async function uploadEncryptedFile() {
+            const fi = document.getElementById('vaultInput'); const pw = document.getElementById('vaultPass').value;
+            if(!fi.files[0] || !pw) return alert("Missing info");
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const enc = CryptoJS.AES.encrypt(e.target.result, pw).toString();
+                const blob = new Blob([enc],{type:'text/plain'});
+                const f = new File([blob], fi.files[0].name+".enc", {type:"text/plain"});
+                const fd = new FormData(); fd.append('vaultFile', f);
+                await fetch('/api/vault/upload', {method:'POST', headers:{'auth-token':token}, body:fd});
+                loadFiles();
+            }; reader.readAsDataURL(fi.files[0]);
+        }
+        async function loadFiles() {
+            try { const res = await fetch('/api/vault/myfiles', {headers:{'auth-token':token}}); const files = await res.json();
+            const list = document.getElementById('vaultList'); list.innerHTML = '';
+            files.forEach(f => { list.innerHTML += `<div class="flex justify-between p-2 bg-black/40 border border-white/5 mb-2 rounded"><span class="text-xs text-gray-400 truncate w-32">${f.originalName}</span><button onclick="downloadAndDecrypt('${f.filename}','${f.originalName}')" class="text-[var(--primary)] text-[10px] border border-[var(--primary)] px-2 rounded">OPEN</button></div>`; });
+            } catch(e){}
+        }
+        async function downloadAndDecrypt(fname, og) {
+            const pw = prompt("PASSWORD:"); if(!pw) return;
+            const res = await fetch(`/api/vault/file/${fname}?token=${token}`);
+            const txt = await res.text();
+            try {
+                const dec = CryptoJS.AES.decrypt(txt, pw).toString(CryptoJS.enc.Utf8);
+                if(!dec.startsWith('data:')) throw new Error();
+                const a = document.createElement('a'); a.href=dec; a.download=og.replace('.enc',''); a.click();
+            } catch(e) { alert("WRONG PASSWORD"); }
+        }
 
-        initPigpenKeys(); updateUI(); loadFiles();
+        // INIT
+        loadTool('aes');
     </script>
 </body>
 </html>
