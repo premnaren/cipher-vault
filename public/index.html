@@ -115,6 +115,8 @@
                         <div id="keyGroup">
                             <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Encryption Key</label>
                             <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Key / Shift / Password">
+                            
+                            <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
                         </div>
 
                         <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all orbitron">
@@ -145,7 +147,6 @@
                 <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
                 <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
             </div>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                 <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
                 <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
@@ -198,6 +199,7 @@
             algo: document.getElementById('algoSelect'),
             mainIn: document.getElementById('mainInput'),
             keyIn: document.getElementById('keyInput'),
+            rsaKeyIn: document.getElementById('rsaKeyInput'),
             out: document.getElementById('outputDisplay'),
             swapBtn: document.getElementById('swapModeBtn'),
             modeTitle: document.getElementById('modeTitle'),
@@ -213,7 +215,6 @@
         };
 
         // --- ANIMATION ENGINE ---
-        // Generates the "Hacker/Slot" text resolve effect
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
         function animateText(element, finalState) {
             let iterations = 0;
@@ -227,14 +228,12 @@
                         return letters[Math.floor(Math.random() * 26)];
                     })
                     .join("");
-                
                 if(iterations >= finalState.length) { 
                     clearInterval(interval);
                     element.innerText = finalState;
                 }
-                
-                iterations += 1 / 2; // Control speed
-            }, 30);
+                iterations += 1;
+            }, 5); // Fast slot animation
         }
 
         // --- NAVIGATION ---
@@ -265,6 +264,7 @@
                 DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
+                // Stego Logic
                 if (DOM.algo.value === 'steganography') {
                     if (mode === 'encrypt') {
                         DOM.stegoTextCont.classList.remove('hidden'); 
@@ -274,6 +274,15 @@
                         DOM.processBtn.innerText = "DECODE IMAGE";
                     }
                 }
+                
+                // RSA Logic (Auto-clear output, manage key inputs)
+                if (DOM.algo.value === 'rsa') {
+                    // Update placeholders based on mode
+                    DOM.rsaKeyIn.placeholder = mode === 'encrypt' 
+                        ? "Paste Public Key... (Leave empty to Auto-Generate)" 
+                        : "Paste Private Key to Decrypt...";
+                }
+
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
             }});
         };
@@ -282,16 +291,28 @@
         DOM.algo.addEventListener('change', () => {
             const val = DOM.algo.value;
             const isStego = val === 'steganography';
+            const isRSA = val === 'rsa';
             const isAsym = ['rsa', 'ecc'].includes(val);
             
             DOM.stdGroup.classList.toggle('hidden', isStego);
             DOM.stegoGroup.classList.toggle('hidden', !isStego);
-            DOM.keyGroup.classList.toggle('hidden', isStego || isAsym);
+            
+            // Key Input Management
+            DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA)); // Hide standard key for stego or ECC
+            if (isRSA) {
+                DOM.keyIn.classList.add('hidden'); // Hide single line key
+                DOM.rsaKeyIn.classList.remove('hidden'); // Show multiline key
+            } else {
+                DOM.keyIn.classList.remove('hidden');
+                DOM.rsaKeyIn.classList.add('hidden');
+            }
+
             DOM.out.innerText = "// WAITING...";
             DOM.mainIn.value = "";
             DOM.keyIn.value = "";
+            DOM.rsaKeyIn.value = "";
             
-            if(isAsym) DOM.processBtn.innerText = "GENERATE KEYS (IGNORE INPUT)";
+            if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
             else DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
             
             if(isStego) {
@@ -311,7 +332,6 @@
             // 1. IMAGE STEGANOGRAPHY
             if (algo === 'steganography') {
                 if (mode === 'encrypt') {
-                    // ENCODE
                     if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return alert("Image and Secret Text required!");
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -321,15 +341,11 @@
                             DOM.stegoCanvas.width = img.width; DOM.stegoCanvas.height = img.height;
                             ctx.drawImage(img, 0, 0);
                             const imgData = ctx.getImageData(0,0,img.width,img.height);
-                            
-                            // LSB Encode
                             const msg = DOM.stegoPayload.value;
                             let bin = ""; 
                             for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
-                            bin += "00000000"; // Terminator
-                            
+                            bin += "00000000";
                             if(bin.length > imgData.data.length/4) return alert("Message too long for this image.");
-                            
                             let dIdx = 0;
                             for(let i=0; i<bin.length; i++) {
                                 if(dIdx%4===3) dIdx++;
@@ -337,8 +353,6 @@
                                 dIdx++;
                             }
                             ctx.putImageData(imgData, 0, 0);
-                            
-                            // Download
                             const link = document.createElement('a');
                             link.download = 'stego_secret.png';
                             link.href = DOM.stegoCanvas.toDataURL();
@@ -347,7 +361,6 @@
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 } else {
-                    // DECODE
                     if(!DOM.stegoFile.files[0]) return alert("Select Encoded Image");
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -357,7 +370,6 @@
                             DOM.stegoCanvas.width = img.width; DOM.stegoCanvas.height = img.height;
                             ctx.drawImage(img, 0, 0);
                             const data = ctx.getImageData(0,0,img.width,img.height).data;
-                            
                             let bin = "", res = "";
                             for(let i=0; i<data.length; i++) {
                                 if(i%4===3) continue;
@@ -380,13 +392,39 @@
             const key = DOM.keyIn.value;
             let res = "";
 
-            if (['rsa', 'ecc'].includes(algo)) {
-                if (algo === 'rsa') {
-                    const c = new JSEncrypt({default_key_size: 512});
-                    res = "PUBLIC KEY:\n" + c.getPublicKey() + "\n\nPRIVATE KEY:\n" + c.getPrivateKey();
+            if (algo === 'rsa') {
+                const encryptor = new JSEncrypt({default_key_size: 512}); // Fast for demo
+                const rsaKeyVal = DOM.rsaKeyIn.value.trim();
+
+                if (mode === 'encrypt') {
+                    // Encrypt
+                    let pubKey = rsaKeyVal;
+                    let privKeyMsg = "";
+                    
+                    if (!pubKey) {
+                        // Auto-Gen if empty
+                        pubKey = encryptor.getPublicKey();
+                        const privKey = encryptor.getPrivateKey();
+                        privKeyMsg = "\n\n[PRIVATE KEY - SAVE TO DECRYPT]:\n" + privKey;
+                        encryptor.setPublicKey(pubKey);
+                    } else {
+                        encryptor.setPublicKey(pubKey);
+                    }
+
+                    const encrypted = encryptor.encrypt(txt);
+                    if (!encrypted) res = "ENCRYPTION FAILED. (Text too long for key size?)";
+                    else res = "CIPHERTEXT:\n" + encrypted + privKeyMsg;
                 } else {
-                    res = "ECC CURVE: secp256k1\nPRIVATE: " + Math.random().toString(16).substr(2);
+                    // Decrypt
+                    if (!rsaKeyVal) return alert("Private Key required for decryption!");
+                    encryptor.setPrivateKey(rsaKeyVal);
+                    const decrypted = encryptor.decrypt(txt);
+                    if (!decrypted) res = "DECRYPTION FAILED. (Invalid Key?)";
+                    else res = "DECRYPTED PLAINTEXT:\n" + decrypted;
                 }
+            }
+            else if (algo === 'ecc') {
+                res = "ECC CURVE: secp256k1\nPRIVATE: " + Math.random().toString(16).substr(2);
             }
             else if (algo === 'aes') {
                 if (!txt || !key) return alert("Text and Key required");
@@ -421,7 +459,7 @@
             }
             
             // Trigger Animation
-            animateText(DOM.out, res);
+            if(algo !== 'steganography') animateText(DOM.out, res);
         };
 
         // --- VAULT ---
