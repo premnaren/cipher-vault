@@ -26,23 +26,19 @@
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
         
-        ::-webkit-scrollbar { width: 6px; } 
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
+        /* Custom Scrollbar - Made slightly wider for visibility */
+        ::-webkit-scrollbar { width: 10px; } 
+        ::-webkit-scrollbar-track { background: var(--bg-body); } 
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; border: 2px solid var(--bg-body); }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        /* Sidebar Item Active State */
         .tool-btn.active { background: rgba(0, 243, 255, 0.1); border-left: 4px solid var(--primary); color: white; }
         .tool-btn { border-left: 4px solid transparent; transition: all 0.2s; }
 
-        /* Safari Compatibility Fix */
-        .modal-bg { 
-            background: rgba(0, 0, 0, 0.9); 
-            -webkit-backdrop-filter: blur(5px); 
-            backdrop-filter: blur(5px); 
-        }
+        .modal-bg { background: rgba(0, 0, 0, 0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-hidden">
+<body class="h-screen w-screen flex flex-col overflow-hidden">
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
@@ -65,9 +61,9 @@
         </div>
     </nav>
 
-    <main id="terminalPage" class="flex-grow pt-24 px-4 pb-4 flex gap-4 h-screen overflow-hidden">
+    <main id="terminalPage" class="flex-grow pt-24 px-4 pb-4 flex gap-4 h-full overflow-hidden">
         
-        <aside class="w-64 bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl flex flex-col overflow-y-auto shrink-0">
+        <aside class="w-64 bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl flex flex-col overflow-y-auto shrink-0 pb-4">
             <div class="p-4 border-b border-[var(--border)]">
                 <h2 class="text-sm font-bold text-gray-400 tracking-widest orbitron">ALGORITHMS</h2>
             </div>
@@ -93,20 +89,82 @@
                 </div>
                 <div class="text-[10px] mono text-[var(--primary)] animate-pulse">● SYSTEM READY</div>
             </div>
-
-            <div id="workspaceContent" class="flex-grow flex flex-col gap-4">
-                </div>
+            <div id="workspaceContent" class="flex-grow flex flex-col gap-4"></div>
         </section>
     </main>
 
-    <main id="libraryPage" class="hidden flex-grow pt-24 px-4 pb-12 overflow-y-auto">
+    <main id="libraryPage" class="hidden flex-grow pt-24 px-4 pb-12 overflow-y-auto h-full">
         <div class="w-full max-w-7xl mx-auto">
             <div class="text-center mb-10">
                 <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
                 <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+                
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">3. PLAYFAIR</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Playfair Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">4. VIGENÈRE</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Vigenere Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">5. RAIL FENCE</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Rail Fence Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
+                    <h3 class="text-lg orbitron text-white mb-2">6. PIGPEN</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="Pigpen Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
+                    <h3 class="text-lg orbitron text-red-500 mb-2">7. AES-256</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="AES Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
+                    <h3 class="text-lg orbitron text-red-500 mb-2">8. RSA</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="RSA Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
+                    <h3 class="text-lg orbitron text-red-500 mb-2">9. ECC</h3>
+                    <div class="aspect-video w-full border border-gray-700 bg-black">
+                        <iframe title="ECC Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe>
+                    </div>
+                </div>
+
                 <div class="border border-[var(--accent)] bg-black/40 p-4 rounded-xl hover:border-white transition-all relative">
                     <h3 class="text-lg orbitron text-[var(--accent)] mb-2">10. STEGANOGRAPHY</h3>
                     <div class="aspect-video w-full border border-gray-700 bg-black">
@@ -114,68 +172,6 @@
                     </div>
                 </div>
 
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
-                    <h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Atbash Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
-                    <h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Caesar Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
-                    <h3 class="text-lg orbitron text-white mb-2">3. PLAYFAIR</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Playfair Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
-                    <h3 class="text-lg orbitron text-white mb-2">4. VIGENÈRE</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Vigenere Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
-                    <h3 class="text-lg orbitron text-white mb-2">5. RAIL FENCE</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Rail Fence Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]">
-                    <h3 class="text-lg orbitron text-white mb-2">6. PIGPEN</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Pigpen Cipher Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
-                    <h3 class="text-lg orbitron text-red-500 mb-2">7. AES-256</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="AES Encryption Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
-                    <h3 class="text-lg orbitron text-red-500 mb-2">8. RSA</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="RSA Encryption Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
-
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-red-500">
-                    <h3 class="text-lg orbitron text-red-500 mb-2">9. ECC</h3>
-                    <div class="aspect-video w-full border border-gray-700 bg-black">
-                        <iframe title="Elliptic Curve Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -184,7 +180,7 @@
         <div class="w-full max-w-4xl border border-[var(--primary)] bg-black p-2 relative">
             <button onclick="closeVideo()" class="absolute -top-10 right-0 text-white hover:text-[var(--primary)] font-mono text-xl">[ CLOSE ]</button>
             <div class="aspect-video w-full">
-                <iframe id="youtubeFrame" title="Main Video Player" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
+                <iframe id="youtubeFrame" title="Main Player" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe>
             </div>
         </div>
     </div>
@@ -198,9 +194,9 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6">
                     <label for="vaultInput" class="text-xs font-mono text-[var(--primary)] mb-2 block tracking-widest">1. SELECT ASSET</label>
-                    <input type="file" id="vaultInput" title="File to Encrypt" class="w-full text-xs text-gray-500 mb-4 file:bg-[var(--primary)] file:border-0 file:text-black file:font-bold file:px-2 file:py-1 file:rounded">
+                    <input type="file" id="vaultInput" title="File to encrypt" class="w-full text-xs text-gray-500 mb-4 file:bg-[var(--primary)] file:border-0 file:text-black file:font-bold file:px-2 file:py-1 file:rounded">
                     <label for="vaultPass" class="text-xs font-mono text-[var(--accent)] mb-2 block tracking-widest">2. PASSWORD</label>
-                    <input type="password" id="vaultPass" title="Encryption Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
+                    <input type="password" id="vaultPass" title="Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
                     <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] font-mono text-xs">ENCRYPT & UPLOAD</button>
                 </div>
                 <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
@@ -248,37 +244,36 @@
             const title = document.getElementById('wsTitle');
             const desc = document.getElementById('wsDesc');
 
-            // --- DYNAMIC INJECTION (ACCESSIBLE INPUTS) ---
             if (type === 'aes') {
                 title.innerText = "AES-256"; desc.innerText = "MILITARY GRADE SYMMETRIC ENCRYPTION";
-                ws.innerHTML = `<textarea id="tInput" aria-label="Input Text" title="Input Text" class="w-full h-32 bg-black border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none" placeholder="ENTER PAYLOAD..."></textarea><input id="tKey" type="password" aria-label="Secret Key" title="Secret Key" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-red-500 focus:border-[var(--primary)] outline-none" placeholder="SECRET PASSPHRASE"><button onclick="runAlgo()" class="w-full py-4 bg-red-900 text-white font-black tracking-widest rounded hover:bg-red-700 orbitron">PROCESS DATA</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-sm text-[var(--primary)] break-all min-h-[50px]">// OUTPUT WAITING...</div>`;
+                ws.innerHTML = `<textarea id="tInput" title="Input Payload" class="w-full h-32 bg-black border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none" placeholder="ENTER PAYLOAD..."></textarea><input id="tKey" title="Key" type="password" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-red-500 focus:border-[var(--primary)] outline-none" placeholder="SECRET PASSPHRASE"><button onclick="runAlgo()" class="w-full py-4 bg-red-900 text-white font-black tracking-widest rounded hover:bg-red-700 orbitron">PROCESS DATA</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-sm text-[var(--primary)] break-all min-h-[50px]">// OUTPUT WAITING...</div>`;
             }
             else if (['caesar', 'atbash', 'vigenere', 'railfence', 'pigpen', 'playfair'].includes(type)) {
                 title.innerText = type.toUpperCase(); desc.innerText = "CLASSICAL CIPHER MODULE";
                 let extraInput = "";
-                if(type === 'caesar') extraInput = `<input type="number" id="tKey" aria-label="Shift Amount" title="Shift Amount" value="3" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="SHIFT (e.g., 3)">`;
-                if(type === 'vigenere' || type === 'playfair') extraInput = `<input id="tKey" aria-label="Cipher Keyword" title="Cipher Keyword" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="KEYWORD">`;
-                if(type === 'railfence') extraInput = `<input type="number" id="tKey" aria-label="Rail Count" title="Rail Count" value="3" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="RAILS">`;
+                if(type === 'caesar') extraInput = `<input type="number" id="tKey" title="Shift" value="3" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="SHIFT (e.g., 3)">`;
+                if(type === 'vigenere' || type === 'playfair') extraInput = `<input id="tKey" title="Keyword" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="KEYWORD">`;
+                if(type === 'railfence') extraInput = `<input type="number" id="tKey" title="Rails" value="3" class="w-full bg-black border border-[var(--border)] p-3 rounded mono text-[var(--primary)] outline-none" placeholder="RAILS">`;
                 
-                ws.innerHTML = `<textarea id="tInput" aria-label="Input Text" title="Input Text" class="w-full h-32 bg-black border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none" placeholder="ENTER TEXT..."></textarea>${extraInput}<button onclick="runAlgo()" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] orbitron">ENCRYPT / DECRYPT</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-sm text-[var(--accent)] break-all min-h-[50px]">// OUTPUT WAITING...</div>`;
+                ws.innerHTML = `<textarea id="tInput" title="Input Text" class="w-full h-32 bg-black border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none" placeholder="ENTER TEXT..."></textarea>${extraInput}<button onclick="runAlgo()" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] orbitron">ENCRYPT / DECRYPT</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-sm text-[var(--accent)] break-all min-h-[50px]">// OUTPUT WAITING...</div>`;
             }
             else if (type === 'rsa' || type === 'ecc') {
                 title.innerText = type.toUpperCase(); desc.innerText = "ASYMMETRIC KEY GENERATION";
                 ws.innerHTML = `<button onclick="runAlgo()" class="w-full py-6 bg-red-900 text-white font-black tracking-widest rounded hover:bg-red-700 orbitron">GENERATE NEW KEYPAIR</button><div id="tOutput" class="p-4 bg-black/40 border border-[var(--border)] rounded mono text-xs text-gray-400 break-all whitespace-pre-wrap min-h-[100px]">// KEYS WILL APPEAR HERE</div>`;
             }
             else if (type === 'steganography') {
-                title.innerText = "STEGANOGRAPHY"; desc.innerText = "IMAGE LSB ENCRYPTION (HIDE TEXT IN IMAGE)";
+                title.innerText = "STEGANOGRAPHY"; desc.innerText = "IMAGE LSB ENCRYPTION";
                 ws.innerHTML = `
                 <div class="grid grid-cols-2 gap-4 h-full">
                     <div class="bg-black/30 p-4 border border-white/10 rounded flex flex-col">
                         <h4 class="text-xs font-bold text-[var(--accent)] mb-2 uppercase">ENCODE (HIDE)</h4>
-                        <input type="file" id="stegoInp" aria-label="Source Image" title="Source Image" accept="image/png" class="mb-2 w-full text-xs text-gray-500 file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold">
-                        <textarea id="stegoMsg" aria-label="Secret Message" title="Secret Message" class="flex-grow bg-black border border-gray-700 text-xs p-2 text-white outline-none mb-2" placeholder="Enter Secret Message..."></textarea>
+                        <input type="file" id="stegoInp" title="Image Input" accept="image/png" class="mb-2 w-full text-xs text-gray-500 file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold">
+                        <textarea id="stegoMsg" title="Secret Message" class="flex-grow bg-black border border-gray-700 text-xs p-2 text-white outline-none mb-2" placeholder="Enter Secret Message..."></textarea>
                         <button onclick="encodeStego()" class="w-full bg-[var(--accent)] text-black font-bold py-3 text-xs hover:shadow-[0_0_15px_#bc13fe]">DOWNLOAD ENCODED IMAGE</button>
                     </div>
                     <div class="bg-black/30 p-4 border border-white/10 rounded flex flex-col">
                         <h4 class="text-xs font-bold text-green-400 mb-2 uppercase">DECODE (REVEAL)</h4>
-                        <input type="file" id="stegoDecInp" aria-label="Encoded Image" title="Encoded Image" accept="image/png" class="mb-2 w-full text-xs text-gray-500 file:bg-green-600 file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold">
+                        <input type="file" id="stegoDecInp" title="Image Input" accept="image/png" class="mb-2 w-full text-xs text-gray-500 file:bg-green-600 file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold">
                         <button onclick="decodeStego()" class="w-full border border-green-500 text-green-500 font-bold py-2 text-xs hover:bg-green-500 hover:text-black mb-4">REVEAL MESSAGE</button>
                         <div id="stegoResult" class="flex-grow p-2 bg-green-900/10 border border-green-900 text-xs text-green-400 font-mono break-all overflow-y-auto">// WAITING FOR IMAGE...</div>
                     </div>
@@ -329,7 +324,7 @@
             else if (currentTool === 'ecc') out.innerText = "CURVE: secp256k1\nKEY: " + Math.random().toString(16).substr(2);
         }
 
-        // --- IMAGE STEGANOGRAPHY LOGIC (LSB) ---
+        // --- STEGO LOGIC ---
         function encodeStego() {
             const input = document.getElementById('stegoInp');
             const msg = document.getElementById('stegoMsg').value;
@@ -347,25 +342,19 @@
                     
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height); 
                     const data = imgData.data;
-                    
-                    // Convert msg to binary + null terminator (00000000)
                     let bin = ""; 
                     for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
                     bin += "00000000"; 
 
-                    if(bin.length > data.length/4) return alert("Message too big for this image.");
+                    if(bin.length > data.length/4) return alert("Message too big.");
 
-                    // LSB Injection
                     let dIdx = 0;
                     for(let i=0; i<bin.length; i++) { 
-                        if(dIdx % 4 === 3) dIdx++; // Skip Alpha channel
+                        if(dIdx % 4 === 3) dIdx++; 
                         data[dIdx] = (data[dIdx] & 254) | parseInt(bin[i]); 
                         dIdx++; 
                     }
-                    
                     ctx.putImageData(imgData, 0, 0);
-                    
-                    // Download
                     const link = document.createElement('a'); 
                     link.download = 'enc_image.png'; 
                     link.href = canvas.toDataURL("image/png"); 
@@ -379,7 +368,6 @@
         function decodeStego() {
             const input = document.getElementById('stegoDecInp');
             if(!input.files[0]) return alert("Select encoded PNG image");
-            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
@@ -389,17 +377,13 @@
                     canvas.width = img.width; 
                     canvas.height = img.height; 
                     ctx.drawImage(img, 0, 0);
-                    
                     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
                     let bin = "", res = "";
-                    
-                    // Read LSB
                     for(let i=0; i<data.length; i++) {
-                        if(i % 4 === 3) continue; // Skip Alpha
+                        if(i % 4 === 3) continue;
                         bin += (data[i] & 1).toString();
-                        
                         if(bin.length === 8) { 
-                            if(bin === "00000000") break; // Found null terminator
+                            if(bin === "00000000") break;
                             res += String.fromCharCode(parseInt(bin, 2)); 
                             bin = ""; 
                         }
