@@ -30,7 +30,7 @@
             cursor: none !important;
         }
 
-        /* --- THE SNIPER CROSSHAIR CURSOR --- */
+        /* The Custom Precision Cursor */
         #app-cursor {
             position: fixed;
             top: 0; left: 0;
@@ -38,65 +38,46 @@
             pointer-events: none;
             transform: translate(-50%, -50%);
             mix-blend-mode: difference;
-            width: 30px; height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        /* Center Dot */
-        .cursor-dot {
+        /* Center Dot (Always sharp) */
+        .cursor-core {
             width: 4px; height: 4px;
             background-color: #00f3ff;
             border-radius: 50%;
             position: absolute;
-            z-index: 2;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
             box-shadow: 0 0 5px #00f3ff;
-            transition: all 0.2s ease;
         }
 
-        /* Crosshair Lines */
-        .cursor-line {
+        /* Outer Precision Ring - SIZE REDUCED HERE */
+        .cursor-ring {
+            width: 10px; height: 10px; /* Reduced from 18px */
+            border: 1px solid rgba(0, 243, 255, 0.6);
+            border-radius: 50%;
             position: absolute;
-            background-color: #00f3ff;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.15s ease-out;
         }
 
-        /* Vertical Lines */
-        .line-v { width: 2px; height: 10px; }
-        .line-v.top { top: 0; }
-        .line-v.bottom { bottom: 0; }
-
-        /* Horizontal Lines */
-        .line-h { width: 10px; height: 2px; }
-        .line-h.left { left: 0; }
-        .line-h.right { right: 0; }
-
-        /* --- HOVER STATE: TARGET LOCKED --- */
-        body.hovering .cursor-dot {
-            background-color: #bc13fe; /* Purple */
-            box-shadow: 0 0 10px #bc13fe;
-            transform: scale(1.5);
+        /* Hover State: "Processing" Mode - SIZE REDUCED HERE */
+        body.hovering .cursor-ring {
+            width: 20px; height: 20px; /* Reduced from 28px */
+            border-color: #bc13fe; /* Purple */
+            border-width: 1px;
+            border-style: dashed;
+            animation: spin precision 2s linear infinite;
+            background-color: rgba(188, 19, 254, 0.1);
         }
 
-        body.hovering #app-cursor {
-            transform: translate(-50%, -50%) rotate(45deg); /* Spin 45 degrees */
-        }
-
-        body.hovering .cursor-line {
+        body.hovering .cursor-core {
             background-color: #bc13fe;
+            box-shadow: 0 0 8px #bc13fe;
         }
 
-        /* Clamp lines inward */
-        body.hovering .line-v { height: 14px; } 
-        body.hovering .line-h { width: 14px; }
-        
-        /* Eliminate gap on hover */
-        body.hovering .line-v.top { top: 8px; } 
-        body.hovering .line-v.bottom { bottom: 8px; }
-        body.hovering .line-h.left { left: 8px; } 
-        body.hovering .line-h.right { right: 8px; }
-
+        @keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }
 
         /* --- UI STYLES --- */
         .orbitron { font-family: 'Orbitron', sans-serif; } 
@@ -114,11 +95,8 @@
 <body class="h-screen w-screen flex flex-col overflow-hidden">
 
     <div id="app-cursor">
-        <div class="cursor-dot"></div>
-        <div class="cursor-line line-v top"></div>
-        <div class="cursor-line line-v bottom"></div>
-        <div class="cursor-line line-h left"></div>
-        <div class="cursor-line line-h right"></div>
+        <div class="cursor-ring"></div>
+        <div class="cursor-core"></div>
     </div>
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
@@ -645,6 +623,3 @@
     </script>
 </body>
 </html>
-
-
-this is my entire index.html make the smalll without changing other logics
