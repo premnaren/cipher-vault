@@ -104,26 +104,25 @@ io.on("connection", (socket) => {
         // Send back to Sender
         socket.emit("receive_message", msgData);
 
-        // NOTE: We DO NOT start the delete timer here anymore.
-        // We wait for the 'message_seen' event from the receiver.
+        // NOTE: Timer removed from here. We wait for 'message_seen'.
         
     } catch (err) {
         console.error("Error saving message:", err);
     }
   });
 
-  // --- HANDLE BURN ON READ ---
+  // --- HANDLE BURN ON READ / UNLOCK ---
   socket.on("message_seen", async (msgId) => {
       try {
           const msg = await Message.findById(msgId);
           if(msg && msg.isBurn) {
-              console.log(`🔥 RECIPIENT VIEWED ${msgId}. STARTING 10s TIMER.`);
+              console.log(`🔥 ACTIVATING BURN TIMER FOR ${msgId}`);
               
               // Wait 10 seconds, then delete from DB and notify clients
               setTimeout(async () => {
                   await Message.deleteOne({ _id: msgId });
-                  io.emit("message_burnt", msgId); // Tell all clients to remove it from UI
-                  console.log(`💥 BOOM: Message ${msgId} destroyed.`);
+                  io.emit("message_burnt", msgId); // Triggers visual removal
+                  console.log(`💥 DESTROYED: Message ${msgId}`);
               }, 10000);
           }
       } catch(e) { console.error(e); }

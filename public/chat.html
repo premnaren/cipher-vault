@@ -298,7 +298,6 @@
             };
 
             socket.emit("private_message", payload);
-            // Sender immediately sees it (auto-starts timer locally for UX consistency)
             displayMessage({ ...payload, sender: myId, originalText: text }); 
         }
 
@@ -313,8 +312,6 @@
         });
 
         socket.on("receive_message", (data) => {
-            console.log("⚡ SOCKET MSG:", data);
-            
             const senderString = String(data.senderId || data.sender);
             const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
 
@@ -329,9 +326,8 @@
             }
         });
 
-        // --- NEW: Handle Server-Side Burn Event ---
         socket.on("message_burnt", (msgId) => {
-            const el = document.getElementById(`msg-${msgId}`); // Will need to ensure ID matches
+            const el = document.getElementById(`msg-${msgId}`);
             if(el) {
                 el.classList.add('burn-anim');
                 setTimeout(() => el.remove(), 1500);
@@ -346,7 +342,7 @@
             let content = msg.text || msg.cipherText;
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
-            const msgId = msg._id || 'temp-' + Date.now(); // Ensure we have an ID
+            const msgId = msg._id || 'temp-' + Date.now(); 
 
             if (isMe && method === 'rsa') {
                 const cached = getFromLocalCache(content);
@@ -357,10 +353,12 @@
             }
 
             const div = document.createElement('div');
-            // Use DB ID if available for socket burn events, else temp ID
             div.id = `msg-${msgId}`; 
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             
+            // Mark for burn if needed
+            if (isBurn) div.dataset.burn = "true";
+
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
             const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
@@ -395,24 +393,13 @@
             area.appendChild(div);
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-            // >>> TRIGGER BURN ON READ (ONLY IF RECEIVER) <<<
-            if (isBurn && !isMe) {
-                // If it is RSA, we wait until they unlock it? 
-                // Or burn immediately upon receipt? Usually burn on *view* (which is now).
-                // If locked RSA, maybe wait? For now, we burn on render to keep it simple.
-                // Or better: burn when unlocked? 
-                // Let's stick to "Burn on View" (render).
-                console.log("🔥 Triggering Burn Timer for message", msgId);
-                socket.emit("message_seen", msgId); 
+            // >>> LOGIC FIXED: TRIGGER BURN <<<
+            // 1. If it's NOT locked (e.g. Plaintext/Caesar) AND it's a Burn message AND I am receiver -> BURN IT NOW
+            if (isBurn && !isMe && !isLocked) {
+                console.log("🔥 Triggering Burn Timer for UNLOCKED message", msgId);
+                socket.emit("message_seen", msgId);
             }
-            
-            // Local visual countdown for sender (since server won't tell sender to burn their own copy via 'message_burnt' instantly)
-            if(isBurn && isMe) {
-                 setTimeout(() => {
-                    const el = document.getElementById(`msg-${msgId}`);
-                    if(el) { el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
-                }, 10000);
-            }
+            // 2. If it IS locked (RSA), we DO NOT trigger burn yet. Wait for Unlock button click.
         }
         
         function unlockMessage(id, cipherText) {
@@ -430,6 +417,13 @@
                     const container = document.getElementById(`msg-${id}`); 
                     const btn = container ? container.getElementsByTagName('button')[0] : null;
                     if(btn) btn.classList.add('hidden');
+
+                    // >>> NEW LOGIC: TRIGGER BURN ON UNLOCK <<<
+                    if (container && container.dataset.burn === "true") {
+                        console.log("🔥 Triggering Burn Timer for UNLOCKED RSA message", id);
+                        socket.emit("message_seen", id);
+                    }
+
                 } else {
                     alert("Decryption Failed.");
                 }
