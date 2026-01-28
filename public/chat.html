@@ -216,6 +216,10 @@
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
             
+            // Remove notification if exists
+            const statusText = el.querySelector('.status-text');
+            if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
+
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
@@ -319,16 +323,34 @@
             document.getElementById('burnCheck').checked = false;
         });
 
-        // --- 4. RECEIVING ---
+        // --- 4. RECEIVING (FIXED SOCKET LOGIC) ---
         socket.on("receive_message", (data) => {
-            if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
+            console.log("⚡ SOCKET MSG:", data);
+            
+            // Normalize IDs to prevent Type mismatch issues
+            const senderString = String(data.senderId || data.sender);
+            const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
+
+            if (activeReceiverString && senderString === activeReceiverString) {
+                // If chatting with this person, append message
                 displayMessage(data);
+            } else {
+                // If chatting with someone else, update sidebar notification
+                const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
+                if(userStatus) {
+                    userStatus.innerText = "📩 NEW MSG";
+                    userStatus.classList.add('text-[var(--primary)]', 'animate-pulse');
+                }
             }
         });
 
         function displayMessage(msg) {
             const area = document.getElementById('messagesArea');
-            const isMe = (msg.sender === myId || msg.senderId === myId);
+            
+            // Handle sender ID variations (some backends use 'sender', some 'senderId')
+            const senderString = String(msg.sender || msg.senderId);
+            const isMe = (senderString === String(myId));
+            
             let content = msg.text || msg.cipherText;
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
@@ -338,7 +360,6 @@
                 const cached = getFromLocalCache(content);
                 if(cached) {
                     content = cached;
-                    // Force display as plain text for me
                     msg.originalText = cached; 
                 } else if (msg.originalText) {
                     content = msg.originalText;
@@ -356,10 +377,7 @@
             const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
             // RSA UNLOCK UI LOGIC
-            // If it's me AND I successfully recovered the cache, show plain text
-            // If it's receiver, always show locked
             let isLocked = (!isMe && method === 'rsa');
-            // Edge case: If I sent it but cleared my cache, I see locked too (correct behavior)
             if(isMe && method === 'rsa' && !getFromLocalCache(msg.text) && !msg.originalText) isLocked = true;
 
             let contentHtml = `<div class="text-xs font-mono break-all">${content}</div>`;
@@ -388,7 +406,8 @@
             `;
             
             area.appendChild(div);
-            area.scrollTop = area.scrollHeight;
+            // Auto Scroll (With Timeout to ensure DOM render)
+            setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
             if(isBurn) {
                 setTimeout(() => {
@@ -446,7 +465,11 @@
             document.querySelectorAll('.status-text').forEach(el => {
                 const uid = el.getAttribute('data-id');
                 if(onlineIds.includes(uid)) {
-                    el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]');
+                    // Only update if it doesn't have a new message notification
+                    if (!el.innerText.includes("MSG")) {
+                        el.innerText = "ONLINE"; 
+                        el.classList.replace('text-gray-600', 'text-[var(--primary)]');
+                    }
                 } else {
                     el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600');
                 }
