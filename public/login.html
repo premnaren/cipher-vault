@@ -7,46 +7,181 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #050508; color: #e2e8f0; font-family: 'Orbitron', sans-serif; }
-        .glow { box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); border: 1px solid #1e293b; }
-        .cyber-input { background: #0f1015; border: 1px solid #1e293b; color: #00f3ff; font-family: monospace; }
-        .cyber-input:focus { border-color: #00f3ff; outline: none; box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
+        /* --- CORE THEME --- */
+        body { 
+            background-color: #050508; 
+            color: #e2e8f0; 
+            font-family: 'Orbitron', sans-serif; 
+            overflow: hidden; /* Prevent scrollbars */
+            cursor: none; /* Hide default cursor */
+        }
+
+        /* --- CUSTOM CURSOR --- */
+        #cursor {
+            position: fixed;
+            top: 0; left: 0;
+            width: 20px; height: 20px;
+            border: 2px solid #00f3ff;
+            border-radius: 50%;
+            pointer-events: none; /* Let clicks pass through */
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+            mix-blend-mode: difference;
+        }
+        
+        #cursor::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 4px; height: 4px;
+            background: #00f3ff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Hover state for cursor */
+        body.hovering #cursor {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 243, 255, 0.1);
+            border-color: #bc13fe; /* Accent color on hover */
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
+        }
+
+        /* --- MATRIX CANVAS --- */
+        #matrixCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.2; /* Subtle background */
+        }
+
+        /* --- UI ELEMENTS --- */
+        .glow { box-shadow: 0 0 30px rgba(0, 243, 255, 0.15); border: 1px solid rgba(0, 243, 255, 0.3); }
+        
+        .cyber-input { 
+            background: rgba(15, 16, 21, 0.8); 
+            border: 1px solid #1e293b; 
+            color: #00f3ff; 
+            font-family: monospace;
+            transition: all 0.3s ease;
+        }
+        
+        .cyber-input:focus { 
+            border-color: #00f3ff; 
+            outline: none; 
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); 
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        /* Button Polygon Shape */
+        .clip-path-polygon {
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
     </style>
 </head>
-<body class="h-screen flex items-center justify-center bg-[radial-gradient(circle_at_center,_#1e293b_1px,_transparent_1px)] bg-[length:20px_20px]">
+<body class="h-screen flex items-center justify-center">
 
-    <div class="w-96 p-8 bg-black/90 backdrop-blur rounded-xl glow text-center relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff]"></div>
+    <canvas id="matrixCanvas"></canvas>
+    
+    <div id="cursor"></div>
 
-        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-widest">CIPHER VAULT</h1>
-        <p class="text-[10px] text-gray-500 mb-8 font-mono">SECURE ACCESS TERMINAL</p>
+    <div class="w-96 p-8 bg-black/80 backdrop-blur-md rounded-xl glow text-center relative overflow-hidden z-10">
+        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff] shadow-[0_0_20px_#00f3ff]"></div>
+
+        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-[0.2em] animate-pulse">CIPHER VAULT</h1>
+        <p class="text-[10px] text-gray-500 mb-8 font-mono tracking-widest">SECURE ACCESS TERMINAL</p>
         
-        <form id="authForm" class="space-y-4">
-            <input type="text" id="username" placeholder="AGENT ID" required 
-                   class="w-full p-3 rounded cyber-input">
+        <form id="authForm" class="space-y-5">
+            <div class="relative group">
+                <input type="text" id="username" placeholder="AGENT ID" required 
+                       class="w-full p-3 rounded cyber-input pl-4">
+                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs">ID</div>
+            </div>
             
-            <input type="password" id="password" placeholder="PASSCODE" required 
-                   class="w-full p-3 rounded cyber-input">
+            <div class="relative group">
+                <input type="password" id="password" placeholder="PASSCODE" required 
+                       class="w-full p-3 rounded cyber-input pl-4">
+                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs">KEY</div>
+            </div>
             
             <button type="submit" 
-                    class="w-full py-3 bg-[#00f3ff] text-black font-bold hover:bg-white transition-all tracking-widest clip-path-polygon">
+                    class="w-full py-4 bg-[#00f3ff] text-black font-black hover:bg-white hover:shadow-[0_0_20px_#00f3ff] transition-all tracking-[0.2em] clip-path-polygon transform active:scale-95">
                 AUTHENTICATE
             </button>
             
             <p id="message" class="text-xs text-red-500 font-mono min-h-[20px]"></p>
 
-            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full">
+            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full transition-colors font-mono tracking-wider">
                 :: NEW AGENT? INITIALIZE REGISTRATION ::
             </button>
         </form>
     </div>
 
     <script>
+        // --- 1. MATRIX RAIN EFFECT ---
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas to full screen
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // Characters to drop
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            // Translucent black background to create trail effect
+            ctx.fillStyle = 'rgba(5, 5, 8, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00f3ff'; // Cyan Text
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // Reset drop randomly to create rain effect
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50); // Speed of rain
+
+        // --- 2. CUSTOM CURSOR LOGIC ---
+        const cursor = document.getElementById('cursor');
+        const body = document.body;
+
+        // Move cursor
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Add hover effect for inputs and buttons
+        const interactables = document.querySelectorAll('button, input');
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => body.classList.remove('hovering'));
+        });
+
+        // --- 3. AUTHENTICATION LOGIC (unchanged) ---
         let isLogin = true;
         const form = document.getElementById('authForm');
         const msg = document.getElementById('message');
         
-        // Toggle betwen Login and Register modes
         document.getElementById('toggleAuth').onclick = (e) => {
             isLogin = !isLogin;
             e.target.innerText = isLogin ? ":: NEW AGENT? INITIALIZE REGISTRATION ::" : ":: HAVE ID? LOGIN ::";
@@ -59,6 +194,12 @@
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
             const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+
+            // Add loading effect
+            const btn = document.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "PROCESSING...";
+            btn.style.opacity = "0.7";
 
             try {
                 const res = await fetch(endpoint, {
@@ -74,19 +215,19 @@
                     msg.className = "text-xs text-red-500 font-mono mt-2";
                 } else {
                     if(data.token) {
-                        // Success: Save token and redirect
                         localStorage.setItem('auth-token', data.token);
                         window.location.href = '/index.html';
                     } else {
-                        // Registered successfully
                         msg.innerText = "IDENTITY CREATED. PLEASE LOGIN.";
                         msg.className = "text-xs text-[#00f3ff] font-mono mt-2";
-                        // Auto-switch back to login
                         setTimeout(() => document.getElementById('toggleAuth').click(), 1500);
                     }
                 }
             } catch (err) {
                 msg.innerText = "SYSTEM FAILURE: SERVER UNREACHABLE";
+            } finally {
+                btn.innerText = originalText;
+                btn.style.opacity = "1";
             }
         };
     </script>
