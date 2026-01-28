@@ -13,47 +13,77 @@
             color: #e2e8f0; 
             font-family: 'Orbitron', sans-serif; 
             overflow: hidden; 
-            cursor: none !important; /* Force hide everywhere */
+            cursor: none !important; /* STRICTLY HIDE SYSTEM CURSOR */
         }
 
-        /* --- STRICT CURSOR REMOVAL --- */
-        /* This ensures the "I" beam and "Hand" never appear */
-        input, button, a, .cyber-input, .clip-path-polygon {
+        /* Prevent default cursors on all elements */
+        input, button, a, .cyber-input, .clip-path-polygon, label {
             cursor: none !important;
         }
 
-        /* --- CUSTOM CURSOR --- */
+        /* --- CUSTOM TACTICAL CURSOR --- */
         #cursor {
             position: fixed;
             top: 0; left: 0;
-            width: 20px; height: 20px;
-            border: 2px solid #00f3ff;
-            border-radius: 50%;
-            pointer-events: none; /* Crucial: Lets clicks pass through to buttons below */
+            pointer-events: none; /* Allows clicking through */
             z-index: 9999;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
-            transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s;
             mix-blend-mode: difference;
         }
-        
-        #cursor::after {
-            content: '';
+
+        /* The Center Dot */
+        .cursor-dot {
+            width: 4px; height: 4px;
+            background-color: #00f3ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00f3ff;
             position: absolute;
             top: 50%; left: 50%;
-            width: 4px; height: 4px;
-            background: #00f3ff;
-            border-radius: 50%;
             transform: translate(-50%, -50%);
+            transition: all 0.2s ease;
         }
 
-        /* Hover state for cursor (When over inputs/buttons) */
-        body.hovering #cursor {
-            width: 50px;
-            height: 50px;
-            background-color: rgba(0, 243, 255, 0.1);
-            border-color: #bc13fe;
-            box-shadow: 0 0 30px rgba(188, 19, 254, 0.6);
+        /* The Outer Scanning Ring */
+        .cursor-reticle {
+            width: 30px; height: 30px;
+            border: 1px dashed rgba(0, 243, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: scanSpin 4s linear infinite;
+            transition: all 0.3s ease;
+        }
+
+        /* --- HOVER STATE (TARGET LOCKED) --- */
+        /* When body has class 'hovering', transform cursor */
+        body.hovering .cursor-reticle {
+            width: 50px; height: 50px;
+            border-radius: 4px; /* Turn into square */
+            border: 2px solid #bc13fe; /* Purple */
+            border-left: 2px solid transparent; /* Gap effect */
+            border-right: 2px solid transparent;
+            background-color: rgba(188, 19, 254, 0.05);
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
+            animation: lockSpin 1s infinite linear; /* Fast spin */
+        }
+
+        body.hovering .cursor-dot {
+            background-color: #bc13fe;
+            box-shadow: 0 0 15px #bc13fe;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        /* Animation Definitions */
+        @keyframes scanSpin { 
+            0% { transform: translate(-50%, -50%) rotate(0deg); } 
+            100% { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+        
+        @keyframes lockSpin { 
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(0.9); } 
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); } 
         }
 
         /* --- MATRIX CANVAS --- */
@@ -92,7 +122,10 @@
 
     <canvas id="matrixCanvas"></canvas>
     
-    <div id="cursor"></div>
+    <div id="cursor">
+        <div class="cursor-reticle"></div>
+        <div class="cursor-dot"></div>
+    </div>
 
     <div class="w-96 p-8 bg-black/80 backdrop-blur-md rounded-xl glow text-center relative overflow-hidden z-10">
         <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff] shadow-[0_0_20px_#00f3ff]"></div>
@@ -104,13 +137,13 @@
             <div class="relative group">
                 <input type="text" id="username" placeholder="AGENT ID" required 
                        class="w-full p-3 rounded cyber-input pl-4">
-                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs">ID</div>
+                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">ID</div>
             </div>
             
             <div class="relative group">
                 <input type="password" id="password" placeholder="PASSCODE" required 
                        class="w-full p-3 rounded cyber-input pl-4">
-                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs">KEY</div>
+                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">KEY</div>
             </div>
             
             <button type="submit" 
@@ -160,16 +193,18 @@
         }
         setInterval(drawMatrix, 50);
 
-        // --- 2. CUSTOM CURSOR LOGIC ---
+        // --- 2. CUSTOM TACTICAL CURSOR LOGIC ---
         const cursor = document.getElementById('cursor');
         const body = document.body;
 
+        // Smoothly follow mouse
         document.addEventListener('mousemove', (e) => {
             cursor.style.left = e.clientX + 'px';
             cursor.style.top = e.clientY + 'px';
         });
 
-        const interactables = document.querySelectorAll('button, input');
+        // Trigger "Target Locked" state on hover
+        const interactables = document.querySelectorAll('button, input, a, .clickable');
         interactables.forEach(el => {
             el.addEventListener('mouseenter', () => body.classList.add('hovering'));
             el.addEventListener('mouseleave', () => body.classList.remove('hovering'));
