@@ -53,6 +53,7 @@
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></span>
                 <span id="statusText">OFFLINE</span>
             </div>
+            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-gray-500 hover:text-white text-xs border border-gray-700 px-3 py-1 rounded">🔊 ON</button>
             <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
         </div>
     </nav>
@@ -133,6 +134,62 @@
     </div>
 
     <script>
+        // --- 0. SOUND SYSTEM (WEB AUDIO API) ---
+        const SoundFX = {
+            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+            muted: false,
+            
+            toggle: function() {
+                this.muted = !this.muted;
+                document.getElementById('muteBtn').innerText = this.muted ? "🔇 OFF" : "🔊 ON";
+                // Resume context if suspended (browser autoplay policy)
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+
+            playOscillator: function(freq, type, duration, vol=0.1) {
+                if(this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+
+            playWhiteNoise: function(duration) {
+                if(this.muted) return;
+                const bufferSize = this.ctx.sampleRate * duration;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            },
+
+            send: function() { this.playOscillator(1200, 'sine', 0.1); }, // High blip
+            receive: function() { 
+                this.playOscillator(800, 'square', 0.1); 
+                setTimeout(() => this.playOscillator(1200, 'square', 0.2), 100);
+            },
+            decrypt: function() {
+                this.playOscillator(200, 'sawtooth', 0.5);
+                setTimeout(() => this.playOscillator(600, 'sine', 0.3), 100);
+            },
+            burn: function() { this.playWhiteNoise(0.5); } // Fizzle sound
+        };
+
+        // --- UI LOGIC ---
         function toggleSpyTools() {
             const el = document.getElementById('spyTools');
             el.classList.toggle('open');
@@ -298,7 +355,8 @@
             };
 
             socket.emit("private_message", payload);
-            displayMessage({ ...payload, sender: myId, originalText: text }); 
+            SoundFX.send(); // SOUND EFFECT
+            // displayMessage is handled by socket echo to ensure sync
         }
 
         document.getElementById('chatForm').addEventListener('submit', (e) => {
@@ -315,9 +373,11 @@
             const senderString = String(data.senderId || data.sender);
             const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
 
-            if (activeReceiverString && senderString === activeReceiverString) {
+            if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
                 displayMessage(data);
-            } else {
+                if (senderString !== String(myId)) SoundFX.receive(); // SOUND EFFECT FOR RECEIVING
+            } else if (senderString !== String(myId)) {
+                SoundFX.receive(); // SOUND EFFECT FOR NOTIFICATION
                 const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
                 if(userStatus) {
                     userStatus.innerText = "📩 NEW MSG";
@@ -329,6 +389,7 @@
         socket.on("message_burnt", (msgId) => {
             const el = document.getElementById(`msg-${msgId}`);
             if(el) {
+                SoundFX.burn(); // SOUND EFFECT
                 el.classList.add('burn-anim');
                 setTimeout(() => el.remove(), 1500);
             }
@@ -342,7 +403,7 @@
             let content = msg.text || msg.cipherText;
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
-            const msgId = msg._id || 'temp-' + Date.now(); 
+            const msgId = msg._id; 
 
             if (isMe && method === 'rsa') {
                 const cached = getFromLocalCache(content);
@@ -356,7 +417,6 @@
             div.id = `msg-${msgId}`; 
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             
-            // Mark for burn if needed
             if (isBurn) div.dataset.burn = "true";
 
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
@@ -393,13 +453,10 @@
             area.appendChild(div);
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-            // >>> LOGIC FIXED: TRIGGER BURN <<<
-            // 1. If it's NOT locked (e.g. Plaintext/Caesar) AND it's a Burn message AND I am receiver -> BURN IT NOW
+            // LOGIC: TRIGGER BURN FOR UNLOCKED MESSAGES
             if (isBurn && !isMe && !isLocked) {
-                console.log("🔥 Triggering Burn Timer for UNLOCKED message", msgId);
                 socket.emit("message_seen", msgId);
             }
-            // 2. If it IS locked (RSA), we DO NOT trigger burn yet. Wait for Unlock button click.
         }
         
         function unlockMessage(id, cipherText) {
@@ -410,6 +467,7 @@
                 const decrypted = decryptor.decrypt(cipherText);
                 
                 if (decrypted) {
+                    SoundFX.decrypt(); // SOUND EFFECT
                     document.getElementById(`plain-${id}`).innerText = decrypted;
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
@@ -418,9 +476,8 @@
                     const btn = container ? container.getElementsByTagName('button')[0] : null;
                     if(btn) btn.classList.add('hidden');
 
-                    // >>> NEW LOGIC: TRIGGER BURN ON UNLOCK <<<
                     if (container && container.dataset.burn === "true") {
-                        console.log("🔥 Triggering Burn Timer for UNLOCKED RSA message", id);
+                        console.log("🔥 Triggering Burn for RSA message", id);
                         socket.emit("message_seen", id);
                     }
 
