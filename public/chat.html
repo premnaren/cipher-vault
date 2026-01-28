@@ -37,7 +37,6 @@
 
         .encrypted-text { color: #bc13fe; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: -0.5px; opacity: 0.7; }
         
-        /* Drawer Animation */
         #spyTools { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         #spyTools.open { max-height: 200px; opacity: 1; margin-bottom: 10px; }
     </style>
@@ -134,14 +133,12 @@
     </div>
 
     <script>
-        // --- UI LOGIC ---
         function toggleSpyTools() {
             const el = document.getElementById('spyTools');
             el.classList.toggle('open');
             document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
         }
 
-        // --- AUTH & INIT ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         
@@ -157,14 +154,10 @@
         }
 
         const socket = io({ auth: { token } });
-        
         let currentReceiver = null;
         let activeUsersMap = {}; 
-        
-        // --- 1. REFACTORED RSA ENGINE ---
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
-        // >>> NEW: LOCAL CACHE FOR SENT MESSAGES <<<
         function saveToLocalCache(cipher, plain) {
             try {
                 let cache = JSON.parse(localStorage.getItem('sent_cache') || '{}');
@@ -209,14 +202,11 @@
 
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- 2. USER SELECTION ---
         async function selectUser(user, el) {
             currentReceiver = user;
-            
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
             
-            // Remove notification if exists
             const statusText = el.querySelector('.status-text');
             if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
 
@@ -273,7 +263,6 @@
         }
         fetchUsers();
 
-        // --- 3. SENDING ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
             if(!currentReceiver) return alert("Select a user first!");
             const method = forcedMethod || document.getElementById('cipherMethod').value;
@@ -289,7 +278,6 @@
                 cipherText = encryptor.encrypt(text);
                 if(!cipherText) return alert("Message too long for RSA.");
                 
-                // >>> SAVE COPY FOR SELF <<<
                 saveToLocalCache(cipherText, text);
             } 
             else if (method === 'caesar') {
@@ -310,6 +298,7 @@
             };
 
             socket.emit("private_message", payload);
+            // Sender immediately sees it (auto-starts timer locally for UX consistency)
             displayMessage({ ...payload, sender: myId, originalText: text }); 
         }
 
@@ -323,19 +312,15 @@
             document.getElementById('burnCheck').checked = false;
         });
 
-        // --- 4. RECEIVING (FIXED SOCKET LOGIC) ---
         socket.on("receive_message", (data) => {
             console.log("⚡ SOCKET MSG:", data);
             
-            // Normalize IDs to prevent Type mismatch issues
             const senderString = String(data.senderId || data.sender);
             const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
 
             if (activeReceiverString && senderString === activeReceiverString) {
-                // If chatting with this person, append message
                 displayMessage(data);
             } else {
-                // If chatting with someone else, update sidebar notification
                 const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
                 if(userStatus) {
                     userStatus.innerText = "📩 NEW MSG";
@@ -344,39 +329,41 @@
             }
         });
 
+        // --- NEW: Handle Server-Side Burn Event ---
+        socket.on("message_burnt", (msgId) => {
+            const el = document.getElementById(`msg-${msgId}`); // Will need to ensure ID matches
+            if(el) {
+                el.classList.add('burn-anim');
+                setTimeout(() => el.remove(), 1500);
+            }
+        });
+
         function displayMessage(msg) {
             const area = document.getElementById('messagesArea');
-            
-            // Handle sender ID variations (some backends use 'sender', some 'senderId')
             const senderString = String(msg.sender || msg.senderId);
             const isMe = (senderString === String(myId));
             
             let content = msg.text || msg.cipherText;
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
-            
-            // >>> RECOVER PLAIN TEXT FROM CACHE IF IT'S ME <<<
+            const msgId = msg._id || 'temp-' + Date.now(); // Ensure we have an ID
+
             if (isMe && method === 'rsa') {
                 const cached = getFromLocalCache(content);
-                if(cached) {
-                    content = cached;
-                    msg.originalText = cached; 
-                } else if (msg.originalText) {
-                    content = msg.originalText;
-                }
+                if(cached) { content = cached; msg.originalText = cached; } 
+                else if (msg.originalText) { content = msg.originalText; }
             } else if (isMe && msg.originalText) {
                 content = msg.originalText;
             }
 
             const div = document.createElement('div');
-            const burnId = 'msg-' + Date.now() + Math.floor(Math.random() * 100000);
-            div.id = burnId;
+            // Use DB ID if available for socket burn events, else temp ID
+            div.id = `msg-${msgId}`; 
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
             const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
-            // RSA UNLOCK UI LOGIC
             let isLocked = (!isMe && method === 'rsa');
             if(isMe && method === 'rsa' && !getFromLocalCache(msg.text) && !msg.originalText) isLocked = true;
 
@@ -384,11 +371,11 @@
             
             if (isLocked) {
                 contentHtml = `
-                    <div class="encrypted-text mb-2 break-all" id="cipher-${burnId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
-                    <button onclick="unlockMessage('${burnId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                    <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
+                    <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
                         <span>🔓 UNLOCK DATA</span>
                     </button>
-                    <div id="plain-${burnId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                    <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
                 `;
             }
 
@@ -406,12 +393,23 @@
             `;
             
             area.appendChild(div);
-            // Auto Scroll (With Timeout to ensure DOM render)
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-            if(isBurn) {
-                setTimeout(() => {
-                    const el = document.getElementById(burnId);
+            // >>> TRIGGER BURN ON READ (ONLY IF RECEIVER) <<<
+            if (isBurn && !isMe) {
+                // If it is RSA, we wait until they unlock it? 
+                // Or burn immediately upon receipt? Usually burn on *view* (which is now).
+                // If locked RSA, maybe wait? For now, we burn on render to keep it simple.
+                // Or better: burn when unlocked? 
+                // Let's stick to "Burn on View" (render).
+                console.log("🔥 Triggering Burn Timer for message", msgId);
+                socket.emit("message_seen", msgId); 
+            }
+            
+            // Local visual countdown for sender (since server won't tell sender to burn their own copy via 'message_burnt' instantly)
+            if(isBurn && isMe) {
+                 setTimeout(() => {
+                    const el = document.getElementById(`msg-${msgId}`);
                     if(el) { el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
                 }, 10000);
             }
@@ -429,7 +427,7 @@
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
                     
-                    const container = document.getElementById(id);
+                    const container = document.getElementById(`msg-${id}`); 
                     const btn = container ? container.getElementsByTagName('button')[0] : null;
                     if(btn) btn.classList.add('hidden');
                 } else {
@@ -465,7 +463,6 @@
             document.querySelectorAll('.status-text').forEach(el => {
                 const uid = el.getAttribute('data-id');
                 if(onlineIds.includes(uid)) {
-                    // Only update if it doesn't have a new message notification
                     if (!el.innerText.includes("MSG")) {
                         el.innerText = "ONLINE"; 
                         el.classList.replace('text-gray-600', 'text-[var(--primary)]');

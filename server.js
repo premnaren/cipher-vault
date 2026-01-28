@@ -26,7 +26,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/vault", require("./routes/vault")); 
 
-// --- 1. API TO GET ALL USERS (The Phonebook) ---
+// --- API ENDPOINTS ---
 app.get("/api/users", async (req, res) => {
     try {
         const users = await User.find({}, "username _id publicKey"); 
@@ -36,7 +36,6 @@ app.get("/api/users", async (req, res) => {
     }
 });
 
-// --- 2. UPDATE MY PUBLIC KEY (The Sync) ---
 app.post("/api/users/key", async (req, res) => {
     const { userId, publicKey } = req.body;
     try {
@@ -47,7 +46,6 @@ app.post("/api/users/key", async (req, res) => {
     }
 });
 
-// --- 3. GET CHAT HISTORY ---
 app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
     try {
         const { senderId, receiverId } = req.params;
@@ -56,41 +54,37 @@ app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
                 { sender: senderId, receiver: receiverId },
                 { sender: receiverId, receiver: senderId }
             ]
-        }).sort({ timestamp: 1 }); // Oldest first
+        }).sort({ timestamp: 1 });
         res.json(messages);
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch messages" });
     }
 });
 
-// Serve HTML pages
+// Serve Frontend
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/index.html")));
 app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.html")));
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- TRACK ONLINE USERS ---
-// Map stores <UserId, SocketId>
+// --- SOCKET LOGIC ---
 let onlineUsers = new Map(); 
 
-// --- SOCKET LOGIC ---
 io.on("connection", (socket) => {
   console.log("⚡ New Connection:", socket.id);
 
-  // 1. Handle User Login (Map UserID -> SocketID)
   socket.on("login", (userId) => {
     if (userId) {
         onlineUsers.set(userId, socket.id);
-        io.emit("get_users", Array.from(onlineUsers.keys())); // Tell everyone who is online
-        console.log(`✅ User Logged In: ${userId} -> ${socket.id}`);
+        io.emit("get_users", Array.from(onlineUsers.keys()));
+        console.log(`✅ User Logged In: ${userId}`);
     }
   });
 
-  // 2. Handle Private Message (Direct Routing)
+  // --- HANDLE MESSAGE ---
   socket.on("private_message", async (data) => {
     const { senderId, receiverId, text, cipherType, isBurn } = data;
     
     try {
-        // A. Save to Database
         const newMessage = new Message({ 
             sender: senderId, 
             receiver: receiverId, 
@@ -100,43 +94,41 @@ io.on("connection", (socket) => {
         });
         const savedMsg = await newMessage.save();
 
-        // Add the real DB ID to the data payload before sending
         const msgData = { ...data, _id: savedMsg._id };
-
-        // B. Find Receiver's Socket ID
         const receiverSocketId = onlineUsers.get(receiverId);
 
-        // C. Send to Receiver (Instant Update)
+        // Send to Receiver
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("receive_message", msgData);
-            console.log(`📨 Message sent to Receiver (${receiverId})`);
-        } else {
-            console.log(`⚠️ Receiver (${receiverId}) is offline. Message saved to DB.`);
         }
-
-        // D. Send back to Sender (For other tabs/confirmation)
+        // Send back to Sender
         socket.emit("receive_message", msgData);
 
-        // --- SELF DESTRUCT LOGIC ---
-        if (isBurn) {
-            console.log(`💣 BURN TIMER STARTED: Message ${savedMsg._id}`);
-            setTimeout(async () => {
-                await Message.deleteOne({ _id: savedMsg._id });
-                
-                // Notify both parties to delete from UI
-                if(receiverSocketId) io.to(receiverSocketId).emit("message_burnt", savedMsg._id);
-                socket.emit("message_burnt", savedMsg._id);
-                
-                console.log(`💥 BOOM: Message ${savedMsg._id} destroyed.`);
-            }, 10000); // 10 Seconds
-        }
+        // NOTE: We DO NOT start the delete timer here anymore.
+        // We wait for the 'message_seen' event from the receiver.
         
     } catch (err) {
         console.error("Error saving message:", err);
     }
   });
 
-  // 3. Handle Disconnect
+  // --- HANDLE BURN ON READ ---
+  socket.on("message_seen", async (msgId) => {
+      try {
+          const msg = await Message.findById(msgId);
+          if(msg && msg.isBurn) {
+              console.log(`🔥 RECIPIENT VIEWED ${msgId}. STARTING 10s TIMER.`);
+              
+              // Wait 10 seconds, then delete from DB and notify clients
+              setTimeout(async () => {
+                  await Message.deleteOne({ _id: msgId });
+                  io.emit("message_burnt", msgId); // Tell all clients to remove it from UI
+                  console.log(`💥 BOOM: Message ${msgId} destroyed.`);
+              }, 10000);
+          }
+      } catch(e) { console.error(e); }
+  });
+
   socket.on("disconnect", () => {
     for (let [id, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
@@ -144,8 +136,7 @@ io.on("connection", (socket) => {
         break;
       }
     }
-    io.emit("get_users", Array.from(onlineUsers.keys())); // Update everyone's list
-    console.log("❌ User Disconnected", socket.id);
+    io.emit("get_users", Array.from(onlineUsers.keys()));
   });
 });
 
