@@ -24,12 +24,11 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/vault", require("./routes/vault")); // Commented out if you don't use vault yet
+app.use("/api/vault", require("./routes/vault")); 
 
 // --- 1. API TO GET ALL USERS (The Phonebook) ---
 app.get("/api/users", async (req, res) => {
     try {
-        // Return id, username, AND publicKey
         const users = await User.find({}, "username _id publicKey"); 
         res.json(users);
     } catch (err) {
@@ -70,32 +69,28 @@ app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.ht
 app.use(express.static(path.join(__dirname, "public")));
 
 // --- TRACK ONLINE USERS ---
-let onlineUsers = new Map(); // Stores { userId: socketId }
+// Map stores <UserId, SocketId>
+let onlineUsers = new Map(); 
 
 // --- SOCKET LOGIC ---
 io.on("connection", (socket) => {
-  console.log("User Connected:", socket.id);
+  console.log("⚡ New Connection:", socket.id);
 
-  // 1. Handle User Login
+  // 1. Handle User Login (Map UserID -> SocketID)
   socket.on("login", (userId) => {
     if (userId) {
         onlineUsers.set(userId, socket.id);
-        io.emit("get_users", Array.from(onlineUsers.keys()));
-        console.log(`User Logged In: ${userId}`);
+        io.emit("get_users", Array.from(onlineUsers.keys())); // Tell everyone who is online
+        console.log(`✅ User Logged In: ${userId} -> ${socket.id}`);
     }
   });
 
-  // 2. Join a Private Room
-  socket.on("join_room", ({ senderId, receiverId }) => {
-    const roomName = [senderId, receiverId].sort().join("_");
-    socket.join(roomName);
-  });
-
-  // 3. Handle Private Message
+  // 2. Handle Private Message (Direct Routing)
   socket.on("private_message", async (data) => {
     const { senderId, receiverId, text, cipherType, isBurn } = data;
     
     try {
+        // A. Save to Database
         const newMessage = new Message({ 
             sender: senderId, 
             receiver: receiverId, 
@@ -105,17 +100,33 @@ io.on("connection", (socket) => {
         });
         const savedMsg = await newMessage.save();
 
+        // Add the real DB ID to the data payload before sending
         const msgData = { ...data, _id: savedMsg._id };
 
-        const roomName = [senderId, receiverId].sort().join("_");
-        io.to(roomName).emit("receive_message", msgData);
+        // B. Find Receiver's Socket ID
+        const receiverSocketId = onlineUsers.get(receiverId);
+
+        // C. Send to Receiver (Instant Update)
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("receive_message", msgData);
+            console.log(`📨 Message sent to Receiver (${receiverId})`);
+        } else {
+            console.log(`⚠️ Receiver (${receiverId}) is offline. Message saved to DB.`);
+        }
+
+        // D. Send back to Sender (For other tabs/confirmation)
+        socket.emit("receive_message", msgData);
 
         // --- SELF DESTRUCT LOGIC ---
         if (isBurn) {
             console.log(`💣 BURN TIMER STARTED: Message ${savedMsg._id}`);
             setTimeout(async () => {
                 await Message.deleteOne({ _id: savedMsg._id });
-                io.to(roomName).emit("message_burnt", savedMsg._id);
+                
+                // Notify both parties to delete from UI
+                if(receiverSocketId) io.to(receiverSocketId).emit("message_burnt", savedMsg._id);
+                socket.emit("message_burnt", savedMsg._id);
+                
                 console.log(`💥 BOOM: Message ${savedMsg._id} destroyed.`);
             }, 10000); // 10 Seconds
         }
@@ -125,7 +136,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  // 4. Handle Disconnect
+  // 3. Handle Disconnect
   socket.on("disconnect", () => {
     for (let [id, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
@@ -133,8 +144,8 @@ io.on("connection", (socket) => {
         break;
       }
     }
-    io.emit("get_users", Array.from(onlineUsers.keys()));
-    console.log("User Disconnected", socket.id);
+    io.emit("get_users", Array.from(onlineUsers.keys())); // Update everyone's list
+    console.log("❌ User Disconnected", socket.id);
   });
 });
 
