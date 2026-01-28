@@ -15,14 +15,70 @@
 
         :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
         
+        /* --- CURSOR SYSTEM --- */
         body { 
             background-color: var(--bg-body); 
             color: #e2e8f0; 
             font-family: 'Inter', sans-serif; 
             background-image: radial-gradient(var(--border) 1px, transparent 1px); 
-            background-size: 30px 30px; 
+            background-size: 30px 30px;
+            cursor: none !important; /* Hide default cursor */
         }
-        
+
+        /* Force hide cursor on all interactables */
+        a, button, input, textarea, select, label, .tool-btn {
+            cursor: none !important;
+        }
+
+        /* The Custom Cursor Container */
+        #app-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            z-index: 9999;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+        }
+
+        /* Center Dot (The actual point) */
+        .cursor-core {
+            width: 2px; height: 2px;
+            background-color: #00f3ff;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 4px #00f3ff;
+        }
+
+        /* Outer Shape - "Data Bit" Style */
+        .cursor-ring {
+            width: 14px; height: 14px; /* Small and precise */
+            border: 1px solid #00f3ff;
+            /* Square with slight rounded corners = Tech look */
+            border-radius: 2px; 
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Snap effect */
+            opacity: 0.8;
+        }
+
+        /* Hover State: "Target Locked" - Diamond Shape */
+        body.hovering .cursor-ring {
+            width: 24px; height: 24px;
+            border-color: #bc13fe; /* Purple */
+            border-width: 1px;
+            transform: translate(-50%, -50%) rotate(45deg); /* Turn into diamond */
+            background-color: rgba(188, 19, 254, 0.1);
+            box-shadow: 0 0 10px rgba(188, 19, 254, 0.3);
+        }
+
+        body.hovering .cursor-core {
+            background-color: #bc13fe;
+            box-shadow: 0 0 6px #bc13fe;
+        }
+
+        /* --- UI STYLES --- */
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
         .card-inner { transform-style: preserve-3d; }
@@ -36,6 +92,11 @@
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
+
+    <div id="app-cursor">
+        <div class="cursor-ring"></div>
+        <div class="cursor-core"></div>
+    </div>
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
@@ -189,6 +250,22 @@
     </div>
 
     <script>
+        // --- CUSTOM CURSOR LOGIC ---
+        const cursor = document.getElementById('app-cursor');
+        const cursorRing = cursor.querySelector('.cursor-ring');
+        
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Hover Effect
+        const interactables = document.querySelectorAll('button, input, textarea, select, a, .border');
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+        });
+
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
