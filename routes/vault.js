@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const multer = require('multer');        
-const File = require('../models/VaultFile'); // Ensure this model exists and matches your schema
+const File = require('../models/File'); // Ensure this model exists and matches your schema
 const jwt = require('jsonwebtoken');    
 const path = require('path');
 const fs = require('fs');
