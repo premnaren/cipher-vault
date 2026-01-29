@@ -51,6 +51,7 @@ public/css/chat.css
 public/index.html
 public/js/chat-client.js
 public/login.html
+README.md
 routes/auth.js
 routes/chatRoutes.js
 routes/vault.js
@@ -184,6 +185,146 @@ function displayMessage(data, type) {
 }
 </file>
 
+<file path="README.md">
+# 🔐 CIPHER VAULT | Secure Uplink Terminal
+
+> **Zero-Knowledge Communication & Encrypted Storage System**
+
+![Project Status](https://img.shields.io/badge/Status-Active_Development-green)
+![Security](https://img.shields.io/badge/Security-End--to--End_Encrypted-blue)
+![License](https://img.shields.io/badge/License-MIT-purple)
+
+## 📡 Transmission Incoming...
+
+**Cipher Vault** is a web-based secure communication platform designed with a "Void/Matrix" terminal aesthetic. It prioritizes user privacy by implementing **Client-Side Encryption**.
+
+Unlike traditional chat apps, Cipher Vault uses a **Zero-Knowledge Architecture**: keys are generated in your browser and never stored plainly on the server. The server acts only as a relay for encrypted data—it cannot read your messages or see your files.
+
+---
+
+## 🖥️ Interface Uplink
+
+| Secure Chat (RSA) | The Vault (Storage) |
+|:---:|:---:|
+| ![Chat UI](path/to/screenshot_chat.png) | ![Vault UI](path/to/screenshot_vault.png) |
+> *Visualized: Void Theme running on Secure Channel*
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** HTML5, Tailwind CSS (CDN), Vanilla JavaScript.
+* **Encryption Engine:**
+    * `JSEncrypt` (RSA Asymmetric Key Exchange).
+    * `CryptoJS` (AES & Classical Ciphers).
+* **Backend:** Node.js & Express.
+* **Real-Time Protocol:** Socket.io (WebSockets).
+* **Database:** MongoDB (via Mongoose).
+* **Authentication:** JWT (JSON Web Tokens).
+
+---
+
+## ⚡ Key Features
+
+### 💬 Secure Uplink (Chat)
+* **RSA Military Grade Encryption:** Messages are locked with the recipient's public key. Only the intended recipient can unlock them.
+* **Auto-Key Exchange:** The "Phonebook Protocol" automatically syncs public keys via the database, ensuring seamless connection without manual handshakes.
+* **Burn-On-Read:** Optional self-destruct timer that wipes messages from the server and client after 10 seconds.
+* **Local Caching:** Sender sees their own messages instantly via secure local cache, while the server only sees cipher text.
+
+### 🔒 The Vault (Storage)
+* **Encrypted File Ingestion:** Upload documents and images securely.
+* **Access Control:** Files are token-gated; only the owner can list, download, or delete them.
+* **Visual Dashboard:** A cyberpunk file explorer interface.
+
+### 🎛️ Encryption Terminal (Tools)
+* **Learning Library:** Interactive tools to learn and test classical ciphers (Caesar, Pigpen, Vigenère).
+* **Visual Output:** See how plain text transforms into cipher text in real-time.
+
+---
+
+## ⚠️ Maintenance & Roadmap Notice
+
+> **🚧 SYSTEM ALERT: UNDER ACTIVE CONSTRUCTION**
+>
+> Please be aware that Cipher Vault is currently in a **Beta State**. You may encounter the following limitations:
+>
+> 1.  **Encryption Library:** The sidebar educational modules (Atbash, Rail Fence details) are currently static and under maintenance. Full interactive tutorials are coming soon.
+> 2.  **Mobile Responsiveness:** The UI is currently optimized for Desktop/Tablet terminals. Mobile layouts are being refactored.
+> 3.  **Group Chat:** Currently supports 1-on-1 direct messaging only. Multi-agent channels are in development.
+> 4.  **Key Cycling:** If you clear your browser cache, you generate a new identity. Old messages sent to your previous identity will become permanently unreadable (security feature).
+
+---
+
+## 🚀 Initialization (How to Run)
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/yourusername/cipher-vault.git](https://github.com/yourusername/cipher-vault.git)
+cd cipher-vault
+2. Install Dependencies
+Initialize the node modules:
+
+Bash
+
+npm install
+3. Configure Environment
+Create a .env file in the root directory and add your secrets:
+
+Code snippet
+
+PORT=10000
+MONGO_URI=your_mongodb_connection_string_here
+JWT_SECRET=your_super_secret_jwt_key
+4. Deploy System
+Start the server:
+
+Bash
+
+npm start
+# OR for development with auto-restart:
+npm run dev
+5. Access Terminal
+Open your browser and navigate to: http://localhost:10000
+
+🕵️ Usage Guide
+Register Identity: Create a unique Agent ID (Username) and Password.
+
+Login: The system will automatically generate your RSA Key Pair (Public/Private) and sync your Public Lock to the Secure Phonebook.
+
+Secure Chat:
+
+Navigate to Secure Chat.
+
+Select an Agent from the sidebar.
+
+Choose RSA (Military Grade) from the protocol dropdown.
+
+Type and Send.
+
+Vault:
+
+Click Secure Vault on the dashboard.
+
+Upload sensitive files.
+
+Use the "Access" button to view decrypted files or "Delete" to wipe them.
+
+🔧 Troubleshooting
+"Decryption Error" Popup? If you see decryption errors immediately after a restart or login, your local identity keys might be out of sync with the database.
+
+Fix: Logout → Clear Browser Local Storage (DevTools > Application > Clear) → Login again to regenerate a fresh identity.
+
+🤝 Contributing
+Contributions are welcome. Please fork the repository and submit a pull request for review.
+
+Current Priority: Fixing the educational sidebar modules and improving mobile CSS.
+
+⚖️ Disclaimer: This is a proof-of-concept prototype designed for educational purposes. While it uses real cryptographic libraries (AES/RSA), it has not undergone a professional security audit. Use for sensitive data at your own risk.
+
+System Status: ONLINE 🟢
+</file>
+
 <file path="routes/auth.js">
 const router = require('express').Router();
 const User = require('../models/User');
@@ -281,103 +422,6 @@ router.post("/conversation", async (req, res) => {
 });
 
 module.exports = router;
-</file>
-
-<file path="public/login.html">
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Vault | Access Control</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #050508; color: #e2e8f0; font-family: 'Orbitron', sans-serif; }
-        .glow { box-shadow: 0 0 20px rgba(0, 243, 255, 0.2); border: 1px solid #1e293b; }
-        .cyber-input { background: #0f1015; border: 1px solid #1e293b; color: #00f3ff; font-family: monospace; }
-        .cyber-input:focus { border-color: #00f3ff; outline: none; box-shadow: 0 0 10px rgba(0, 243, 255, 0.1); }
-    </style>
-</head>
-<body class="h-screen flex items-center justify-center bg-[radial-gradient(circle_at_center,_#1e293b_1px,_transparent_1px)] bg-[length:20px_20px]">
-
-    <div class="w-96 p-8 bg-black/90 backdrop-blur rounded-xl glow text-center relative overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff]"></div>
-
-        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-widest">CIPHER VAULT</h1>
-        <p class="text-[10px] text-gray-500 mb-8 font-mono">SECURE ACCESS TERMINAL</p>
-        
-        <form id="authForm" class="space-y-4">
-            <input type="text" id="username" placeholder="AGENT ID" required 
-                   class="w-full p-3 rounded cyber-input">
-            
-            <input type="password" id="password" placeholder="PASSCODE" required 
-                   class="w-full p-3 rounded cyber-input">
-            
-            <button type="submit" 
-                    class="w-full py-3 bg-[#00f3ff] text-black font-bold hover:bg-white transition-all tracking-widest clip-path-polygon">
-                AUTHENTICATE
-            </button>
-            
-            <p id="message" class="text-xs text-red-500 font-mono min-h-[20px]"></p>
-
-            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full">
-                :: NEW AGENT? INITIALIZE REGISTRATION ::
-            </button>
-        </form>
-    </div>
-
-    <script>
-        let isLogin = true;
-        const form = document.getElementById('authForm');
-        const msg = document.getElementById('message');
-        
-        // Toggle betwen Login and Register modes
-        document.getElementById('toggleAuth').onclick = (e) => {
-            isLogin = !isLogin;
-            e.target.innerText = isLogin ? ":: NEW AGENT? INITIALIZE REGISTRATION ::" : ":: HAVE ID? LOGIN ::";
-            document.querySelector('button[type="submit"]').innerText = isLogin ? "AUTHENTICATE" : "REGISTER IDENTITY";
-            msg.innerText = "";
-        };
-
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-
-            try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: u, password: p })
-                });
-
-                const data = await res.json();
-                
-                if(!res.ok) {
-                    msg.innerText = "ERROR: " + (data.error || "Access Denied");
-                    msg.className = "text-xs text-red-500 font-mono mt-2";
-                } else {
-                    if(data.token) {
-                        // Success: Save token and redirect
-                        localStorage.setItem('auth-token', data.token);
-                        window.location.href = '/index.html';
-                    } else {
-                        // Registered successfully
-                        msg.innerText = "IDENTITY CREATED. PLEASE LOGIN.";
-                        msg.className = "text-xs text-[#00f3ff] font-mono mt-2";
-                        // Auto-switch back to login
-                        setTimeout(() => document.getElementById('toggleAuth').click(), 1500);
-                    }
-                }
-            } catch (err) {
-                msg.innerText = "SYSTEM FAILURE: SERVER UNREACHABLE";
-            }
-        };
-    </script>
-</body>
-</html>
 </file>
 
 <file path="routes/vault.js">
@@ -559,422 +603,271 @@ module.exports = mongoose.model('User', UserSchema);
 }
 </file>
 
-<file path="public/index.html">
+<file path="public/login.html">
 <!DOCTYPE html>
-<html lang="en" data-theme="void">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Vault | Secure Terminal</title>
-    
+    <title>Cipher Vault | Access Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
     <style>
-        /* --- FONTS --- */
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
-
-        /* --- THEME DEFINITIONS --- */
-        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --text-main: #e2e8f0; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
-        :root[data-theme="matrix"] { --bg-body: #000000; --bg-panel: #0a0f0a; --primary: #00ff41; --accent: #008f11; --text-main: #e0ffe4; --border: #003b00; --glow: 0 0 20px rgba(0, 255, 65, 0.3); }
-        :root[data-theme="crimson"] { --bg-body: #1a0505; --bg-panel: #2b0a0a; --primary: #ff2a2a; --accent: #ff8c00; --text-main: #ffebeb; --border: #4a0d0d; --glow: 0 0 20px rgba(255, 42, 42, 0.3); }
-        :root[data-theme="amber"] { --bg-body: #1c1917; --bg-panel: #292524; --primary: #fbbf24; --accent: #d97706; --text-main: #fef3c7; --border: #451a03; --glow: 0 0 20px rgba(251, 191, 36, 0.2); }
-        :root[data-theme="nebula"] { --bg-body: #0f172a; --bg-panel: #1e293b; --primary: #818cf8; --accent: #c084fc; --text-main: #f1f5f9; --border: #334155; --glow: 0 0 20px rgba(129, 140, 248, 0.3); }
-
-        body {
-            background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif;
-            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px; transition: background 0.5s ease;
+        /* --- CORE THEME --- */
+        body { 
+            background-color: #050508; 
+            color: #e2e8f0; 
+            font-family: 'Orbitron', sans-serif; 
+            overflow: hidden; 
+            cursor: none !important; /* STRICTLY HIDE SYSTEM CURSOR */
         }
-        .mono { font-family: 'Space Mono', monospace; }
-        .orbitron { font-family: 'Orbitron', sans-serif; }
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .text-primary-var { color: var(--primary); }
 
-        /* --- MENU BUTTON ANIMATION --- */
-        .menu-reactor { position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
-        .reactor-ring { position: absolute; width: 100%; height: 100%; border: 2px dashed var(--primary); border-radius: 50%; animation: spin 8s linear infinite; }
-        .reactor-core { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); animation: pulse 2s ease-in-out infinite; }
-        #menuBtn:hover .reactor-ring { animation-duration: 2s; border-color: var(--accent); }
-        #menuBtn:hover .reactor-core { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
-        #menuBtn:hover span { color: var(--accent); letter-spacing: 2px; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.5); opacity: 0.7; } }
+        /* Prevent default cursors on all elements */
+        input, button, a, .cyber-input, .clip-path-polygon, label {
+            cursor: none !important;
+        }
 
-        /* --- SIDEBAR FONTS --- */
-        #sidebar h2 { font-family: 'Orbitron', sans-serif; font-weight: 900; text-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
-        details { font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; } 
-        details > summary { list-style: none; outline: none; transition: all 0.3s; font-family: 'Orbitron', sans-serif; font-size: 0.9rem; letter-spacing: 1px; }
-        details[open] summary { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
-        details[open] summary ~ * { animation: slideDown 0.4s ease-out; }
-        @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+        /* --- CUSTOM TACTICAL CURSOR --- */
+        #cursor {
+            position: fixed;
+            top: 0; left: 0;
+            pointer-events: none; /* Allows clicking through */
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+        }
 
-        #sidebar { box-shadow: 20px 0 50px rgba(0,0,0,0.8); border-right: 1px solid var(--primary); }
-        .edu-section { border-left: 3px solid var(--primary); padding-left: 1.2rem; margin-bottom: 1.5rem; background: linear-gradient(90deg, rgba(0,243,255,0.05) 0%, transparent 100%); padding-top: 5px; padding-bottom: 5px; }
-        .edu-title { color: var(--primary); font-family: 'Orbitron', sans-serif; font-size: 0.8rem; margin-bottom: 0.5rem; }
-        .viz-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 15px; margin-top: 10px; border-radius: 6px; font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-main); box-shadow: inset 0 0 20px rgba(0,0,0,0.5); }
+        /* The Center Dot */
+        .cursor-dot {
+            width: 4px; height: 4px;
+            background-color: #00f3ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00f3ff;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.2s ease;
+        }
 
-        /* --- PIGPEN --- */
-        .pp-key { width: 45px; height: 45px; border-color: var(--primary); cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .pp-key:hover { background: rgba(255,255,255,0.1); }
-        .pp-dot::after { content:''; position: absolute; width:5px; height:5px; background:var(--primary); border-radius:50%; }
-        .pp-r { border-right: 3px solid var(--primary); } .pp-l { border-left: 3px solid var(--primary); }
-        .pp-t { border-top: 3px solid var(--primary); } .pp-b { border-bottom: 3px solid var(--primary); }
+        /* The Outer Scanning Ring */
+        .cursor-reticle {
+            width: 30px; height: 30px;
+            border: 1px dashed rgba(0, 243, 255, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation: scanSpin 4s linear infinite;
+            transition: all 0.3s ease;
+        }
 
-        .perspective-container { perspective: 1200px; }
-        .card-inner { transform-style: preserve-3d; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-body); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        /* --- HOVER STATE (TARGET LOCKED) --- */
+        /* When body has class 'hovering', transform cursor */
+        body.hovering .cursor-reticle {
+            width: 50px; height: 50px;
+            border-radius: 4px; /* Turn into square */
+            border: 2px solid #bc13fe; /* Purple */
+            border-left: 2px solid transparent; /* Gap effect */
+            border-right: 2px solid transparent;
+            background-color: rgba(188, 19, 254, 0.05);
+            box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
+            animation: lockSpin 1s infinite linear; /* Fast spin */
+        }
+
+        body.hovering .cursor-dot {
+            background-color: #bc13fe;
+            box-shadow: 0 0 15px #bc13fe;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        /* Animation Definitions */
+        @keyframes scanSpin { 
+            0% { transform: translate(-50%, -50%) rotate(0deg); } 
+            100% { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+        
+        @keyframes lockSpin { 
+            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 
+            50% { transform: translate(-50%, -50%) rotate(180deg) scale(0.9); } 
+            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); } 
+        }
+
+        /* --- MATRIX CANVAS --- */
+        #matrixCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.2; 
+        }
+
+        /* --- UI ELEMENTS --- */
+        .glow { box-shadow: 0 0 30px rgba(0, 243, 255, 0.15); border: 1px solid rgba(0, 243, 255, 0.3); }
+        
+        .cyber-input { 
+            background: rgba(15, 16, 21, 0.8); 
+            border: 1px solid #1e293b; 
+            color: #00f3ff; 
+            font-family: monospace;
+            transition: all 0.3s ease;
+        }
+        
+        .cyber-input:focus { 
+            border-color: #00f3ff; 
+            outline: none; 
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); 
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        .clip-path-polygon {
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="h-screen flex items-center justify-center">
 
-    <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
-        <div class="flex items-center gap-4">
-            <button id="menuBtn" class="flex items-center gap-3 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--accent)] group">
-                <div class="menu-reactor"> <div class="reactor-ring"></div> <div class="reactor-core"></div> </div>
-                <span class="tracking-[0.15em] text-xs font-mono transition-all">LIBRARY</span>
-            </button>
-            
-            <button id="vaultBtn" onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
-                <span class="text-lg group-hover:animate-pulse">🔒</span>
-                <span class="tracking-[0.15em] text-xs font-mono transition-all">SECURE VAULT</span>
-            </button>
-
-            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold transition-all border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black group decoration-0">
-                <span class="text-lg">💬</span>
-                <span class="tracking-[0.15em] text-xs font-mono transition-all">SECURE CHAT</span>
-            </a>
-
-            <h1 class="text-2xl font-black tracking-widest text-center ml-4 hidden md:block font-orbitron">CIPHER <span class="text-primary-var">VAULT</span></h1>
-        </div>
-
-        <div class="flex gap-2">
-            <button id="themeBtn" class="px-4 py-2 border border-[var(--border)] rounded text-xs font-bold hover:bg-[var(--border)] transition-colors font-mono">THEME: VOID</button>
-            <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20 transition-colors font-mono">LOGOUT</button>
-        </div>
-    </nav>
-
-    <div id="overlay" class="fixed inset-0 bg-black/80 z-40 hidden opacity-0 transition-opacity duration-300"></div>
+    <canvas id="matrixCanvas"></canvas>
     
-    <div id="vaultModal" class="fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none">
-        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" onclick="toggleVault(false)"></div>
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl p-0 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col h-[600px] md:h-auto pointer-events-auto">
-            
-            <div class="flex justify-between items-center p-6 border-b border-[var(--border)] bg-black/40">
-                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] font-orbitron">
-                    SECURE STORAGE <span class="text-primary-var">TERMINAL</span>
-                </h3>
-                <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕ ESC</button>
-            </div>
-
-            <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 bg-black/20">
-                <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6 flex flex-col justify-center">
-                    <label for="vaultInput" class="text-xs font-mono text-[var(--primary)] mb-4 block tracking-widest border-b border-[var(--border)] pb-2">INGEST NEW ASSET</label>
-                    
-                    <div class="border-2 border-dashed border-[var(--border)] rounded-lg p-8 text-center hover:border-[var(--accent)] transition-colors group cursor-pointer relative h-40 flex flex-col items-center justify-center">
-                        <input type="file" id="vaultInput" title="Upload File" aria-label="Upload a file to the vault" onchange="updateFileName(this)" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                        <div class="text-4xl mb-2 group-hover:scale-110 transition-transform">📂</div>
-                        <p id="fileNameDisplay" class="text-[10px] text-gray-500 font-mono group-hover:text-[var(--accent)] break-all px-2">DRAG FILE OR CLICK</p>
-                    </div>
-
-                    <button onclick="uploadFile()" class="w-full mt-4 py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] transition-all font-mono text-xs">
-                        ENCRYPT & UPLOAD
-                    </button>
-                </div>
-
-                <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
-                    <div class="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
-                        <label class="text-xs font-mono text-[var(--primary)] tracking-widest">DECRYPTED DATABASE</label>
-                        <button onclick="loadFiles()" class="text-[10px] text-gray-500 hover:text-white font-mono">↻ REFRESH</button>
-                    </div>
-                    
-                    <div id="vaultList" class="flex-grow overflow-y-auto pr-2 space-y-2">
-                        <div class="flex items-center justify-center h-full text-gray-600 font-mono text-xs">
-                            // CONNECTING TO SECURE DB...
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="cursor">
+        <div class="cursor-reticle"></div>
+        <div class="cursor-dot"></div>
     </div>
 
-    <aside id="sidebar" class="fixed top-0 left-0 h-full w-full md:w-[650px] bg-[#0c0c12] z-50 transform -translate-x-full transition-transform duration-500 flex flex-col">
-        <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-black/40">
-            <h2 class="text-2xl tracking-widest text-[var(--primary)]">ENCRYPTION<br>LIBRARY</h2>
-            <button id="closeMenu" class="text-red-500 text-2xl hover:scale-110 transition-transform">✕</button>
-        </div>
+    <div class="w-96 p-8 bg-black/80 backdrop-blur-md rounded-xl glow text-center relative overflow-hidden z-10">
+        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff] shadow-[0_0_20px_#00f3ff]"></div>
+
+        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-[0.2em] animate-pulse">CIPHER VAULT</h1>
+        <p class="text-[10px] text-gray-500 mb-8 font-mono tracking-widest">SECURE ACCESS TERMINAL</p>
         
-        <div class="flex-grow overflow-y-auto p-6 space-y-4">
-            <details class="group bg-white/5 border border-white/5 rounded">
-                <summary class="p-4 cursor-pointer text-gray-200 hover:text-[var(--primary)]">1. ATBASH CIPHER</summary>
-                <div class="p-6 border-t border-white/5 text-gray-300 text-lg leading-relaxed">
-                    <div class="edu-section"><div class="edu-title">The Mechanism</div><p>A monoalphabetic substitution cipher. Maps alphabet to reverse.</p></div>
-                    <div class="viz-box text-center text-[var(--secondary)]">PLAIN: A B C...<br>CIPHER: Z Y X...</div>
-                </div>
-            </details>
-            <div class="p-4 text-xs text-gray-500 font-mono text-center">... MORE MODULES AVAILABLE IN FULL VERSION ...</div>
-        </div>
-    </aside>
-
-    <main class="flex-grow flex items-center justify-center p-4 pt-20 perspective-container">
-        <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] border border-[var(--border)] shadow-[var(--glow)] rounded-xl relative overflow-hidden">
+        <form id="authForm" class="space-y-5">
+            <div class="relative group">
+                <input type="text" id="username" placeholder="AGENT ID" required 
+                       class="w-full p-3 rounded cyber-input pl-4">
+                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">ID</div>
+            </div>
             
-            <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20">
-                <div>
-                    <h2 id="modeTitle" class="text-3xl font-bold tracking-widest font-orbitron text-primary-var">ENCRYPTION MODE</h2>
-                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY</p>
-                </div>
-                <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
-                    <div class="text-right">
-                        <div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div>
-                        <div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div>
-                    </div>
-                    <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
-                </button>
+            <div class="relative group">
+                <input type="password" id="password" placeholder="PASSCODE" required 
+                       class="w-full p-3 rounded cyber-input pl-4">
+                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">KEY</div>
             </div>
+            
+            <button type="submit" 
+                    class="w-full py-4 bg-[#00f3ff] text-black font-black hover:bg-white hover:shadow-[0_0_20px_#00f3ff] transition-all tracking-[0.2em] clip-path-polygon transform active:scale-95">
+                AUTHENTICATE
+            </button>
+            
+            <p id="message" class="text-xs text-red-500 font-mono min-h-[20px]"></p>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                <div class="p-6 space-y-6 border-r border-[var(--border)] relative">
-                    <div class="relative">
-                        <label for="mainInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Payload Input</label>
-                        <textarea id="mainInput" title="Input Text" placeholder="Enter text to process..." class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm resize-y focus:border-[var(--primary)] outline-none transition-colors"></textarea>
-                        <div id="visualInput" class="hidden w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded overflow-y-auto flex-wrap gap-1 content-start border-[var(--primary)]"></div>
-                    </div>
-
-                    <div>
-                        <label for="algoSelect" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Strategy</label>
-                        <select id="algoSelect" title="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
-                            <optgroup label="Classical"> <option value="caesar">Caesar Cipher</option> <option value="atbash">Atbash Cipher</option> <option value="playfair">Playfair Cipher</option> <option value="rail_fence">Rail Fence</option> <option value="vigenere">Vigenère Cipher</option> <option value="pigpen">Pigpen (Visual)</option> </optgroup>
-                            <optgroup label="Modern"> <option value="aes">AES-256</option> <option value="rsa">RSA (Asymmetric)</option> <option value="ecc">ECC (Elliptic Curve)</option> </optgroup>
-                        </select>
-                    </div>
-
-                    <div id="stdKeySection">
-                        <label for="keyInput" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block flex justify-between font-mono"> <span>Secret Key / Shift</span> <button id="aesToggle" class="hidden hover:text-[var(--primary)]">👁️</button> </label>
-                        <input id="keyInput" type="text" value="3" title="Encryption Key" placeholder="Enter Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none">
-                        <p id="keyHint" class="text-[9px] text-gray-500 mt-1 italic"></p>
-                    </div>
-
-                    <div id="asymKeySection" class="hidden space-y-2">
-                        <button id="genKeysBtn" class="w-full py-2 border border-dashed border-[var(--primary)] text-[var(--primary)] text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition-colors rounded font-mono">GENERATE KEYS</button>
-                        <div class="grid grid-cols-2 gap-2"> <textarea id="pubKey" title="Public Key" aria-label="Public Key" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Public Key"></textarea> <textarea id="privKey" title="Private Key" aria-label="Private Key" class="h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 text-[10px] mono resize-none focus:border-[var(--primary)] outline-none rounded text-gray-400" placeholder="Private Key"></textarea> </div>
-                    </div>
-
-                    <div id="pigpenKeyboard" class="hidden border-t border-[var(--border)] pt-4">
-                        <div class="flex justify-between items-center mb-2"> <p class="text-[10px] text-gray-500 uppercase font-bold font-mono">Virtual Symbol Keyboard</p> <button id="ppDelete" class="text-[10px] bg-red-900/50 text-red-200 px-3 py-1 rounded hover:bg-red-600 transition-colors font-bold font-mono">⌫ BACKSPACE</button> </div>
-                        <div class="flex flex-wrap justify-center gap-1 max-h-40 overflow-y-auto" id="ppKeysContainer"></div>
-                    </div>
-
-                    <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all duration-300 transform hover:-translate-y-1 font-orbitron">ENCRYPT DATA</button>
-                </div>
-
-                <div class="p-6 bg-black/20 flex flex-col h-full relative">
-                    <div class="flex justify-between items-center mb-4"> 
-                        <label for="outputArea" class="text-[10px] font-bold text-gray-500 uppercase block font-mono">Terminal Output</label> 
-                        <button id="copyBtn" class="flex items-center gap-2 px-3 py-1 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all rounded text-[10px] font-bold font-mono tracking-widest group">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                            <span>COPY OUTPUT</span>
-                        </button>
-                    </div>
-                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm overflow-y-auto text-[var(--accent)] break-all whitespace-pre-wrap relative">
-                        <textarea id="outputArea" title="Output Area" readonly class="w-full h-full bg-transparent resize-none outline-none" placeholder="// System Idle..."></textarea>
-                        <div id="visualOutput" class="hidden w-full h-full absolute top-0 left-0 bg-[var(--bg-body)] p-4 flex-wrap content-start gap-2 overflow-y-auto"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
+            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full transition-colors font-mono tracking-wider">
+                :: NEW AGENT? INITIALIZE REGISTRATION ::
+            </button>
+        </form>
+    </div>
 
     <script>
-        // --- 1. SECURITY CHECK ---
-        const token = localStorage.getItem('auth-token');
-        if (!token) window.location.href = '/login.html';
-        function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
+        // --- 1. MATRIX RAIN EFFECT ---
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
 
-        // --- THEME MANAGER ---
-        const themes = ['void', 'matrix', 'crimson', 'amber', 'nebula']; let currTheme = 0; const themeBtn = document.getElementById('themeBtn');
-        themeBtn.onclick = () => { currTheme = (currTheme + 1) % themes.length; const t = themes[currTheme]; document.documentElement.setAttribute('data-theme', t); themeBtn.innerText = `THEME: ${t.toUpperCase()}`; };
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        // --- STATE & DOM ---
-        let mode = 'encrypt'; let pigpenBuffer = "";
-        const DOM = { 
-            card: document.getElementById('mainCard'), 
-            input: document.getElementById('mainInput'), 
-            visInput: document.getElementById('visualInput'), 
-            output: document.getElementById('outputArea'), 
-            visOutput: document.getElementById('visualOutput'), 
-            algo: document.getElementById('algoSelect'), 
-            key: document.getElementById('keyInput'), 
-            stdKeySec: document.getElementById('stdKeySection'), 
-            asymKeySec: document.getElementById('asymKeySection'), 
-            ppKeys: document.getElementById('ppKeysContainer'), 
-            ppBoard: document.getElementById('pigpenKeyboard'), 
-            ppDelete: document.getElementById('ppDelete'), 
-            processBtn: document.getElementById('processBtn'), 
-            modeTitle: document.getElementById('modeTitle'), 
-            swapBtnText: document.getElementById('swapBtnText'), 
-            genKey: document.getElementById('genKeysBtn'), 
-            pub: document.getElementById('pubKey'), 
-            priv: document.getElementById('privKey'), 
-            aesEye: document.getElementById('aesToggle'), 
-            keyHint: document.getElementById('keyHint') 
+        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 5, 8, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00f3ff';
+            ctx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        // --- 2. CUSTOM TACTICAL CURSOR LOGIC ---
+        const cursor = document.getElementById('cursor');
+        const body = document.body;
+
+        // Smoothly follow mouse
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Trigger "Target Locked" state on hover
+        const interactables = document.querySelectorAll('button, input, a, .clickable');
+        interactables.forEach(el => {
+            el.addEventListener('mouseenter', () => body.classList.add('hovering'));
+            el.addEventListener('mouseleave', () => body.classList.remove('hovering'));
+        });
+
+        // --- 3. AUTH LOGIC ---
+        let isLogin = true;
+        const form = document.getElementById('authForm');
+        const msg = document.getElementById('message');
+        
+        document.getElementById('toggleAuth').onclick = (e) => {
+            isLogin = !isLogin;
+            e.target.innerText = isLogin ? ":: NEW AGENT? INITIALIZE REGISTRATION ::" : ":: HAVE ID? LOGIN ::";
+            document.querySelector('button[type="submit"]').innerText = isLogin ? "AUTHENTICATE" : "REGISTER IDENTITY";
+            msg.innerText = "";
         };
 
-        // --- TOGGLE VAULT MODAL ---
-        const vaultModal = document.getElementById('vaultModal');
-        const vaultBtn = document.getElementById('vaultBtn');
-        function toggleVault(show) {
-            if(show) {
-                vaultModal.classList.remove('hidden');
-                setTimeout(() => {
-                    vaultModal.classList.remove('opacity-0', 'pointer-events-none');
-                    vaultModal.querySelector('div.relative').classList.remove('scale-95');
-                }, 10);
-                loadFiles(); // Auto-load files when opened
-            } else {
-                vaultModal.classList.add('opacity-0', 'pointer-events-none');
-                vaultModal.querySelector('div.relative').classList.add('scale-95');
-                setTimeout(() => vaultModal.classList.add('hidden'), 300);
-            }
-        }
-        // vaultBtn.onclick = () => toggleVault(true); // Handled inline now
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
 
-        // --- NEW: UPDATE FILE NAME ON SELECT ---
-        function updateFileName(input) {
-            const display = document.getElementById('fileNameDisplay');
-            if(input.files && input.files[0]) {
-                display.innerText = "SELECTED: " + input.files[0].name;
-                display.style.color = "var(--primary)";
-                display.style.fontWeight = "bold";
-            } else {
-                display.innerText = "DRAG FILE OR CLICK";
-                display.style.color = "";
-                display.style.fontWeight = "normal";
-            }
-        }
+            const btn = document.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.innerText = "PROCESSING...";
+            btn.style.opacity = "0.7";
 
-        // --- VAULT LOGIC (DELETE + ICONS + UPLOAD) ---
-        const vaultList = document.getElementById('vaultList');
-
-        async function loadFiles() {
             try {
-                const res = await fetch('/api/vault/myfiles', { headers: { 'auth-token': token } });
-                const files = await res.json();
-                vaultList.innerHTML = '';
-                if(files.length === 0) { vaultList.innerHTML = '<div class="text-[10px] text-gray-600 font-mono text-center pt-8">// DATABASE EMPTY</div>'; return; }
-
-                files.forEach(file => {
-                    let icon = '📄';
-                    if(file.mimetype.includes('image')) icon = '📷';
-                    if(file.mimetype.includes('video')) icon = '🎥';
-                    if(file.mimetype.includes('pdf'))   icon = '📕';
-                    if(file.mimetype.includes('audio')) icon = '🎵';
-
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between items-center p-3 bg-black/40 rounded border border-white/5 hover:border-[var(--accent)] transition-colors group mb-2";
-                    div.innerHTML = `
-                        <div class="flex items-center gap-3 overflow-hidden">
-                            <span class="text-xl text-gray-500 group-hover:text-[var(--accent)] transition-colors">${icon}</span>
-                            <div>
-                                <div class="truncate text-xs font-bold text-gray-300 w-48">${file.originalName}</div>
-                                <div class="text-[9px] text-gray-600 font-mono uppercase">${new Date(file.uploadDate).toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <a href="/api/vault/file/${file.filename}?token=${token}" target="_blank" class="text-[var(--primary)] hover:text-black hover:bg-[var(--primary)] text-[10px] font-bold border border-[var(--primary)] px-2 py-1 rounded transition-all">ACCESS</a>
-                            <button onclick="deleteFile('${file._id}')" class="text-red-500 hover:text-white hover:bg-red-600 text-[10px] font-bold border border-red-500/50 px-2 py-1 rounded transition-all">DELETE</button>
-                        </div>
-                    `;
-                    vaultList.appendChild(div);
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: u, password: p })
                 });
-            } catch(e) { console.error("Vault Error", e); }
-        }
 
-        async function uploadFile() {
-            const input = document.getElementById('vaultInput');
-            if(!input.files[0]) return alert("SELECT A FILE FIRST");
-            const btn = document.querySelector('button[onclick="uploadFile()"]');
-            const originalText = btn.innerText; btn.innerText = "ENCRYPTING...";
-
-            try {
-                const formData = new FormData();
-                formData.append('vaultFile', input.files[0]);
-                const res = await fetch('/api/vault/upload', { method: 'POST', headers: { 'auth-token': token }, body: formData });
                 const data = await res.json();
-                if(res.ok) { 
-                    alert("SUCCESS: " + data.message); 
-                    input.value = ''; 
-                    updateFileName(input); 
-                    loadFiles(); 
-                } 
-                else { alert("ERROR: " + data.message); }
-            } catch(e) { alert("SYSTEM UPLOAD FAILURE"); }
-            btn.innerText = originalText;
-        }
-
-        async function deleteFile(id) {
-            if(!confirm("⚠️ PERMANENTLY DELETE THIS ASSET?\nThis cannot be undone.")) return;
-            try {
-                const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: { 'auth-token': token } });
-                const data = await res.json();
-                if(res.ok) { loadFiles(); } else { alert("ERROR: " + data.message); }
-            } catch(e) { alert("DELETE FAILED"); }
-        }
-
-        // --- ALGORITHMS & UI HELPERS ---
-        if(DOM.key) {
-            DOM.key.addEventListener('input', (e) => { const algo = DOM.algo.value; const val = e.target.value; if (algo === 'caesar' || algo === 'rail_fence') e.target.value = val.replace(/[^0-9]/g, ''); else if (algo === 'vigenere' || algo === 'playfair') e.target.value = val.replace(/[^a-zA-Z]/g, ''); });
-        }
-        
-        const Algorithms = {
-            caesar: (t, k, m) => { const s = parseInt(k) || 0; const shift = m === 'encrypt' ? s : -s; return t.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26 + 26) % 26 + b); }); },
-            atbash: (t) => { const f = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; const r = "ZYXWVUTSRQPONMLKJIHGFEDCBA"; return t.toUpperCase().replace(/[A-Z]/g, c => f.indexOf(c) > -1 ? r[f.indexOf(c)] : c); },
-            rail_fence: (t, k, m) => { const r = parseInt(k) || 3; if(r < 2) return t; const len = t.length; if(m==='encrypt') { let f = Array.from({length:r},()=>[]); let row=0, d=1; for(let c of t) { f[row].push(c); row+=d; if(row===0||row===r-1) d=-d; } return f.flat().join(''); } else { let f=Array.from({length:r},()=>new Array(len).fill(null)); let row=0, d=1; for(let i=0;i<len;i++){ f[row][i]='?'; row+=d; if(row===0||row===r-1) d=-d; } let idx=0; for(let i=0;i<r;i++) for(let j=0;j<len;j++) if(f[i][j]=='?' && idx<len) f[i][j]=t[idx++]; let res='', r2=0, d2=1; for(let i=0;i<len;i++){ if(f[r2][i]) res+=f[r2][i]; r2+=d2; if(r2===0||r2===r-1) d2=-d2; } return res; } },
-            vigenere: (t, k, m) => { const key = k.toUpperCase().replace(/[^A-Z]/g,'') || 'A'; let ki = 0; return t.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; const charCode = c.toUpperCase().charCodeAt(0) - 65; const keyCode = key[ki++ % key.length].charCodeAt(0) - 65; let result = m === 'encrypt' ? (charCode + keyCode) % 26 : (charCode - keyCode + 26) % 26; return String.fromCharCode(result + b); }); },
-            playfair: (t, k, m) => { let key = (k||"KEY").toUpperCase().replace(/[^A-Z]/g,"").replace(/J/g,"I"); let matrix=[], seen=new Set(); (key+"ABCDEFGHIKLMNOPQRSTUVWXYZ").split('').forEach(c=>{ if(!seen.has(c)){ seen.add(c); matrix.push(c); }}); let input = t.toUpperCase().replace(/[^A-Z]/g,"").replace(/J/g,"I"); if(m === 'encrypt') { let pairs=[]; for(let i=0;i<input.length;i+=2){ let a=input[i], b=input[i+1]||'X'; if(a===b){ b='X'; i--; } pairs.push([a,b]); } return pairs.map(([a,b])=>{ let i1=matrix.indexOf(a), i2=matrix.indexOf(b); let r1=Math.floor(i1/5), c1=i1%5, r2=Math.floor(i2/5), c2=i2%5; if(r1===r2) return matrix[r1*5+(c1+1)%5] + matrix[r2*5+(c2+1)%5]; if(c1===c2) return matrix[((r1+1)%5)*5+c1] + matrix[((r2+1)%5)*5+c2]; return matrix[r1*5+c2] + matrix[r2*5+c1]; }).join(' '); } else { let res=""; for(let i=0;i<input.length;i+=2){ let a=input[i], b=input[i+1]; if(!b)break; let i1=matrix.indexOf(a), i2=matrix.indexOf(b); let r1=Math.floor(i1/5), c1=i1%5, r2=Math.floor(i2/5), c2=i2%5; if(r1===r2) res+=matrix[r1*5+(c1+4)%5] + matrix[r2*5+(c2+4)%5]; else if(c1===c2) res+=matrix[((r1+4)%5)*5+c1] + matrix[((r2+4)%5)*5+c2]; else res+=matrix[r1*5+c2] + matrix[r2*5+c1]; } return res; } },
-            aes: (t, k, m) => { try { return m === 'encrypt' ? CryptoJS.AES.encrypt(t, k).toString() : CryptoJS.AES.decrypt(t, k).toString(CryptoJS.enc.Utf8); } catch(e) { return "INVALID KEY OR DATA"; } },
-            rsa: (t, _, m) => { const crypt = new JSEncrypt(); try { let pub = DOM.pub.value, priv = DOM.priv.value; if(pub && !pub.includes('BEGIN')) pub = `\n${pub}\n`; if(priv && !priv.includes('BEGIN')) priv = `\n${priv}\n`; if(m === 'encrypt') { crypt.setPublicKey(pub); return crypt.encrypt(t) || "Fail"; } else { crypt.setPrivateKey(priv); return crypt.decrypt(t) || "Fail"; } } catch(e) { return "RSA KEY ERROR"; } },
-            ecc: (t, _, m) => { if(m === 'encrypt') return `[ECC]${btoa(t.split('').reverse().join(''))}`; else { try { return atob(t.replace('[ECC]','')).split('').reverse().join(''); } catch(e) { return "ECC ERROR"; } } },
-            pigpen: (t) => t
+                
+                if(!res.ok) {
+                    msg.innerText = "ERROR: " + (data.error || "Access Denied");
+                    msg.className = "text-xs text-red-500 font-mono mt-2";
+                } else {
+                    if(data.token) {
+                        localStorage.setItem('auth-token', data.token);
+                        window.location.href = '/index.html';
+                    } else {
+                        msg.innerText = "IDENTITY CREATED. PLEASE LOGIN.";
+                        msg.className = "text-xs text-[#00f3ff] font-mono mt-2";
+                        setTimeout(() => document.getElementById('toggleAuth').click(), 1500);
+                    }
+                }
+            } catch (err) {
+                msg.innerText = "SYSTEM FAILURE: SERVER UNREACHABLE";
+            } finally {
+                btn.innerText = originalText;
+                btn.style.opacity = "1";
+            }
         };
-
-        // --- PIGPEN RENDERER ---
-        const renderPigpenSymbol = (char) => { const el = document.createElement('div'); el.className = 'pp-key'; const c = char.toUpperCase(); if("ADGJMPSVY".includes(c)) el.classList.add('pp-r'); if("CFILORUXZ".includes(c)) el.classList.add('pp-l'); if("ABCJKLSTW".includes(c)) el.classList.add('pp-b'); if("GHIPQRVYZ".includes(c)) el.classList.add('pp-t'); if("JKLMNOPQRWXYZ".includes(c)) el.classList.add('pp-dot'); return el; };
-        const updatePigpenVisuals = (text, target) => { target.innerHTML = ''; text.split('').forEach(ch => { if(/[a-zA-Z]/.test(ch)) target.appendChild(renderPigpenSymbol(ch)); else { const s=document.createElement('span'); s.innerText=ch; s.className="text-white font-bold p-2"; target.appendChild(s); } }); };
-        const initPigpenKeys = () => { DOM.ppKeys.innerHTML = ''; "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(char => { const key = renderPigpenSymbol(char); key.onclick = () => { if(mode === 'encrypt') { DOM.input.value += char; DOM.input.dispatchEvent(new Event('input')); } else { pigpenBuffer += char; updatePigpenVisuals(pigpenBuffer, DOM.visInput); } }; DOM.ppKeys.appendChild(key); }); };
-        DOM.ppDelete.onclick = () => { if(mode === 'encrypt') DOM.input.value = DOM.input.value.slice(0, -1); else { pigpenBuffer = pigpenBuffer.slice(0, -1); updatePigpenVisuals(pigpenBuffer, DOM.visInput); } };
-
-        // --- UI & INIT ---
-        const updateUI = () => { const algo = DOM.algo.value; const isAsym = ['rsa', 'ecc'].includes(algo); const isPigpen = algo === 'pigpen'; if(algo === 'caesar' || algo === 'rail_fence') DOM.keyHint.innerText = "Restricted: Numbers Only"; else if(algo === 'vigenere') DOM.keyHint.innerText = "Restricted: Letters Only"; else DOM.keyHint.innerText = ""; DOM.stdKeySec.classList.toggle('hidden', isAsym || isPigpen); DOM.asymKeySec.classList.toggle('hidden', !isAsym); DOM.ppBoard.classList.toggle('hidden', !isPigpen); DOM.aesEye.classList.toggle('hidden', algo !== 'aes'); DOM.key.type = algo === 'aes' ? "password" : "text"; if(algo==='rsa') DOM.genKey.innerText = "GENERATE RSA KEY PAIR"; if(algo==='ecc') DOM.genKey.innerText = "GENERATE ECC CURVE"; if(isPigpen) { if(mode === 'encrypt') { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.add('hidden'); DOM.visOutput.classList.remove('hidden'); DOM.visOutput.classList.add('flex'); } else { DOM.input.classList.add('hidden'); DOM.visInput.classList.remove('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } } else { DOM.input.classList.remove('hidden'); DOM.visInput.classList.add('hidden'); DOM.output.classList.remove('hidden'); DOM.visOutput.classList.add('hidden'); DOM.visOutput.classList.remove('flex'); } };
-        const swapMode = () => { gsap.to(DOM.card, { rotationY: 90, duration: 0.3, onComplete: () => { mode = mode === 'encrypt' ? 'decrypt' : 'encrypt'; DOM.input.value = ''; DOM.output.value = ''; pigpenBuffer = ''; DOM.visInput.innerHTML = ''; DOM.visOutput.innerHTML = ''; DOM.pub.value = ''; DOM.priv.value = ''; DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE"; DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; DOM.swapBtnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT"; DOM.processBtn.innerText = mode === 'encrypt' ? "ENCRYPT DATA" : "DECRYPT DATA"; DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a"; updateUI(); gsap.to(DOM.card, { rotationY: 0, duration: 0.4 }); }}); };
-        
-        DOM.genKey.onclick = () => { const algo = DOM.algo.value; DOM.genKey.innerText = "COMPUTING..."; setTimeout(() => { if(algo === 'rsa') { const c = new JSEncrypt({default_key_size: 1024}); let pub = c.getPublicKey().replace(/-----BEGIN PUBLIC KEY-----|-----END PUBLIC KEY-----|\n/g, ''); let priv = c.getPrivateKey().replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g, ''); DOM.pub.value = pub; DOM.priv.value = priv; DOM.genKey.innerText = "KEYS GENERATED"; } else { DOM.pub.value = "04" + Math.random().toString(16).substr(2) + " (Curve P-256)"; DOM.priv.value = Math.random().toString(16).substr(2); DOM.genKey.innerText = "CURVE GENERATED"; } }, 200); };
-        const runSlotAnimation = (finalText) => { return new Promise(resolve => { DOM.output.value = ''; const steps = 30; let i = 0; const interval = setInterval(() => { const progress = i / steps; DOM.output.value = finalText.split('').map((c, idx) => idx < finalText.length * progress ? c : "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random()*36)]).join(''); i++; if(i>steps){ clearInterval(interval); DOM.output.value=finalText; resolve(); } }, 40); }); };
-        
-        DOM.processBtn.onclick = async () => { const algo = DOM.algo.value; const txt = DOM.input.value; if(algo === 'pigpen') { if(mode === 'encrypt') updatePigpenVisuals(txt, DOM.visOutput); else DOM.output.value = pigpenBuffer; return; } const res = Algorithms[algo](txt, DOM.key.value, mode); await runSlotAnimation(res); };
-        
-        document.getElementById('copyBtn').onclick = (e) => {
-            navigator.clipboard.writeText(DOM.output.value);
-            const btn = e.currentTarget;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<span class="text-xs">✅</span> <span>COPIED!</span>`;
-            btn.classList.add('bg-[var(--primary)]', 'text-black');
-            setTimeout(() => {
-                btn.innerHTML = originalHTML;
-                btn.classList.remove('bg-[var(--primary)]', 'text-black');
-            }, 2000);
-        };
-
-        const sb = document.getElementById('sidebar'), ov = document.getElementById('overlay');
-        const toggleMenu = (s) => { if(s) { sb.classList.remove('-translate-x-full'); ov.classList.remove('hidden'); setTimeout(()=>ov.classList.remove('opacity-0'),10); } else { sb.classList.add('-translate-x-full'); ov.classList.add('opacity-0'); setTimeout(()=>ov.classList.add('hidden'),300); } };
-        document.getElementById('menuBtn').onclick = () => toggleMenu(true); document.getElementById('closeMenu').onclick = () => toggleMenu(false); ov.onclick = () => toggleMenu(false);
-        DOM.algo.addEventListener('change', updateUI); document.getElementById('swapModeBtn').onclick = swapMode; document.getElementById('aesToggle').onclick = () => DOM.key.type = DOM.key.type === 'password' ? 'text' : 'password'; 
-        initPigpenKeys(); updateUI();
-        loadFiles();
     </script>
 </body>
 </html>
@@ -995,10 +888,15 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// --- UPDATE: INCREASED PAYLOAD LIMIT FOR IMAGES ---
+const io = new Server(server, {
+    cors: { origin: "*" },
+    maxHttpBufferSize: 1e8 // 100 MB
+});
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Allow large JSON for REST API too
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -1007,12 +905,11 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));
-app.use("/api/vault", require("./routes/vault")); // Commented out if you don't use vault yet
+app.use("/api/vault", require("./routes/vault")); 
 
-// --- 1. API TO GET ALL USERS (The Phonebook) ---
+// --- API ENDPOINTS ---
 app.get("/api/users", async (req, res) => {
     try {
-        // Return id, username, AND publicKey
         const users = await User.find({}, "username _id publicKey"); 
         res.json(users);
     } catch (err) {
@@ -1020,7 +917,6 @@ app.get("/api/users", async (req, res) => {
     }
 });
 
-// --- 2. UPDATE MY PUBLIC KEY (The Sync) ---
 app.post("/api/users/key", async (req, res) => {
     const { userId, publicKey } = req.body;
     try {
@@ -1031,7 +927,6 @@ app.post("/api/users/key", async (req, res) => {
     }
 });
 
-// --- 3. GET CHAT HISTORY ---
 app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
     try {
         const { senderId, receiverId } = req.params;
@@ -1040,41 +935,31 @@ app.get("/api/messages/:senderId/:receiverId", async (req, res) => {
                 { sender: senderId, receiver: receiverId },
                 { sender: receiverId, receiver: senderId }
             ]
-        }).sort({ timestamp: 1 }); // Oldest first
+        }).sort({ timestamp: 1 });
         res.json(messages);
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch messages" });
     }
 });
 
-// Serve HTML pages
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public/index.html")));
 app.get("/chat", (req, res) => res.sendFile(path.join(__dirname, "public/chat.html")));
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- TRACK ONLINE USERS ---
-let onlineUsers = new Map(); // Stores { userId: socketId }
-
 // --- SOCKET LOGIC ---
-io.on("connection", (socket) => {
-  console.log("User Connected:", socket.id);
+let onlineUsers = new Map(); 
 
-  // 1. Handle User Login
+io.on("connection", (socket) => {
+  console.log("⚡ New Connection:", socket.id);
+
   socket.on("login", (userId) => {
     if (userId) {
         onlineUsers.set(userId, socket.id);
         io.emit("get_users", Array.from(onlineUsers.keys()));
-        console.log(`User Logged In: ${userId}`);
+        console.log(`✅ User Logged In: ${userId}`);
     }
   });
 
-  // 2. Join a Private Room
-  socket.on("join_room", ({ senderId, receiverId }) => {
-    const roomName = [senderId, receiverId].sort().join("_");
-    socket.join(roomName);
-  });
-
-  // 3. Handle Private Message
   socket.on("private_message", async (data) => {
     const { senderId, receiverId, text, cipherType, isBurn } = data;
     
@@ -1089,26 +974,30 @@ io.on("connection", (socket) => {
         const savedMsg = await newMessage.save();
 
         const msgData = { ...data, _id: savedMsg._id };
+        const receiverSocketId = onlineUsers.get(receiverId);
 
-        const roomName = [senderId, receiverId].sort().join("_");
-        io.to(roomName).emit("receive_message", msgData);
-
-        // --- SELF DESTRUCT LOGIC ---
-        if (isBurn) {
-            console.log(`💣 BURN TIMER STARTED: Message ${savedMsg._id}`);
-            setTimeout(async () => {
-                await Message.deleteOne({ _id: savedMsg._id });
-                io.to(roomName).emit("message_burnt", savedMsg._id);
-                console.log(`💥 BOOM: Message ${savedMsg._id} destroyed.`);
-            }, 10000); // 10 Seconds
-        }
+        if (receiverSocketId) io.to(receiverSocketId).emit("receive_message", msgData);
+        socket.emit("receive_message", msgData);
         
     } catch (err) {
         console.error("Error saving message:", err);
     }
   });
 
-  // 4. Handle Disconnect
+  socket.on("message_seen", async (msgId) => {
+      try {
+          const msg = await Message.findById(msgId);
+          if(msg && msg.isBurn) {
+              console.log(`🔥 ACTIVATING BURN TIMER FOR ${msgId}`);
+              setTimeout(async () => {
+                  await Message.deleteOne({ _id: msgId });
+                  io.emit("message_burnt", msgId);
+                  console.log(`💥 DESTROYED: Message ${msgId}`);
+              }, 10000);
+          }
+      } catch(e) { console.error(e); }
+  });
+
   socket.on("disconnect", () => {
     for (let [id, socketId] of onlineUsers.entries()) {
       if (socketId === socket.id) {
@@ -1117,7 +1006,6 @@ io.on("connection", (socket) => {
       }
     }
     io.emit("get_users", Array.from(onlineUsers.keys()));
-    console.log("User Disconnected", socket.id);
   });
 });
 
@@ -1165,7 +1053,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
         .encrypted-text { color: #bc13fe; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: -0.5px; opacity: 0.7; }
         
-        /* Drawer Animation */
         #spyTools { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         #spyTools.open { max-height: 200px; opacity: 1; margin-bottom: 10px; }
     </style>
@@ -1182,12 +1069,12 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></span>
                 <span id="statusText">OFFLINE</span>
             </div>
+            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-gray-500 hover:text-white text-xs border border-gray-700 px-3 py-1 rounded">🔊 ON</button>
             <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
         </div>
     </nav>
 
     <div class="flex flex-1 overflow-hidden">
-        
         <aside class="w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10 hidden md:flex">
             <div class="p-4 border-b border-[var(--border)]">
                 <label for="userSearch" class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
@@ -1199,7 +1086,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         </aside>
 
         <main class="flex-1 flex flex-col relative bg-black/20">
-            
             <div id="chatHeader" class="h-12 border-b border-[var(--border)] flex items-center px-4 justify-between bg-[var(--bg-panel)] hidden">
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]"></div>
@@ -1236,12 +1122,10 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                                     <option value="plain">3. PLAINTEXT (NONE)</option>
                                 </select>
                             </div>
-
                             <div class="flex-[1.5]" id="cipherKeyContainer">
                                 <label for="cipherKey" class="text-[9px] text-[var(--accent)] font-bold block mb-1">MANUAL KEY (NON-RSA)</label>
                                 <input id="cipherKey" title="Manual Key" aria-label="Secret Key" type="text" placeholder="Not needed for RSA" class="w-full bg-[#050508] border border-[var(--border)] text-[10px] text-gray-500 p-2 rounded focus:border-[var(--accent)] outline-none font-mono">
                             </div>
-
                             <div class="flex items-end">
                                 <label class="flex items-center gap-2 cursor-pointer border border-red-900/50 bg-red-900/10 px-3 py-2 rounded hover:bg-red-900/20 h-[34px]">
                                     <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3">
@@ -1252,13 +1136,628 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     </div>
 
                     <form id="chatForm" class="flex gap-2 items-center">
-                        <div class="w-8 h-8 rounded-full bg-[var(--border)] flex items-center justify-center text-gray-500 text-xs" id="lockIcon">🔒</div>
-                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type a secure message..." autocomplete="off" class="flex-grow bg-black border border-[var(--border)] p-3 rounded text-sm text-white focus:border-[var(--primary)] outline-none font-mono">
+                        <input type="file" id="stegoImgInput" accept="image/*" class="hidden" onchange="handleFileSelect(this)" title="Steganography Image Upload" aria-label="Upload Image for Steganography">
+                        
+                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-gray-500 hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative" id="attachBtn" title="Attach Image" aria-label="Attach Image">
+                            📎
+                        </button>
+
+                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type message (Select image to hide text inside it)..." autocomplete="off" class="flex-grow bg-black border border-[var(--border)] p-3 rounded text-sm text-white focus:border-[var(--primary)] outline-none font-mono">
                         <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[0_0_15px_rgba(0,243,255,0.3)] transition-all text-xs">SEND</button>
                     </form>
                 </div>
             </div>
         </main>
+    </div>
+
+    <canvas id="procCanvas" class="hidden"></canvas>
+
+    <script>
+        // --- 0. SOUND SYSTEM ---
+        const SoundFX = {
+            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+            muted: false,
+            toggle: function() {
+                this.muted = !this.muted;
+                document.getElementById('muteBtn').innerText = this.muted ? "🔇 OFF" : "🔊 ON";
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playOscillator: function(freq, type, duration, vol=0.1) {
+                if(this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playWhiteNoise: function(duration) {
+                if(this.muted) return;
+                const bufferSize = this.ctx.sampleRate * duration;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            },
+            send: function() { this.playOscillator(1200, 'sine', 0.1); },
+            receive: function() { this.playOscillator(800, 'square', 0.1); setTimeout(() => this.playOscillator(1200, 'square', 0.2), 100); },
+            decrypt: function() { this.playOscillator(200, 'sawtooth', 0.5); setTimeout(() => this.playOscillator(600, 'sine', 0.3), 100); },
+            burn: function() { this.playWhiteNoise(0.5); }
+        };
+
+        // --- AUTH & INIT ---
+        const token = localStorage.getItem('auth-token');
+        if (!token) window.location.href = '/login.html';
+        function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; } }
+        const userPayload = parseJwt(token);
+        const userData = userPayload.user || userPayload;
+        const myId = userData._id || userData.id; 
+        if (!myId) { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
+
+        const socket = io({ auth: { token } });
+        let currentReceiver = null;
+        let activeUsersMap = {}; 
+        const myRSA = new JSEncrypt({ default_key_size: 1024 });
+        
+        // --- STEGO LOGIC ---
+        let selectedImage = null;
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    selectedImage = e.target.result;
+                    document.getElementById('attachBtn').classList.add('bg-[var(--primary)]', 'text-black', 'border-transparent');
+                    document.getElementById('msgInput').placeholder = "Type secret message to hide in image...";
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- AUTH & SETUP ---
+        function saveToLocalCache(cipher, plain) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); c[cipher] = plain; localStorage.setItem('sent_cache', JSON.stringify(c)); } catch(e){} }
+        function getFromLocalCache(cipher) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); return c[cipher]; } catch(e) { return null; } }
+
+        async function initIdentity() {
+            let storedPriv = localStorage.getItem('rsa_priv');
+            let storedPub = localStorage.getItem('rsa_pub');
+            if(!storedPriv || !storedPub) {
+                document.getElementById('keyGenStatus').innerText = "GENERATING NEW IDENTITY...";
+                myRSA.getKey();
+                storedPriv = myRSA.getPrivateKey();
+                storedPub = myRSA.getPublicKey();
+                localStorage.setItem('rsa_priv', storedPriv);
+                localStorage.setItem('rsa_pub', storedPub);
+            }
+            myRSA.setPrivateKey(storedPriv);
+            try {
+                await fetch('/api/users/key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: myId, publicKey: storedPub }) });
+                document.getElementById('keyGenStatus').innerText = "IDENTITY SECURED & SYNCED.";
+                document.getElementById('keyGenStatus').className = "mono text-[10px] text-[var(--primary)] mt-2";
+            } catch(e) {}
+        }
+        setTimeout(initIdentity, 100);
+        function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
+
+        async function selectUser(user, el) {
+            currentReceiver = user;
+            document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
+            el.classList.add('active-user');
+            const statusText = el.querySelector('.status-text');
+            if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('messagesArea').classList.remove('hidden');
+            document.getElementById('inputArea').classList.remove('hidden');
+            document.getElementById('chatPartnerName').innerText = user.username;
+            try {
+                const res = await fetch('/api/users');
+                const freshUsers = await res.json();
+                const freshUser = freshUsers.find(u => u._id === user._id);
+                if (freshUser) activeUsersMap[user._id] = freshUser;
+                const statusEl = document.getElementById('encryptionStatus');
+                if(freshUser && freshUser.publicKey && freshUser.publicKey.includes("BEGIN PUBLIC KEY")) {
+                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED"; statusEl.className = "text-[9px] mono text-[var(--primary)]";
+                } else {
+                    statusEl.innerText = "⚠️ UNSECURED"; statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
+                }
+            } catch(e) {}
+            document.getElementById('messagesArea').innerHTML = ''; 
+            loadHistory(user._id);
+        }
+
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                const list = document.getElementById('usersList');
+                list.innerHTML = '';
+                users.forEach(u => {
+                    if (u._id === myId) return; 
+                    activeUsersMap[u._id] = u;
+                    const div = document.createElement('div');
+                    div.className = 'user-card p-3 cursor-pointer hover:bg-white/5 flex items-center gap-3 border-l-2 border-transparent transition-all';
+                    div.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-gray-300">${u.username}</div><div class="text-[9px] text-gray-600 mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
+                    div.onclick = () => selectUser(u, div);
+                    list.appendChild(div);
+                });
+            } catch(e) {}
+        }
+        fetchUsers();
+
+        // --- SEND LOGIC ---
+        function sendMessage(text, forcedMethod = null, isBurn = false) {
+            if(!currentReceiver) return alert("Select a user first!");
+            const method = forcedMethod || document.getElementById('cipherMethod').value;
+            
+            // STEGANOGRAPHY PATH
+            if (selectedImage) {
+                const img = new Image();
+                img.onload = () => {
+                    const cvs = document.getElementById('procCanvas');
+                    const ctx = cvs.getContext('2d');
+                    cvs.width = img.width; cvs.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0,0,img.width,img.height);
+                    
+                    // LSB Encode
+                    let bin = ""; 
+                    for(let i=0; i<text.length; i++) bin += text.charCodeAt(i).toString(2).padStart(8,'0');
+                    bin += "00000000"; // Terminator
+                    
+                    let dIdx = 0;
+                    for(let i=0; i<bin.length; i++) {
+                        if(dIdx%4===3) dIdx++;
+                        imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]);
+                        dIdx++;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    const stegoDataUrl = cvs.toDataURL(); // Encoded Image
+
+                    const payload = {
+                        senderId: myId, receiverId: currentReceiver._id,
+                        text: stegoDataUrl, // Send image data as text
+                        cipherType: 'steganography', // Mark it
+                        isBurn: isBurn, timestamp: new Date()
+                    };
+                    socket.emit("private_message", payload);
+                    SoundFX.send();
+                    
+                    // Reset UI
+                    selectedImage = null;
+                    document.getElementById('attachBtn').classList.remove('bg-[var(--primary)]', 'text-black', 'border-transparent');
+                    document.getElementById('msgInput').placeholder = "Type a secure message...";
+                    document.getElementById('stegoImgInput').value = "";
+                };
+                img.src = selectedImage;
+                return; // Stop here, async send happens in onload
+            }
+
+            // NORMAL PATH
+            let cipherText = text;
+            if (method === 'rsa') {
+                const partnerData = activeUsersMap[currentReceiver._id];
+                if (!partnerData || !partnerData.publicKey) return alert("User key missing.");
+                const encryptor = new JSEncrypt();
+                encryptor.setPublicKey(partnerData.publicKey);
+                cipherText = encryptor.encrypt(text);
+                if(!cipherText) return alert("Message too long for RSA.");
+                saveToLocalCache(cipherText, text);
+            } 
+            else if (method === 'caesar') {
+                const shift = parseInt(document.getElementById('cipherKey').value) || 3;
+                cipherText = text.replace(/[a-zA-Z]/g, c => {
+                    const b = c >= 'a' ? 97 : 65;
+                    return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26) + b);
+                });
+            }
+
+            const payload = {
+                senderId: myId, receiverId: currentReceiver._id,
+                text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date()
+            };
+            socket.emit("private_message", payload);
+            SoundFX.send();
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msgInput');
+            const burn = document.getElementById('burnCheck').checked;
+            if(!input.value) return;
+            sendMessage(input.value, null, burn);
+            input.value = '';
+            document.getElementById('burnCheck').checked = false;
+        });
+
+        socket.on("receive_message", (data) => {
+            const senderString = String(data.senderId || data.sender);
+            const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
+            if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
+                displayMessage(data);
+                if (senderString !== String(myId)) SoundFX.receive();
+            } else if (senderString !== String(myId)) {
+                SoundFX.receive();
+                const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
+                if(userStatus) { userStatus.innerText = "📩 NEW MSG"; userStatus.classList.add('text-[var(--primary)]', 'animate-pulse'); }
+            }
+        });
+
+        socket.on("message_burnt", (msgId) => {
+            const el = document.getElementById(`msg-${msgId}`);
+            if(el) { SoundFX.burn(); el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
+        });
+
+        function displayMessage(msg) {
+            const area = document.getElementById('messagesArea');
+            const senderString = String(msg.sender || msg.senderId);
+            const isMe = (senderString === String(myId));
+            
+            let content = msg.text || msg.cipherText;
+            const method = msg.cipherType || 'plain';
+            const isBurn = msg.isBurn;
+            const msgId = msg._id || 'temp-' + Date.now(); 
+
+            const div = document.createElement('div');
+            div.id = `msg-${msgId}`; 
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
+            if (isBurn) div.dataset.burn = "true";
+
+            const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
+            const bg = isMe ? 'bg-white/5' : 'bg-black/40';
+
+            let innerHTML = "";
+
+            if (method === 'steganography') {
+                // STEGO IMAGE DISPLAY
+                innerHTML = `
+                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
+                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                        <span>🔍 SCAN FOR HIDDEN DATA</span>
+                    </button>
+                    <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                `;
+            } 
+            else if (method === 'rsa') {
+                // RSA DISPLAY
+                let isLocked = (!isMe && !getFromLocalCache(msg.text) && !msg.originalText);
+                if (isMe) {
+                    const cached = getFromLocalCache(content) || msg.originalText;
+                    if(cached) { content = cached; isLocked = false; } else { isLocked = true; }
+                }
+
+                if (isLocked) {
+                    innerHTML = `
+                        <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
+                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                            <span>🔓 UNLOCK DATA</span>
+                        </button>
+                        <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                    `;
+                } else {
+                    innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
+                }
+            } else {
+                // PLAIN/CAESAR
+                innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
+            }
+
+            const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
+
+            div.innerHTML = `
+                <div class="max-w-[75%] rounded-lg p-3 border ${color} ${bg} shadow-lg relative" ${clickAction}>
+                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4">
+                        <span>${isMe ? 'YOU' : currentReceiver.username}</span>
+                        <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
+                    </div>
+                    ${innerHTML}
+                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase">🔒 ${method}</div>` : ''}
+                </div>
+            `;
+            
+            area.appendChild(div);
+            setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
+
+            // LOGIC: TRIGGER BURN
+            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') {
+                socket.emit("message_seen", msgId);
+            }
+        }
+        
+        function scanImage(id, imgSrc) {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.getElementById('procCanvas');
+                const ctx = cvs.getContext('2d');
+                cvs.width = img.width; cvs.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0,0,img.width,img.height).data;
+                
+                let bin = "", res = "";
+                for(let i=0; i<data.length; i++) {
+                    if(i%4===3) continue;
+                    bin += (data[i]&1).toString();
+                    if(bin.length===8) {
+                        if(bin==="00000000") break;
+                        res += String.fromCharCode(parseInt(bin, 2));
+                        bin = "";
+                    }
+                }
+                
+                document.getElementById(`plain-${id}`).innerText = "HIDDEN MSG: " + res;
+                document.getElementById(`plain-${id}`).classList.remove('hidden');
+                SoundFX.decrypt();
+
+                // Trigger burn if needed
+                const container = document.getElementById(`msg-${id}`);
+                if (container && container.dataset.burn === "true") {
+                    socket.emit("message_seen", id);
+                }
+            };
+            img.src = imgSrc;
+        }
+
+        function unlockMessage(id, cipherText) {
+            try {
+                const myPriv = localStorage.getItem('rsa_priv');
+                const decryptor = new JSEncrypt();
+                decryptor.setPrivateKey(myPriv);
+                const decrypted = decryptor.decrypt(cipherText);
+                
+                if (decrypted) {
+                    SoundFX.decrypt();
+                    document.getElementById(`plain-${id}`).innerText = decrypted;
+                    document.getElementById(`plain-${id}`).classList.remove('hidden');
+                    document.getElementById(`cipher-${id}`).classList.add('hidden');
+                    
+                    const container = document.getElementById(`msg-${id}`); 
+                    if (container && container.dataset.burn === "true") {
+                        socket.emit("message_seen", id);
+                    }
+                } else { alert("Decryption Failed."); }
+            } catch(e) { alert("Decryption Error"); }
+        }
+
+        function toggleSpyTools() {
+            const el = document.getElementById('spyTools');
+            el.classList.toggle('open');
+            document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
+        }
+        function decryptCaesar(text, shift) {
+             const s = (26 - parseInt(shift)) % 26;
+             return text.replace(/[a-zA-Z]/g, c => {
+                const b = c >= 'a' ? 97 : 65;
+                return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b);
+            });
+        }
+        async function loadHistory(partnerId) {
+            try {
+                const res = await fetch(`/api/messages/${myId}/${partnerId}`);
+                const msgs = await res.json();
+                msgs.forEach(displayMessage);
+            } catch(e) {}
+        }
+        socket.on('connect', () => {
+            socket.emit("login", myId);
+            document.getElementById('statusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]";
+            document.getElementById('statusText').innerText = "ONLINE";
+            document.getElementById('statusText').className = "text-green-500";
+        });
+        socket.on('get_users', (onlineIds) => {
+            document.querySelectorAll('.status-text').forEach(el => {
+                const uid = el.getAttribute('data-id');
+                if(onlineIds.includes(uid)) {
+                    if (!el.innerText.includes("MSG")) { el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]'); }
+                } else { el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600'); }
+            });
+        });
+    </script>
+</body>
+</html>
+</file>
+
+<file path="public/index.html">
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher Vault | Secure Terminal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+
+        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        
+        body { 
+            background-color: var(--bg-body); 
+            color: #e2e8f0; 
+            font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); 
+            background-size: 30px 30px;
+            /* Default cursor restored */
+        }
+
+        /* --- UI STYLES --- */
+        .orbitron { font-family: 'Orbitron', sans-serif; } 
+        .mono { font-family: 'Space Mono', monospace; }
+        .card-inner { transform-style: preserve-3d; }
+        .perspective-container { perspective: 1200px; }
+
+        ::-webkit-scrollbar { width: 8px; } 
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        .modal-bg { background: rgba(0, 0, 0, 0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden">
+
+    <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
+        <div class="flex items-center gap-4">
+            <button id="termBtn" onclick="showPage('terminal')" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">
+                <span class="tracking-[0.15em] text-xs font-mono">TERMINAL</span>
+            </button>
+            <button id="libBtn" onclick="showPage('library')" class="flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all">
+                <span class="tracking-[0.15em] text-xs font-mono">VIDEO LIBRARY</span>
+            </button>
+            <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
+                <span class="text-lg group-hover:animate-pulse">🔒</span> <span class="tracking-[0.15em] text-xs font-mono">VAULT</span>
+            </button>
+            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all">
+                <span class="text-lg">💬</span> <span class="tracking-[0.15em] text-xs font-mono">CHAT</span>
+            </a>
+        </div>
+        <div class="flex items-center gap-4">
+            <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">CIPHER <span class="text-[var(--primary)]">VAULT</span></h1>
+            <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
+        </div>
+    </nav>
+
+    <main id="terminalPage" class="flex-grow flex items-center justify-center p-4 pt-24 perspective-container h-full">
+        <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] border border-[var(--border)] shadow-[var(--glow)] rounded-xl relative overflow-hidden flex flex-col max-h-full">
+            
+            <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20 shrink-0">
+                <div>
+                    <h2 id="modeTitle" class="text-3xl font-bold tracking-widest orbitron text-[var(--primary)]">ENCRYPTION MODE</h2>
+                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY // AUTO-KEY MEMORY: <span id="memoryStatus" class="text-red-500 font-bold">OFFLINE</span></p>
+                </div>
+                <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
+                    <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div><div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div></div>
+                    <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-grow overflow-hidden">
+                
+                <div class="p-6 space-y-6 border-r border-[var(--border)] relative overflow-y-auto">
+                    <div>
+                        <label for="algoSelect" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Selection</label>
+                        <select id="algoSelect" title="Select Algorithm" aria-label="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-white font-mono">
+                            <optgroup label="Classical Ciphers">
+                                <option value="atbash">1. Atbash Cipher</option>
+                                <option value="caesar">2. Caesar Cipher</option>
+                                <option value="playfair">3. Playfair Cipher</option>
+                                <option value="vigenere">4. Vigenère Cipher</option>
+                                <option value="rail_fence">5. Rail Fence Cipher</option>
+                                <option value="pigpen">6. Pigpen Cipher</option>
+                            </optgroup>
+                            <optgroup label="Modern Encryption">
+                                <option value="aes" selected>7. AES-256 (Standard)</option>
+                                <option value="rsa">8. RSA (Asymmetric)</option>
+                                <option value="ecc">9. ECC (Elliptic Curve)</option>
+                            </optgroup>
+                            <optgroup label="Covert Operations">
+                                <option value="steganography">10. Steganography (Image)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div id="dynamicInputs" class="space-y-4">
+                        <div id="stdInputGroup">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Input Data</label>
+                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none" placeholder="Enter text..."></textarea>
+                        </div>
+
+                        <div id="stegoInputGroup" class="hidden">
+                            <label class="text-[10px] font-bold text-[var(--accent)] uppercase mb-2 block font-mono">Image Source</label>
+                            <input type="file" id="stegoFile" title="Upload Source Image" aria-label="Upload Source Image" accept="image/png" class="w-full text-xs text-gray-500 file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold mb-2">
+                            <div id="stegoTextContainer">
+                                <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Secret Payload</label>
+                                <textarea id="stegoPayload" title="Enter Secret Message" aria-label="Enter Secret Message" class="w-full h-20 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--accent)] outline-none" placeholder="Message to hide..."></textarea>
+                            </div>
+                        </div>
+
+                        <div id="keyGroup">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Encryption Key</label>
+                            <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Key / Shift / Password">
+                            
+                            <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
+                        </div>
+
+                        <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all orbitron">
+                            EXECUTE PROCESS
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-black/20 flex flex-col h-full relative overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4"> 
+                        <label class="text-[10px] font-bold text-gray-500 uppercase block font-mono">System Output</label> 
+                        <button id="copyBtn" class="flex items-center gap-2 px-3 py-1 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all rounded text-[10px] font-bold font-mono group">
+                            <span>COPY RESULT</span>
+                        </button>
+                    </div>
+                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm text-[var(--accent)] break-all whitespace-pre-wrap overflow-y-auto relative">
+                        <div id="outputDisplay">// WAITING FOR INPUT...</div>
+                        <canvas id="stegoCanvas" class="hidden"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <main id="libraryPage" class="hidden flex-grow pt-24 px-4 pb-12 overflow-y-auto h-full">
+        <div class="w-full max-w-7xl mx-auto">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
+                <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">3. PLAYFAIR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Playfair Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">4. VIGENERE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Vigenere Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">5. RAIL FENCE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Rail Fence Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">6. PIGPEN</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Pigpen Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">7. AES-256</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="AES Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">8. RSA</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="RSA Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">9. ECC</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="ECC Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--accent)] bg-black/40 p-4 rounded-xl hover:border-white transition-all"><h3 class="text-lg orbitron text-[var(--accent)] mb-2">10. STEGANOGRAPHY</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Steganography Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" frameborder="0" allowfullscreen></iframe></div></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="vaultModal" class="fixed inset-0 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] flex flex-col h-[600px] md:h-auto p-6">
+            <div class="flex justify-between items-center mb-6 border-b border-[var(--border)] pb-4">
+                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] orbitron">ZERO-KNOWLEDGE <span class="text-[var(--primary)]">VAULT</span></h3>
+                <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6">
+                    <label class="text-xs font-mono text-[var(--primary)] mb-2 block tracking-widest">1. SELECT ASSET</label>
+                    <input type="file" id="vaultInput" title="File Upload" aria-label="File Upload" class="w-full text-xs text-gray-500 mb-4 file:bg-[var(--primary)] file:border-0 file:text-black file:font-bold file:px-2 file:py-1 file:rounded">
+                    <label class="text-xs font-mono text-[var(--accent)] mb-2 block tracking-widest">2. PASSWORD</label>
+                    <input type="password" id="vaultPass" title="Vault Password" aria-label="Vault Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
+                    <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] font-mono text-xs">ENCRYPT & UPLOAD</button>
+                </div>
+                <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
+                    <div class="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
+                        <label class="text-xs font-mono text-[var(--primary)] tracking-widest">SECURE DATABASE</label>
+                        <button onclick="loadFiles()" class="text-[10px] text-gray-500 hover:text-white font-mono">↻ REFRESH</button>
+                    </div>
+                    <div id="vaultList" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1285,14 +1784,11 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         }
 
         const socket = io({ auth: { token } });
-        
         let currentReceiver = null;
         let activeUsersMap = {}; 
-        
-        // --- 1. REFACTORED RSA ENGINE ---
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
-        // >>> NEW: LOCAL CACHE FOR SENT MESSAGES <<<
+        // --- CACHE SYSTEM ---
         function saveToLocalCache(cipher, plain) {
             try {
                 let cache = JSON.parse(localStorage.getItem('sent_cache') || '{}');
@@ -1337,13 +1833,15 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- 2. USER SELECTION ---
+        // --- USER SELECTION ---
         async function selectUser(user, el) {
             currentReceiver = user;
-            
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
             
+            const statusText = el.querySelector('.status-text');
+            if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
+
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
@@ -1397,7 +1895,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         }
         fetchUsers();
 
-        // --- 3. SENDING ---
+        // --- SENDING LOGIC (FIXED) ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
             if(!currentReceiver) return alert("Select a user first!");
             const method = forcedMethod || document.getElementById('cipherMethod').value;
@@ -1413,7 +1911,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 cipherText = encryptor.encrypt(text);
                 if(!cipherText) return alert("Message too long for RSA.");
                 
-                // >>> SAVE COPY FOR SELF <<<
                 saveToLocalCache(cipherText, text);
             } 
             else if (method === 'caesar') {
@@ -1434,7 +1931,10 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             };
 
             socket.emit("private_message", payload);
-            displayMessage({ ...payload, sender: myId, originalText: text }); 
+            
+            // --- FIX: DO NOT DISPLAY MANUALLY HERE ---
+            // We wait for the server to echo it back with the Real ID.
+            // This ensures "A" has the correct ID to delete later.
         }
 
         document.getElementById('chatForm').addEventListener('submit', (e) => {
@@ -1447,58 +1947,77 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             document.getElementById('burnCheck').checked = false;
         });
 
-        // --- 4. RECEIVING ---
+        // --- RECEIVING ---
         socket.on("receive_message", (data) => {
-            if (currentReceiver && (data.senderId === currentReceiver._id || data.sender === currentReceiver._id)) {
+            const senderString = String(data.senderId || data.sender);
+            const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
+
+            // Show if it's from partner OR if it's from ME (Echo confirmation)
+            if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
                 displayMessage(data);
+            } else if (senderString !== String(myId)) {
+                // Only notify if it's not me
+                const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
+                if(userStatus) {
+                    userStatus.innerText = "📩 NEW MSG";
+                    userStatus.classList.add('text-[var(--primary)]', 'animate-pulse');
+                }
+            }
+        });
+
+        // --- BURN EVENT HANDLER ---
+        socket.on("message_burnt", (msgId) => {
+            console.log("🔥 BURN COMMAND RECEIVED for ID:", msgId);
+            const el = document.getElementById(`msg-${msgId}`);
+            if(el) {
+                el.classList.add('burn-anim');
+                setTimeout(() => el.remove(), 1500);
+            } else {
+                console.warn("Could not find message to burn:", msgId);
             }
         });
 
         function displayMessage(msg) {
             const area = document.getElementById('messagesArea');
-            const isMe = (msg.sender === myId || msg.senderId === myId);
+            const senderString = String(msg.sender || msg.senderId);
+            const isMe = (senderString === String(myId));
+            
             let content = msg.text || msg.cipherText;
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
-            
-            // >>> RECOVER PLAIN TEXT FROM CACHE IF IT'S ME <<<
+            const msgId = msg._id; // IMPORTANT: This is now always the DB ID
+
+            // If I am sender, try to recover plain text from cache
             if (isMe && method === 'rsa') {
                 const cached = getFromLocalCache(content);
-                if(cached) {
-                    content = cached;
-                    // Force display as plain text for me
-                    msg.originalText = cached; 
-                } else if (msg.originalText) {
-                    content = msg.originalText;
-                }
+                if(cached) { content = cached; msg.originalText = cached; } 
+                else if (msg.originalText) { content = msg.originalText; }
             } else if (isMe && msg.originalText) {
                 content = msg.originalText;
             }
 
             const div = document.createElement('div');
-            const burnId = 'msg-' + Date.now() + Math.floor(Math.random() * 100000);
-            div.id = burnId;
+            div.id = `msg-${msgId}`; // Assign Real ID
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             
+            if (isBurn) div.dataset.burn = "true";
+
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
             const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
-            // RSA UNLOCK UI LOGIC
-            // If it's me AND I successfully recovered the cache, show plain text
-            // If it's receiver, always show locked
             let isLocked = (!isMe && method === 'rsa');
-            // Edge case: If I sent it but cleared my cache, I see locked too (correct behavior)
+            // If I am sender, RSA is locked if I don't have the cached plain text
             if(isMe && method === 'rsa' && !getFromLocalCache(msg.text) && !msg.originalText) isLocked = true;
 
             let contentHtml = `<div class="text-xs font-mono break-all">${content}</div>`;
             
             if (isLocked) {
                 contentHtml = `
-                    <div class="encrypted-text mb-2 break-all" id="cipher-${burnId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
-                    <button onclick="unlockMessage('${burnId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                    <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
+                    <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
                         <span>🔓 UNLOCK DATA</span>
                     </button>
-                    <div id="plain-${burnId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                    <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
                 `;
             }
 
@@ -1516,13 +2035,12 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             `;
             
             area.appendChild(div);
-            area.scrollTop = area.scrollHeight;
+            setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-            if(isBurn) {
-                setTimeout(() => {
-                    const el = document.getElementById(burnId);
-                    if(el) { el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
-                }, 10000);
+            // >>> LOGIC: TRIGGER BURN <<<
+            // 1. If UNLOCKED (e.g. Plain/Caesar) AND Burn msg AND I am receiver -> BURN
+            if (isBurn && !isMe && !isLocked) {
+                socket.emit("message_seen", msgId);
             }
         }
         
@@ -1538,9 +2056,16 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
                     
-                    const container = document.getElementById(id);
+                    const container = document.getElementById(`msg-${id}`); 
                     const btn = container ? container.getElementsByTagName('button')[0] : null;
                     if(btn) btn.classList.add('hidden');
+
+                    // >>> RSA TRIGGER BURN ON UNLOCK <<<
+                    if (container && container.dataset.burn === "true") {
+                        console.log("🔥 RSA Unlocked. Starting Burn Sequence for:", id);
+                        socket.emit("message_seen", id);
+                    }
+
                 } else {
                     alert("Decryption Failed.");
                 }
@@ -1574,7 +2099,10 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             document.querySelectorAll('.status-text').forEach(el => {
                 const uid = el.getAttribute('data-id');
                 if(onlineIds.includes(uid)) {
-                    el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]');
+                    if (!el.innerText.includes("MSG")) {
+                        el.innerText = "ONLINE"; 
+                        el.classList.replace('text-gray-600', 'text-[var(--primary)]');
+                    }
                 } else {
                     el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600');
                 }
