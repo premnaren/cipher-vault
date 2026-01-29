@@ -209,7 +209,7 @@
             }
         }
 
-        // --- AUTH & SETUP ---
+        // --- CACHE & KEYS ---
         function saveToLocalCache(cipher, plain) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); c[cipher] = plain; localStorage.setItem('sent_cache', JSON.stringify(c)); } catch(e){} }
         function getFromLocalCache(cipher) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); return c[cipher]; } catch(e) { return null; } }
 
@@ -280,6 +280,60 @@
         }
         fetchUsers();
 
+        // --- COMMAND LINE INTERFACE (CLI) LOGIC ---
+        function handleCommand(cmd) {
+            const args = cmd.split(' ');
+            const main = args[0].toLowerCase();
+            const area = document.getElementById('messagesArea');
+
+            // Helper to add system message
+            const sysMsg = (text, isError=false) => {
+                const div = document.createElement('div');
+                div.className = "text-[10px] font-mono p-2 my-2 border-l-2 " + (isError ? "border-red-500 text-red-400 bg-red-900/10" : "border-[var(--primary)] text-[var(--primary)] bg-cyan-900/10");
+                div.innerHTML = `<strong>SYSTEM:</strong> ${text}`;
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
+            };
+
+            switch(main) {
+                case '/clear':
+                    area.innerHTML = '';
+                    sysMsg("TERMINAL BUFFER CLEARED.");
+                    break;
+                
+                case '/burn':
+                    // Burn all visible messages
+                    const msgs = document.querySelectorAll('.msg-enter');
+                    if(msgs.length === 0) { sysMsg("NO TARGETS FOUND.", true); return; }
+                    SoundFX.burn();
+                    sysMsg(`INITIATING MASS DELETE SEQUENCE (${msgs.length} OBJECTS)...`);
+                    msgs.forEach((el, i) => {
+                        setTimeout(() => {
+                            el.classList.add('burn-anim');
+                            setTimeout(() => el.remove(), 1000);
+                        }, i * 100); // Staggered delete
+                    });
+                    break;
+
+                case '/id':
+                    const pubKey = localStorage.getItem('rsa_pub') || "UNKNOWN";
+                    const shortKey = pubKey.substring(30, 60) + "...";
+                    sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`);
+                    break;
+
+                case '/help':
+                    sysMsg(`AVAILABLE COMMANDS:<br>
+                    • /clear - Wipe local screen<br>
+                    • /burn - Destroy visible msgs<br>
+                    • /id - Show identity info<br>
+                    • /help - Show this menu`);
+                    break;
+
+                default:
+                    sysMsg(`UNKNOWN COMMAND: ${main}`, true);
+            }
+        }
+
         // --- SEND LOGIC ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
             if(!currentReceiver) return alert("Select a user first!");
@@ -295,10 +349,9 @@
                     ctx.drawImage(img, 0, 0);
                     const imgData = ctx.getImageData(0,0,img.width,img.height);
                     
-                    // LSB Encode
                     let bin = ""; 
                     for(let i=0; i<text.length; i++) bin += text.charCodeAt(i).toString(2).padStart(8,'0');
-                    bin += "00000000"; // Terminator
+                    bin += "00000000"; 
                     
                     let dIdx = 0;
                     for(let i=0; i<bin.length; i++) {
@@ -307,12 +360,12 @@
                         dIdx++;
                     }
                     ctx.putImageData(imgData, 0, 0);
-                    const stegoDataUrl = cvs.toDataURL(); // Encoded Image
+                    const stegoDataUrl = cvs.toDataURL(); 
 
                     const payload = {
                         senderId: myId, receiverId: currentReceiver._id,
-                        text: stegoDataUrl, // Send image data as text
-                        cipherType: 'steganography', // Mark it
+                        text: stegoDataUrl, 
+                        cipherType: 'steganography', 
                         isBurn: isBurn, timestamp: new Date()
                     };
                     socket.emit("private_message", payload);
@@ -325,7 +378,7 @@
                     document.getElementById('stegoImgInput').value = "";
                 };
                 img.src = selectedImage;
-                return; // Stop here, async send happens in onload
+                return; 
             }
 
             // NORMAL PATH
@@ -359,8 +412,18 @@
             e.preventDefault();
             const input = document.getElementById('msgInput');
             const burn = document.getElementById('burnCheck').checked;
-            if(!input.value) return;
-            sendMessage(input.value, null, burn);
+            const val = input.value.trim();
+            
+            if(!val) return;
+
+            // --- CLI CHECK ---
+            if (val.startsWith('/')) {
+                handleCommand(val);
+                input.value = '';
+                return;
+            }
+
+            sendMessage(val, null, burn);
             input.value = '';
             document.getElementById('burnCheck').checked = false;
         });
@@ -389,17 +452,13 @@
             const isMe = (senderString === String(myId));
             
             let content = msg.text || msg.cipherText;
-            let method = msg.cipherType || 'plain'; // Default to plain
+            let method = msg.cipherType || 'plain'; 
             const isBurn = msg.isBurn;
             const msgId = msg._id || 'temp-' + Date.now(); 
 
-            // --- FIX: AUTO-DETECT STEGANOGRAPHY IMAGE ---
-            // If the content looks like image data, force method to steganography
-            if (content.startsWith('data:image')) {
-                method = 'steganography';
-            }
+            // Auto-detect Stego
+            if (content.startsWith('data:image')) method = 'steganography';
 
-            // If I am sender (RSA), recover plain text from cache
             if (isMe && method === 'rsa') {
                 const cached = getFromLocalCache(content);
                 if(cached) { content = cached; msg.originalText = cached; } 
@@ -418,13 +477,9 @@
 
             let innerHTML = "";
 
-            // --- RENDER LOGIC ---
             if (method === 'steganography') {
-                //  showing the Scan button
                 innerHTML = `
-                    <div class="mb-2">
-                        <img src="${content}" class="max-w-[200px] rounded border border-gray-700">
-                    </div>
+                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
                     <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
                         <span>🔍 SCAN FOR HIDDEN DATA</span>
                     </button>
@@ -432,7 +487,6 @@
                 `;
             } 
             else if (method === 'rsa') {
-                // RSA Logic
                 let isLocked = (!isMe && !getFromLocalCache(msg.text) && !msg.originalText);
                 if (isMe) {
                     const cached = getFromLocalCache(content) || msg.originalText;
@@ -451,11 +505,9 @@
                     innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
                 }
             } else {
-                // Plain/Caesar
                 innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
             }
 
-            // Click to decrypt Caesar (Only if not me and likely caesar)
             const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
 
             div.innerHTML = `
@@ -472,7 +524,6 @@
             area.appendChild(div);
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-            // LOGIC: TRIGGER BURN
             if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') {
                 socket.emit("message_seen", msgId);
             }
@@ -502,7 +553,6 @@
                 document.getElementById(`plain-${id}`).classList.remove('hidden');
                 SoundFX.decrypt();
 
-                // Trigger burn if needed
                 const container = document.getElementById(`msg-${id}`);
                 if (container && container.dataset.burn === "true") {
                     socket.emit("message_seen", id);
