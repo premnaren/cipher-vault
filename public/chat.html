@@ -389,9 +389,24 @@
             const isMe = (senderString === String(myId));
             
             let content = msg.text || msg.cipherText;
-            const method = msg.cipherType || 'plain';
+            let method = msg.cipherType || 'plain'; // Default to plain
             const isBurn = msg.isBurn;
             const msgId = msg._id || 'temp-' + Date.now(); 
+
+            // --- FIX: AUTO-DETECT STEGANOGRAPHY IMAGE ---
+            // If the content looks like image data, force method to steganography
+            if (content.startsWith('data:image')) {
+                method = 'steganography';
+            }
+
+            // If I am sender (RSA), recover plain text from cache
+            if (isMe && method === 'rsa') {
+                const cached = getFromLocalCache(content);
+                if(cached) { content = cached; msg.originalText = cached; } 
+                else if (msg.originalText) { content = msg.originalText; }
+            } else if (isMe && msg.originalText) {
+                content = msg.originalText;
+            }
 
             const div = document.createElement('div');
             div.id = `msg-${msgId}`; 
@@ -403,10 +418,13 @@
 
             let innerHTML = "";
 
+            // --- RENDER LOGIC ---
             if (method === 'steganography') {
-                // STEGO IMAGE DISPLAY
+                //  showing the Scan button
                 innerHTML = `
-                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
+                    <div class="mb-2">
+                        <img src="${content}" class="max-w-[200px] rounded border border-gray-700">
+                    </div>
                     <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
                         <span>🔍 SCAN FOR HIDDEN DATA</span>
                     </button>
@@ -414,7 +432,7 @@
                 `;
             } 
             else if (method === 'rsa') {
-                // RSA DISPLAY
+                // RSA Logic
                 let isLocked = (!isMe && !getFromLocalCache(msg.text) && !msg.originalText);
                 if (isMe) {
                     const cached = getFromLocalCache(content) || msg.originalText;
@@ -433,16 +451,17 @@
                     innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
                 }
             } else {
-                // PLAIN/CAESAR
+                // Plain/Caesar
                 innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
             }
 
+            // Click to decrypt Caesar (Only if not me and likely caesar)
             const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
 
             div.innerHTML = `
                 <div class="max-w-[75%] rounded-lg p-3 border ${color} ${bg} shadow-lg relative" ${clickAction}>
                     <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4">
-                        <span>${isMe ? 'YOU' : currentReceiver.username}</span>
+                        <span>${isMe ? 'YOU' : (currentReceiver ? currentReceiver.username : 'Partner')}</span>
                         <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
                     </div>
                     ${innerHTML}
