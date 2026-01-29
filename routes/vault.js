@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const multer = require('multer');        
-const File = require('../models/File'); 
+const File = require('../models/VaultFile'); // Ensure this model exists and matches your schema
 const jwt = require('jsonwebtoken');    
 const path = require('path');
 const fs = require('fs');
@@ -80,15 +80,20 @@ router.delete('/delete/:id', verifyToken, async (req, res) => {
     try {
         const userId = req.user._id || req.user.id;
         const file = await File.findOne({ _id: req.params.id, user: userId });
+        
         if(!file) return res.status(404).json({ message: "Not found or Access Denied" });
 
         // Delete from Disk
-        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        if (fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+        }
 
         // Delete from DB
         await File.deleteOne({ _id: req.params.id });
+        
         res.json({ message: "File Deleted" });
     } catch(err) {
+        console.error(err);
         res.status(500).json({ error: "Server Error" });
     }
 });

@@ -174,7 +174,12 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6">
                     <label class="text-xs font-mono text-[var(--primary)] mb-2 block tracking-widest">1. SELECT ASSET</label>
-                    <input type="file" id="vaultInput" title="File Upload" aria-label="File Upload" class="w-full text-xs text-gray-500 mb-4 file:bg-[var(--primary)] file:border-0 file:text-black file:font-bold file:px-2 file:py-1 file:rounded">
+                    <input type="file" id="vaultInput" title="File Upload" aria-label="File Upload" 
+                           onchange="this.classList.add('border-[var(--primary)]', 'shadow-[0_0_10px_rgba(0,243,255,0.3)]')"
+                           class="w-full text-xs text-gray-500 mb-4 border border-[var(--border)] rounded p-2 transition-all duration-200
+                                  file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 
+                                  file:text-xs file:font-black file:bg-[var(--primary)] file:text-black 
+                                  file:cursor-pointer file:transition-transform file:active:scale-90 hover:file:bg-white">
                     <label class="text-xs font-mono text-[var(--accent)] mb-2 block tracking-widest">2. PASSWORD</label>
                     <input type="password" id="vaultPass" title="Vault Password" aria-label="Vault Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
                     <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] font-mono text-xs">ENCRYPT & UPLOAD</button>
@@ -519,13 +524,16 @@
                 const list = document.getElementById('vaultList'); 
                 list.innerHTML = '';
                 
-                if(files.length === 0) list.innerHTML = '<div class="text-xs text-gray-500 p-2">VAULT EMPTY</div>';
+                if(files.length === 0) list.innerHTML = '<div class="text-xs text-gray-500 p-2 font-mono">VAULT EMPTY</div>';
 
                 files.forEach(f => { 
                     list.innerHTML += `
-                    <div class="flex justify-between items-center p-2 bg-black/40 border border-white/5 mb-2 rounded hover:border-[var(--primary)] transition-colors">
-                        <span class="text-xs text-gray-400 truncate w-48 font-mono">${f.originalName}</span>
-                        <button onclick="downloadAndDecrypt('${f.filename}','${f.originalName}')" class="text-[var(--primary)] text-[9px] border border-[var(--primary)] px-2 py-1 rounded hover:bg-[var(--primary)] hover:text-black font-bold">DECRYPT</button>
+                    <div class="flex justify-between items-center p-3 bg-black/40 border border-white/5 mb-2 rounded hover:border-[var(--primary)] transition-colors group">
+                        <span class="text-xs text-gray-400 truncate w-40 font-mono group-hover:text-white transition-colors">${f.originalName}</span>
+                        <div class="flex gap-2">
+                            <button onclick="downloadAndDecrypt('${f.filename}','${f.originalName}')" class="text-[var(--primary)] text-[9px] border border-[var(--primary)] px-3 py-1 rounded hover:bg-[var(--primary)] hover:text-black font-bold transition-all active:scale-95">DECRYPT</button>
+                            <button onclick="deleteFile('${f._id}')" class="text-red-500 text-[9px] border border-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-black font-bold transition-all active:scale-95">DELETE</button>
+                        </div>
                     </div>`; 
                 });
             } catch(e){ console.log("Vault Load Error", e); }
@@ -548,6 +556,23 @@
                 a.download = og.replace('.enc',''); 
                 a.click();
             } catch(e) { alert("ACCESS DENIED: INCORRECT PASSWORD"); }
+        }
+
+        async function deleteFile(id) {
+            if(!confirm("⚠️ PERMANENTLY DELETE THIS FILE?")) return;
+            
+            try {
+                const res = await fetch(`/api/vault/delete/${id}`, {
+                    method: 'DELETE',
+                    headers: {'auth-token': token}
+                });
+                
+                if(res.ok) {
+                    loadFiles(); // Refresh list
+                } else {
+                    alert("Delete Failed");
+                }
+            } catch(e) { console.error(e); alert("System Error"); }
         }
         
         document.getElementById('copyBtn').onclick = () => navigator.clipboard.writeText(DOM.out.innerText);
