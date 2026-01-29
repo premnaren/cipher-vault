@@ -59,7 +59,6 @@
     </nav>
 
     <div class="flex flex-1 overflow-hidden">
-        
         <aside class="w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10 hidden md:flex">
             <div class="p-4 border-b border-[var(--border)]">
                 <label for="userSearch" class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
@@ -71,7 +70,6 @@
         </aside>
 
         <main class="flex-1 flex flex-col relative bg-black/20">
-            
             <div id="chatHeader" class="h-12 border-b border-[var(--border)] flex items-center px-4 justify-between bg-[var(--bg-panel)] hidden">
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]"></div>
@@ -108,12 +106,10 @@
                                     <option value="plain">3. PLAINTEXT (NONE)</option>
                                 </select>
                             </div>
-
                             <div class="flex-[1.5]" id="cipherKeyContainer">
                                 <label for="cipherKey" class="text-[9px] text-[var(--accent)] font-bold block mb-1">MANUAL KEY (NON-RSA)</label>
                                 <input id="cipherKey" title="Manual Key" aria-label="Secret Key" type="text" placeholder="Not needed for RSA" class="w-full bg-[#050508] border border-[var(--border)] text-[10px] text-gray-500 p-2 rounded focus:border-[var(--accent)] outline-none font-mono">
                             </div>
-
                             <div class="flex items-end">
                                 <label class="flex items-center gap-2 cursor-pointer border border-red-900/50 bg-red-900/10 px-3 py-2 rounded hover:bg-red-900/20 h-[34px]">
                                     <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3">
@@ -124,8 +120,13 @@
                     </div>
 
                     <form id="chatForm" class="flex gap-2 items-center">
-                        <div class="w-8 h-8 rounded-full bg-[var(--border)] flex items-center justify-center text-gray-500 text-xs" id="lockIcon">🔒</div>
-                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type a secure message..." autocomplete="off" class="flex-grow bg-black border border-[var(--border)] p-3 rounded text-sm text-white focus:border-[var(--primary)] outline-none font-mono">
+                        <input type="file" id="stegoImgInput" accept="image/*" class="hidden" onchange="handleFileSelect(this)" title="Steganography Image Upload" aria-label="Upload Image for Steganography">
+                        
+                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-gray-500 hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative" id="attachBtn" title="Attach Image" aria-label="Attach Image">
+                            📎
+                        </button>
+
+                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type message (Select image to hide text inside it)..." autocomplete="off" class="flex-grow bg-black border border-[var(--border)] p-3 rounded text-sm text-white focus:border-[var(--primary)] outline-none font-mono">
                         <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[0_0_15px_rgba(0,243,255,0.3)] transition-all text-xs">SEND</button>
                     </form>
                 </div>
@@ -133,19 +134,18 @@
         </main>
     </div>
 
+    <canvas id="procCanvas" class="hidden"></canvas>
+
     <script>
-        // --- 0. SOUND SYSTEM (WEB AUDIO API) ---
+        // --- 0. SOUND SYSTEM ---
         const SoundFX = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
             muted: false,
-            
             toggle: function() {
                 this.muted = !this.muted;
                 document.getElementById('muteBtn').innerText = this.muted ? "🔇 OFF" : "🔊 ON";
-                // Resume context if suspended (browser autoplay policy)
                 if (this.ctx.state === 'suspended') this.ctx.resume();
             },
-
             playOscillator: function(freq, type, duration, vol=0.1) {
                 if(this.muted) return;
                 const osc = this.ctx.createOscillator();
@@ -159,14 +159,12 @@
                 osc.start();
                 osc.stop(this.ctx.currentTime + duration);
             },
-
             playWhiteNoise: function(duration) {
                 if(this.muted) return;
                 const bufferSize = this.ctx.sampleRate * duration;
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
                 for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-                
                 const noise = this.ctx.createBufferSource();
                 noise.buffer = buffer;
                 const gain = this.ctx.createGain();
@@ -176,64 +174,48 @@
                 gain.connect(this.ctx.destination);
                 noise.start();
             },
-
-            send: function() { this.playOscillator(1200, 'sine', 0.1); }, // High blip
-            receive: function() { 
-                this.playOscillator(800, 'square', 0.1); 
-                setTimeout(() => this.playOscillator(1200, 'square', 0.2), 100);
-            },
-            decrypt: function() {
-                this.playOscillator(200, 'sawtooth', 0.5);
-                setTimeout(() => this.playOscillator(600, 'sine', 0.3), 100);
-            },
-            burn: function() { this.playWhiteNoise(0.5); } // Fizzle sound
+            send: function() { this.playOscillator(1200, 'sine', 0.1); },
+            receive: function() { this.playOscillator(800, 'square', 0.1); setTimeout(() => this.playOscillator(1200, 'square', 0.2), 100); },
+            decrypt: function() { this.playOscillator(200, 'sawtooth', 0.5); setTimeout(() => this.playOscillator(600, 'sine', 0.3), 100); },
+            burn: function() { this.playWhiteNoise(0.5); }
         };
 
-        // --- UI LOGIC ---
-        function toggleSpyTools() {
-            const el = document.getElementById('spyTools');
-            el.classList.toggle('open');
-            document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
-        }
-
+        // --- AUTH & INIT ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
-        
         function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; } }
-        
         const userPayload = parseJwt(token);
         const userData = userPayload.user || userPayload;
         const myId = userData._id || userData.id; 
-
-        if (!myId) {
-            localStorage.removeItem('auth-token');
-            window.location.href = '/login.html';
-        }
+        if (!myId) { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
         const socket = io({ auth: { token } });
         let currentReceiver = null;
         let activeUsersMap = {}; 
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
-        function saveToLocalCache(cipher, plain) {
-            try {
-                let cache = JSON.parse(localStorage.getItem('sent_cache') || '{}');
-                cache[cipher] = plain;
-                localStorage.setItem('sent_cache', JSON.stringify(cache));
-            } catch(e) {}
+        // --- STEGO LOGIC ---
+        let selectedImage = null;
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    selectedImage = e.target.result;
+                    document.getElementById('attachBtn').classList.add('bg-[var(--primary)]', 'text-black', 'border-transparent');
+                    document.getElementById('msgInput').placeholder = "Type secret message to hide in image...";
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
         }
-        
-        function getFromLocalCache(cipher) {
-            try {
-                let cache = JSON.parse(localStorage.getItem('sent_cache') || '{}');
-                return cache[cipher];
-            } catch(e) { return null; }
-        }
+
+        // --- AUTH & SETUP ---
+        function saveToLocalCache(cipher, plain) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); c[cipher] = plain; localStorage.setItem('sent_cache', JSON.stringify(c)); } catch(e){} }
+        function getFromLocalCache(cipher) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); return c[cipher]; } catch(e) { return null; } }
 
         async function initIdentity() {
             let storedPriv = localStorage.getItem('rsa_priv');
             let storedPub = localStorage.getItem('rsa_pub');
-
             if(!storedPriv || !storedPub) {
                 document.getElementById('keyGenStatus').innerText = "GENERATING NEW IDENTITY...";
                 myRSA.getKey();
@@ -242,53 +224,39 @@
                 localStorage.setItem('rsa_priv', storedPriv);
                 localStorage.setItem('rsa_pub', storedPub);
             }
-            
             myRSA.setPrivateKey(storedPriv);
-            
             try {
-                await fetch('/api/users/key', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: myId, publicKey: storedPub })
-                });
+                await fetch('/api/users/key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: myId, publicKey: storedPub }) });
                 document.getElementById('keyGenStatus').innerText = "IDENTITY SECURED & SYNCED.";
                 document.getElementById('keyGenStatus').className = "mono text-[10px] text-[var(--primary)] mt-2";
-            } catch(e) { console.error("Key Sync Failed", e); }
+            } catch(e) {}
         }
         setTimeout(initIdentity, 100);
-
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
         async function selectUser(user, el) {
             currentReceiver = user;
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
-            
             const statusText = el.querySelector('.status-text');
             if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
-
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
             document.getElementById('inputArea').classList.remove('hidden');
             document.getElementById('chatPartnerName').innerText = user.username;
-            
             try {
                 const res = await fetch('/api/users');
                 const freshUsers = await res.json();
                 const freshUser = freshUsers.find(u => u._id === user._id);
                 if (freshUser) activeUsersMap[user._id] = freshUser;
-                
                 const statusEl = document.getElementById('encryptionStatus');
                 if(freshUser && freshUser.publicKey && freshUser.publicKey.includes("BEGIN PUBLIC KEY")) {
-                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED";
-                    statusEl.className = "text-[9px] mono text-[var(--primary)]";
+                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED"; statusEl.className = "text-[9px] mono text-[var(--primary)]";
                 } else {
-                    statusEl.innerText = "⚠️ UNSECURED (PARTNER NEEDS TO RE-LOGIN)";
-                    statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
+                    statusEl.innerText = "⚠️ UNSECURED"; statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
                 }
             } catch(e) {}
-
             document.getElementById('messagesArea').innerHTML = ''; 
             loadHistory(user._id);
         }
@@ -299,42 +267,76 @@
                 const users = await res.json();
                 const list = document.getElementById('usersList');
                 list.innerHTML = '';
-                
                 users.forEach(u => {
                     if (u._id === myId) return; 
                     activeUsersMap[u._id] = u;
-
                     const div = document.createElement('div');
                     div.className = 'user-card p-3 cursor-pointer hover:bg-white/5 flex items-center gap-3 border-l-2 border-transparent transition-all';
-                    div.innerHTML = `
-                        <div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron">${u.username.substring(0,2).toUpperCase()}</div>
-                        <div>
-                            <div class="text-sm font-bold text-gray-300">${u.username}</div>
-                            <div class="text-[9px] text-gray-600 mono status-text" data-id="${u._id}">OFFLINE</div>
-                        </div>
-                    `;
+                    div.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-gray-300">${u.username}</div><div class="text-[9px] text-gray-600 mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
                     div.onclick = () => selectUser(u, div);
                     list.appendChild(div);
                 });
-            } catch(e) { console.error("User Fetch Error", e); }
+            } catch(e) {}
         }
         fetchUsers();
 
+        // --- SEND LOGIC ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
             if(!currentReceiver) return alert("Select a user first!");
             const method = forcedMethod || document.getElementById('cipherMethod').value;
-            let cipherText = text;
+            
+            // STEGANOGRAPHY PATH
+            if (selectedImage) {
+                const img = new Image();
+                img.onload = () => {
+                    const cvs = document.getElementById('procCanvas');
+                    const ctx = cvs.getContext('2d');
+                    cvs.width = img.width; cvs.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0,0,img.width,img.height);
+                    
+                    // LSB Encode
+                    let bin = ""; 
+                    for(let i=0; i<text.length; i++) bin += text.charCodeAt(i).toString(2).padStart(8,'0');
+                    bin += "00000000"; // Terminator
+                    
+                    let dIdx = 0;
+                    for(let i=0; i<bin.length; i++) {
+                        if(dIdx%4===3) dIdx++;
+                        imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]);
+                        dIdx++;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    const stegoDataUrl = cvs.toDataURL(); // Encoded Image
 
+                    const payload = {
+                        senderId: myId, receiverId: currentReceiver._id,
+                        text: stegoDataUrl, // Send image data as text
+                        cipherType: 'steganography', // Mark it
+                        isBurn: isBurn, timestamp: new Date()
+                    };
+                    socket.emit("private_message", payload);
+                    SoundFX.send();
+                    
+                    // Reset UI
+                    selectedImage = null;
+                    document.getElementById('attachBtn').classList.remove('bg-[var(--primary)]', 'text-black', 'border-transparent');
+                    document.getElementById('msgInput').placeholder = "Type a secure message...";
+                    document.getElementById('stegoImgInput').value = "";
+                };
+                img.src = selectedImage;
+                return; // Stop here, async send happens in onload
+            }
+
+            // NORMAL PATH
+            let cipherText = text;
             if (method === 'rsa') {
                 const partnerData = activeUsersMap[currentReceiver._id];
-                if (!partnerData || !partnerData.publicKey) {
-                    return alert("User key missing. Ask them to login.");
-                }
+                if (!partnerData || !partnerData.publicKey) return alert("User key missing.");
                 const encryptor = new JSEncrypt();
                 encryptor.setPublicKey(partnerData.publicKey);
                 cipherText = encryptor.encrypt(text);
                 if(!cipherText) return alert("Message too long for RSA.");
-                
                 saveToLocalCache(cipherText, text);
             } 
             else if (method === 'caesar') {
@@ -346,17 +348,11 @@
             }
 
             const payload = {
-                senderId: myId,
-                receiverId: currentReceiver._id,
-                text: cipherText,
-                cipherType: method,
-                isBurn: isBurn,
-                timestamp: new Date()
+                senderId: myId, receiverId: currentReceiver._id,
+                text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date()
             };
-
             socket.emit("private_message", payload);
-            SoundFX.send(); // SOUND EFFECT
-            // displayMessage is handled by socket echo to ensure sync
+            SoundFX.send();
         }
 
         document.getElementById('chatForm').addEventListener('submit', (e) => {
@@ -372,27 +368,19 @@
         socket.on("receive_message", (data) => {
             const senderString = String(data.senderId || data.sender);
             const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
-
             if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
                 displayMessage(data);
-                if (senderString !== String(myId)) SoundFX.receive(); // SOUND EFFECT FOR RECEIVING
+                if (senderString !== String(myId)) SoundFX.receive();
             } else if (senderString !== String(myId)) {
-                SoundFX.receive(); // SOUND EFFECT FOR NOTIFICATION
+                SoundFX.receive();
                 const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
-                if(userStatus) {
-                    userStatus.innerText = "📩 NEW MSG";
-                    userStatus.classList.add('text-[var(--primary)]', 'animate-pulse');
-                }
+                if(userStatus) { userStatus.innerText = "📩 NEW MSG"; userStatus.classList.add('text-[var(--primary)]', 'animate-pulse'); }
             }
         });
 
         socket.on("message_burnt", (msgId) => {
             const el = document.getElementById(`msg-${msgId}`);
-            if(el) {
-                SoundFX.burn(); // SOUND EFFECT
-                el.classList.add('burn-anim');
-                setTimeout(() => el.remove(), 1500);
-            }
+            if(el) { SoundFX.burn(); el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
         });
 
         function displayMessage(msg) {
@@ -403,38 +391,50 @@
             let content = msg.text || msg.cipherText;
             const method = msg.cipherType || 'plain';
             const isBurn = msg.isBurn;
-            const msgId = msg._id; 
-
-            if (isMe && method === 'rsa') {
-                const cached = getFromLocalCache(content);
-                if(cached) { content = cached; msg.originalText = cached; } 
-                else if (msg.originalText) { content = msg.originalText; }
-            } else if (isMe && msg.originalText) {
-                content = msg.originalText;
-            }
+            const msgId = msg._id || 'temp-' + Date.now(); 
 
             const div = document.createElement('div');
             div.id = `msg-${msgId}`; 
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
-            
             if (isBurn) div.dataset.burn = "true";
 
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
             const bg = isMe ? 'bg-white/5' : 'bg-black/40';
 
-            let isLocked = (!isMe && method === 'rsa');
-            if(isMe && method === 'rsa' && !getFromLocalCache(msg.text) && !msg.originalText) isLocked = true;
+            let innerHTML = "";
 
-            let contentHtml = `<div class="text-xs font-mono break-all">${content}</div>`;
-            
-            if (isLocked) {
-                contentHtml = `
-                    <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
-                    <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
-                        <span>🔓 UNLOCK DATA</span>
+            if (method === 'steganography') {
+                // STEGO IMAGE DISPLAY
+                innerHTML = `
+                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
+                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                        <span>🔍 SCAN FOR HIDDEN DATA</span>
                     </button>
                     <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
                 `;
+            } 
+            else if (method === 'rsa') {
+                // RSA DISPLAY
+                let isLocked = (!isMe && !getFromLocalCache(msg.text) && !msg.originalText);
+                if (isMe) {
+                    const cached = getFromLocalCache(content) || msg.originalText;
+                    if(cached) { content = cached; isLocked = false; } else { isLocked = true; }
+                }
+
+                if (isLocked) {
+                    innerHTML = `
+                        <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
+                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                            <span>🔓 UNLOCK DATA</span>
+                        </button>
+                        <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                    `;
+                } else {
+                    innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
+                }
+            } else {
+                // PLAIN/CAESAR
+                innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
             }
 
             const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
@@ -445,7 +445,7 @@
                         <span>${isMe ? 'YOU' : currentReceiver.username}</span>
                         <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
                     </div>
-                    ${contentHtml}
+                    ${innerHTML}
                     ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase">🔒 ${method}</div>` : ''}
                 </div>
             `;
@@ -453,12 +453,45 @@
             area.appendChild(div);
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-            // LOGIC: TRIGGER BURN FOR UNLOCKED MESSAGES
-            if (isBurn && !isMe && !isLocked) {
+            // LOGIC: TRIGGER BURN
+            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') {
                 socket.emit("message_seen", msgId);
             }
         }
         
+        function scanImage(id, imgSrc) {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.getElementById('procCanvas');
+                const ctx = cvs.getContext('2d');
+                cvs.width = img.width; cvs.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0,0,img.width,img.height).data;
+                
+                let bin = "", res = "";
+                for(let i=0; i<data.length; i++) {
+                    if(i%4===3) continue;
+                    bin += (data[i]&1).toString();
+                    if(bin.length===8) {
+                        if(bin==="00000000") break;
+                        res += String.fromCharCode(parseInt(bin, 2));
+                        bin = "";
+                    }
+                }
+                
+                document.getElementById(`plain-${id}`).innerText = "HIDDEN MSG: " + res;
+                document.getElementById(`plain-${id}`).classList.remove('hidden');
+                SoundFX.decrypt();
+
+                // Trigger burn if needed
+                const container = document.getElementById(`msg-${id}`);
+                if (container && container.dataset.burn === "true") {
+                    socket.emit("message_seen", id);
+                }
+            };
+            img.src = imgSrc;
+        }
+
         function unlockMessage(id, cipherText) {
             try {
                 const myPriv = localStorage.getItem('rsa_priv');
@@ -467,26 +500,24 @@
                 const decrypted = decryptor.decrypt(cipherText);
                 
                 if (decrypted) {
-                    SoundFX.decrypt(); // SOUND EFFECT
+                    SoundFX.decrypt();
                     document.getElementById(`plain-${id}`).innerText = decrypted;
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
                     
                     const container = document.getElementById(`msg-${id}`); 
-                    const btn = container ? container.getElementsByTagName('button')[0] : null;
-                    if(btn) btn.classList.add('hidden');
-
                     if (container && container.dataset.burn === "true") {
-                        console.log("🔥 Triggering Burn for RSA message", id);
                         socket.emit("message_seen", id);
                     }
-
-                } else {
-                    alert("Decryption Failed.");
-                }
-            } catch(e) { console.error(e); alert("Decryption Error"); }
+                } else { alert("Decryption Failed."); }
+            } catch(e) { alert("Decryption Error"); }
         }
 
+        function toggleSpyTools() {
+            const el = document.getElementById('spyTools');
+            el.classList.toggle('open');
+            document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
+        }
         function decryptCaesar(text, shift) {
              const s = (26 - parseInt(shift)) % 26;
              return text.replace(/[a-zA-Z]/g, c => {
@@ -494,7 +525,6 @@
                 return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b);
             });
         }
-
         async function loadHistory(partnerId) {
             try {
                 const res = await fetch(`/api/messages/${myId}/${partnerId}`);
@@ -502,25 +532,18 @@
                 msgs.forEach(displayMessage);
             } catch(e) {}
         }
-
         socket.on('connect', () => {
             socket.emit("login", myId);
             document.getElementById('statusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]";
             document.getElementById('statusText').innerText = "ONLINE";
             document.getElementById('statusText').className = "text-green-500";
         });
-        
         socket.on('get_users', (onlineIds) => {
             document.querySelectorAll('.status-text').forEach(el => {
                 const uid = el.getAttribute('data-id');
                 if(onlineIds.includes(uid)) {
-                    if (!el.innerText.includes("MSG")) {
-                        el.innerText = "ONLINE"; 
-                        el.classList.replace('text-gray-600', 'text-[var(--primary)]');
-                    }
-                } else {
-                    el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600');
-                }
+                    if (!el.innerText.includes("MSG")) { el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]'); }
+                } else { el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600'); }
             });
         });
     </script>
