@@ -21,7 +21,6 @@
             font-family: 'Inter', sans-serif; 
             background-image: radial-gradient(var(--border) 1px, transparent 1px); 
             background-size: 30px 30px;
-            /* Default cursor restored */
         }
 
         /* --- UI STYLES --- */
@@ -34,7 +33,7 @@
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        .modal-bg { background: rgba(0, 0, 0, 0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
@@ -195,6 +194,20 @@
         </div>
     </div>
 
+    <div id="passwordModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">SECURITY CHECK</h3>
+            <p class="text-[10px] text-gray-400 font-mono mb-4 uppercase">Enter Decryption Key to Access File</p>
+            
+            <input type="password" id="passwordModalInput" class="w-full bg-[#050508] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all focus:shadow-[0_0_15px_rgba(0,243,255,0.2)]" placeholder="••••••••" autocomplete="off">
+            
+            <div class="flex gap-3">
+                <button id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono">CANCEL</button>
+                <button id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_rgba(0,243,255,0.3)] font-mono">UNLOCK</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- AUTH CHECK ---
         const token = localStorage.getItem('auth-token');
@@ -224,10 +237,73 @@
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
             memStatus: document.getElementById('memoryStatus')
-            // Note: Canvas accessed dynamically now to prevent null errors
         };
 
-        // --- NAVIGATION LOGIC (Fixed Flex/Hidden Conflict) ---
+        // --- NEW: PASSWORD MODAL PROMISE WRAPPER ---
+        function askPassword() {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('passwordModal');
+                const content = modal.firstElementChild; // The inner div
+                const input = document.getElementById('passwordModalInput');
+                const submitBtn = document.getElementById('passwordModalSubmit');
+                const cancelBtn = document.getElementById('passwordModalCancel');
+
+                // Show Modal
+                modal.classList.remove('hidden', 'pointer-events-none');
+                // Use small timeout to allow display:block to apply before opacity transition
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                    content.classList.add('scale-100');
+                }, 10);
+                
+                input.value = '';
+                input.focus();
+
+                const cleanup = () => {
+                    // Hide Modal with animation
+                    modal.classList.add('opacity-0');
+                    content.classList.remove('scale-100');
+                    content.classList.add('scale-95');
+                    
+                    // Wait for transition to finish before hiding completely
+                    setTimeout(() => {
+                        modal.classList.add('hidden', 'pointer-events-none');
+                    }, 300);
+
+                    // Remove listeners
+                    submitBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    input.onkeydown = null;
+                };
+
+                const resolvePass = () => {
+                    const val = input.value;
+                    if(!val) {
+                        input.classList.add('border-red-500', 'animate-pulse');
+                        setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500);
+                        return;
+                    }
+                    cleanup();
+                    resolve(val);
+                };
+
+                const resolveCancel = () => {
+                    cleanup();
+                    resolve(null);
+                };
+
+                submitBtn.onclick = resolvePass;
+                cancelBtn.onclick = resolveCancel;
+                
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') resolvePass();
+                    if (e.key === 'Escape') resolveCancel();
+                };
+            });
+        }
+
+        // --- NAVIGATION LOGIC ---
         function showPage(page) {
             const term = document.getElementById('terminalPage');
             const lib = document.getElementById('libraryPage');
@@ -235,25 +311,13 @@
             const libBtn = document.getElementById('libBtn');
 
             if(page === 'terminal') {
-                // Show Terminal
-                term.classList.remove('hidden');
-                term.classList.add('flex'); // Restore flex layout
-                
-                // Hide Library
+                term.classList.remove('hidden'); term.classList.add('flex');
                 lib.classList.add('hidden');
-                
-                // Update Buttons
                 termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all";
                 libBtn.className = "flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
             } else {
-                // Hide Terminal
-                term.classList.add('hidden');
-                term.classList.remove('flex'); // Remove flex so hidden works
-                
-                // Show Library
+                term.classList.add('hidden'); term.classList.remove('flex');
                 lib.classList.remove('hidden');
-                
-                // Update Buttons
                 libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full transition-all";
                 termBtn.className = "flex items-center gap-2 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
             }
@@ -295,7 +359,6 @@
                 DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
-                // Logic updates for specific modes
                 if (DOM.algo.value === 'steganography') {
                     if (mode === 'encrypt') {
                         DOM.stegoTextCont.classList.remove('hidden'); 
@@ -306,7 +369,6 @@
                     }
                 }
                 
-                // Key Placeholder Updates
                 if (DOM.algo.value === 'rsa') {
                     DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) 
                         ? "[ACCESSING CACHED PRIVATE KEY...] (Leave empty to use)" 
@@ -353,7 +415,7 @@
             
             // 1. STEGANOGRAPHY
             if (algo === 'steganography') {
-                const cvs = document.getElementById('stegoCanvas'); // Hidden canvas in HTML
+                const cvs = document.getElementById('stegoCanvas');
                 const ctx = cvs.getContext('2d');
                 
                 if (mode === 'encrypt') {
@@ -367,9 +429,7 @@
                             const imgData = ctx.getImageData(0,0,img.width,img.height);
                             const msg = DOM.stegoPayload.value;
                             
-                            // Basic LSB Encoding
-                            let bin = ""; 
-                            for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
+                            let bin = ""; for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
                             bin += "00000000"; // Terminator
                             
                             if(bin.length > imgData.data.length/4) return alert("Message too long for image");
@@ -381,16 +441,11 @@
                                 dIdx++;
                             }
                             ctx.putImageData(imgData, 0, 0);
-                            
-                            const link = document.createElement('a');
-                            link.download = 'secret_stego.png';
-                            link.href = cvs.toDataURL();
-                            link.click();
+                            const link = document.createElement('a'); link.download = 'secret_stego.png'; link.href = cvs.toDataURL(); link.click();
                             animateText(DOM.out, "SUCCESS: Encoded Image Downloaded.");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 } else {
-                    // DECRYPT STEGO
                     if(!DOM.stegoFile.files[0]) return alert("Select Image to Decode");
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -416,7 +471,6 @@
                 return;
             }
 
-            // 2. TEXT CIPHERS
             const txt = DOM.mainIn.value;
             let key = DOM.keyIn.value;
             let res = "";
@@ -424,18 +478,11 @@
             if (algo === 'rsa') {
                 const encryptor = new JSEncrypt({default_key_size: 512});
                 const rsaKeyVal = DOM.rsaKeyIn.value.trim();
-
                 if (mode === 'encrypt') {
                     let pubKey = rsaKeyVal;
                     let extra = "";
-                    if (!pubKey) {
-                        pubKey = encryptor.getPublicKey();
-                        keyCache.rsa = encryptor.getPrivateKey();
-                        updateMemoryStatus();
-                        extra = "\n\n[PRIVATE KEY CACHED FOR SESSION]";
-                        encryptor.setPublicKey(pubKey);
-                    } else { encryptor.setPublicKey(pubKey); }
-                    
+                    if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED FOR SESSION]"; encryptor.setPublicKey(pubKey); } 
+                    else { encryptor.setPublicKey(pubKey); }
                     const enc = encryptor.encrypt(txt);
                     res = enc ? "CIPHERTEXT:\n" + enc + extra : "ENCRYPTION FAILED";
                 } else {
@@ -461,17 +508,11 @@
                 }
             }
             else {
-                // SIMPLE CIPHERS
                 if(algo === 'caesar') {
                     const shift = parseInt(key) || 3;
                     const s = mode==='encrypt' ? shift : -shift;
-                    res = txt.replace(/[a-zA-Z]/g, c => {
-                        const b = c>='a'?97:65;
-                        return String.fromCharCode(((c.charCodeAt(0)-b+s)%26+26)%26+b);
-                    });
-                } else {
-                    res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`;
-                }
+                    res = txt.replace(/[a-zA-Z]/g, c => { const b = c>='a'?97:65; return String.fromCharCode(((c.charCodeAt(0)-b+s)%26+26)%26+b); });
+                } else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
             }
             animateText(DOM.out, res);
         };
@@ -480,14 +521,8 @@
         const vaultModal = document.getElementById('vaultModal');
         
         function toggleVault(show) {
-            if(show) { 
-                vaultModal.classList.remove('hidden','pointer-events-none'); 
-                setTimeout(()=>vaultModal.classList.remove('opacity-0'), 10);
-                loadFiles(); 
-            } else { 
-                vaultModal.classList.add('opacity-0','pointer-events-none'); 
-                setTimeout(()=>vaultModal.classList.add('hidden'), 300); 
-            }
+            if(show) { vaultModal.classList.remove('hidden','pointer-events-none'); setTimeout(()=>vaultModal.classList.remove('opacity-0'), 10); loadFiles(); } 
+            else { vaultModal.classList.add('opacity-0','pointer-events-none'); setTimeout(()=>vaultModal.classList.add('hidden'), 300); }
         }
 
         async function uploadEncryptedFile() {
@@ -500,16 +535,9 @@
                 const enc = CryptoJS.AES.encrypt(e.target.result, pw).toString();
                 const blob = new Blob([enc],{type:'text/plain'});
                 const f = new File([blob], fi.files[0].name+".enc", {type:"text/plain"});
-                
-                const fd = new FormData(); 
-                fd.append('vaultFile', f);
-                
+                const fd = new FormData(); fd.append('vaultFile', f);
                 try {
-                    await fetch('/api/vault/upload', {
-                        method:'POST', 
-                        headers:{'auth-token':token}, 
-                        body:fd
-                    });
+                    await fetch('/api/vault/upload', { method:'POST', headers:{'auth-token':token}, body:fd });
                     loadFiles();
                     alert("File Encrypted & Uploaded to Vault.");
                 } catch(err) { alert("Upload Failed"); }
@@ -539,39 +567,27 @@
             } catch(e){ console.log("Vault Load Error", e); }
         }
 
+        // --- MODIFIED: DECRYPT WITH CUSTOM MODAL ---
         async function downloadAndDecrypt(fname, og) {
-            const pw = prompt("ENTER DECRYPTION PASSWORD:"); 
+            // Replace standard prompt with our custom async modal
+            const pw = await askPassword(); 
             if(!pw) return;
             
             try {
                 const res = await fetch(`/api/vault/file/${fname}?token=${token}`);
                 if(!res.ok) throw new Error("Download failed");
                 const txt = await res.text();
-                
                 const dec = CryptoJS.AES.decrypt(txt, pw).toString(CryptoJS.enc.Utf8);
                 if(!dec.startsWith('data:')) throw new Error("Decryption failed");
-                
-                const a = document.createElement('a'); 
-                a.href = dec; 
-                a.download = og.replace('.enc',''); 
-                a.click();
+                const a = document.createElement('a'); a.href = dec; a.download = og.replace('.enc',''); a.click();
             } catch(e) { alert("ACCESS DENIED: INCORRECT PASSWORD"); }
         }
 
         async function deleteFile(id) {
             if(!confirm("⚠️ PERMANENTLY DELETE THIS FILE?")) return;
-            
             try {
-                const res = await fetch(`/api/vault/delete/${id}`, {
-                    method: 'DELETE',
-                    headers: {'auth-token': token}
-                });
-                
-                if(res.ok) {
-                    loadFiles(); // Refresh list
-                } else {
-                    alert("Delete Failed");
-                }
+                const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: {'auth-token': token} });
+                if(res.ok) { loadFiles(); } else { alert("Delete Failed"); }
             } catch(e) { console.error(e); alert("System Error"); }
         }
         
