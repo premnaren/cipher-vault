@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptPact | Secure Terminal</title>
+    <title>CryptPact | Secure Uplink</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
 
-        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; }
         
         body { 
             background-color: var(--bg-body); 
@@ -21,577 +21,594 @@
             font-family: 'Inter', sans-serif; 
             background-image: radial-gradient(var(--border) 1px, transparent 1px); 
             background-size: 30px 30px;
+            overflow: hidden; 
         }
 
-        /* --- UI STYLES --- */
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
-        .card-inner { transform-style: preserve-3d; }
-        .perspective-container { perspective: 1200px; }
 
-        ::-webkit-scrollbar { width: 8px; } 
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
+        ::-webkit-scrollbar { width: 6px; } 
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        .mobile-hide { display: none; }
+        @media (min-width: 768px) {
+            .mobile-hide { display: flex; }
+            .mobile-full { width: auto; }
+        }
+        
+        .msg-enter { animation: slideIn 0.2s ease-out forwards; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .burn-anim { animation: burnOut 1s forwards; }
+        @keyframes burnOut { 0% { filter: blur(0); opacity: 1; } 50% { filter: blur(4px) hue-rotate(90deg); color: red; } 100% { opacity: 0; } }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col">
 
-    <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
-        <div class="flex items-center gap-4">
-            <button id="termBtn" onclick="showPage('terminal')" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">
-                <span class="tracking-[0.15em] text-xs font-mono">TERMINAL</span>
-            </button>
-            <button id="libBtn" onclick="showPage('library')" class="flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all">
-                <span class="tracking-[0.15em] text-xs font-mono">VIDEO LIBRARY</span>
-            </button>
-            <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
-                <span class="text-lg group-hover:animate-pulse">🔒</span> <span class="tracking-[0.15em] text-xs font-mono">VAULT</span>
-            </button>
-            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all">
-                <span class="text-lg">💬</span> <span class="tracking-[0.15em] text-xs font-mono">CHAT</span>
+    <nav class="h-16 shrink-0 border-b border-[var(--border)] bg-[var(--bg-panel)]/90 backdrop-blur flex justify-between items-center px-4 z-50">
+        <div class="flex items-center gap-3">
+            <a href="/" class="flex items-center gap-2 text-[var(--primary)] border border-[var(--primary)] bg-black/40 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition-all">
+                <span>←</span> <span class="hidden sm:inline font-mono">TERMINAL</span>
             </a>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 border border-[var(--border)]">
+                <div id="statusDot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                <span id="statusText" class="text-[10px] font-mono text-gray-500">OFFLINE</span>
+            </div>
         </div>
-        <div class="flex items-center gap-4">
-            <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
-            <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
+        <div class="flex items-center gap-3">
+            <button id="muteBtn" onclick="SoundFX.toggle()" class="text-[10px] mono text-gray-500 border border-[var(--border)] px-3 py-1.5 rounded hover:text-[var(--primary)] transition-all">🔊 ON</button>
+            <button onclick="logout()" class="text-[10px] font-bold text-red-500 border border-red-900/50 px-3 py-1.5 rounded hover:bg-red-900/20 transition-all">LOGOUT</button>
         </div>
     </nav>
 
-    <main id="terminalPage" class="flex-grow flex items-center justify-center p-4 pt-24 perspective-container h-full">
-        <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] border border-[var(--border)] shadow-[var(--glow)] rounded-xl relative overflow-hidden flex flex-col max-h-full">
+    <div class="flex-grow flex relative overflow-hidden">
+        
+        <div id="sidebarPanel" class="w-full md:w-80 border-r border-[var(--border)] bg-black/20 flex flex-col z-20 absolute inset-0 md:relative bg-[var(--bg-body)] md:bg-transparent">
+            <div class="p-4 border-b border-[var(--border)] bg-[var(--bg-panel)]">
+                <h2 class="text-sm font-bold tracking-widest text-gray-400 mb-2 orbitron">ACTIVE AGENTS</h2>
+                <div id="keyGenStatus" class="text-[9px] mono text-gray-600">INITIALIZING ENCRYPTION...</div>
+            </div>
+            <div id="usersList" class="flex-grow overflow-y-auto p-2 space-y-1"></div>
+        </div>
+
+        <div id="chatMain" class="w-full md:flex-1 flex flex-col bg-[var(--bg-body)] z-30 absolute inset-0 md:relative translate-x-full md:translate-x-0 transition-transform duration-300">
             
-            <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20 shrink-0">
-                <div>
-                    <h2 id="modeTitle" class="text-3xl font-bold tracking-widest orbitron text-[var(--primary)]">ENCRYPTION MODE</h2>
-                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY // AUTO-KEY MEMORY: <span id="memoryStatus" class="text-red-500 font-bold">OFFLINE</span></p>
+            <div id="chatHeader" class="h-14 border-b border-[var(--border)] flex justify-between items-center px-4 bg-[var(--bg-panel)] shrink-0 hidden">
+                <div class="flex items-center gap-3">
+                    <button onclick="closeChatMobile()" class="md:hidden text-[var(--primary)] text-xl font-bold p-2">←</button>
+                    <div>
+                        <div id="chatPartnerName" class="font-bold text-sm text-white orbitron">SELECT TARGET</div>
+                        <div id="encryptionStatus" class="text-[9px] mono text-gray-600">WAITING...</div>
+                    </div>
                 </div>
-                <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
-                    <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div><div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div></div>
-                    <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                <button onclick="toggleSpyTools()" class="text-[var(--accent)] text-xs border border-[var(--border)] px-3 py-1 rounded hover:bg-[var(--accent)] hover:text-black transition-all flex items-center gap-2">
+                    <span>TOOLS</span> <span id="toolArrow">▼</span>
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-grow overflow-hidden">
-                
-                <div class="p-6 space-y-6 border-r border-[var(--border)] relative overflow-y-auto">
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600 pointer-events-none hidden md:flex">
+                <div class="text-4xl mb-4 opacity-20">📡</div>
+                <p class="font-mono text-xs tracking-widest">SELECT AN AGENT TO BEGIN</p>
+                <p class="font-mono text-[10px] text-[var(--primary)] mt-2 opacity-50">IDENTITY SECURED & SYNCED.</p>
+            </div>
+
+            <div id="messagesArea" class="flex-grow overflow-y-auto p-4 space-y-3 relative hidden"></div>
+
+            <div id="spyTools" class="h-0 overflow-hidden bg-black/50 border-b border-[var(--border)] transition-all duration-300 absolute top-14 w-full z-40 backdrop-blur-md">
+                <div class="p-4 grid grid-cols-2 gap-4">
                     <div>
-                        <label for="algoSelect" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Selection</label>
-                        <select id="algoSelect" title="Select Algorithm" aria-label="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-white font-mono">
-                            <optgroup label="Classical Ciphers">
-                                <option value="atbash">1. Atbash Cipher</option>
-                                <option value="caesar">2. Caesar Cipher</option>
-                                <option value="playfair">3. Playfair Cipher</option>
-                                <option value="vigenere">4. Vigenère Cipher</option>
-                                <option value="rail_fence">5. Rail Fence Cipher</option>
-                                <option value="pigpen">6. Pigpen Cipher</option>
-                            </optgroup>
-                            <optgroup label="Modern Encryption">
-                                <option value="aes" selected>7. AES-256 (Standard)</option>
-                                <option value="rsa">8. RSA (Asymmetric)</option>
-                                <option value="ecc">9. ECC (Elliptic Curve)</option>
-                            </optgroup>
-                            <optgroup label="Covert Operations">
-                                <option value="steganography">10. Steganography (Image)</option>
-                            </optgroup>
+                        <label for="cipherMethod" class="text-[9px] text-[var(--primary)] block mb-1">ENCRYPTION METHOD</label>
+                        <select id="cipherMethod" title="Encryption Method" aria-label="Encryption Method" class="w-full bg-black border border-[var(--border)] text-xs p-1 rounded text-gray-300">
+                            <option value="rsa">RSA-2048 (ASYMMETRIC)</option>
+                            <option value="aes">AES-256 (SYMMETRIC)</option>
+                            <option value="caesar">CAESAR (CLASSIC)</option>
                         </select>
                     </div>
+                    <div>
+                        <label for="cipherKey" class="text-[9px] text-[var(--accent)] block mb-1">SHIFT KEY (Caesar Only)</label>
+                        <input type="number" id="cipherKey" title="Caesar Shift Key" placeholder="3" value="3" class="w-full bg-black border border-[var(--border)] text-xs p-1 rounded text-gray-300">
+                    </div>
+                </div>
+            </div>
 
-                    <div id="dynamicInputs" class="space-y-4">
-                        <div id="stdInputGroup">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Input Data</label>
-                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none" placeholder="Enter text..."></textarea>
+            <div id="inputArea" class="p-3 border-t border-[var(--border)] bg-[var(--bg-panel)] shrink-0 hidden">
+                <form id="chatForm" class="flex gap-2 items-end">
+                    <div class="relative flex-grow">
+                        <input type="file" id="stegoImgInput" title="Steganography Image Input" accept="image/*" class="hidden" onchange="handleFileSelect(this)">
+                        <button type="button" id="attachBtn" onclick="document.getElementById('stegoImgInput').click()" class="absolute left-2 top-2 text-gray-500 hover:text-white transition-colors text-lg" aria-label="Attach Image">📎</button>
+                        <textarea id="msgInput" rows="1" title="Message Input" placeholder="Type a secure message..." class="w-full bg-black/50 border border-[var(--border)] text-sm text-gray-200 rounded-lg py-3 pl-10 pr-10 focus:border-[var(--primary)] outline-none resize-none font-mono"></textarea>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-1 justify-center" title="Self Destruct">
+                            <input type="checkbox" id="burnCheck" title="Self Destruct Toggle" class="accent-red-500 w-3 h-3">
+                            <label for="burnCheck" class="text-[9px] text-red-500 font-bold cursor-pointer">BURN</label>
                         </div>
-
-                        <div id="stegoInputGroup" class="hidden">
-                            <label class="text-[10px] font-bold text-[var(--accent)] uppercase mb-2 block font-mono">Image Source</label>
-                            <input type="file" id="stegoFile" title="Upload Source Image" aria-label="Upload Source Image" accept="image/png" class="w-full text-xs text-gray-500 file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold mb-2">
-                            <div id="stegoTextContainer">
-                                <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Secret Payload</label>
-                                <textarea id="stegoPayload" title="Enter Secret Message" aria-label="Enter Secret Message" class="w-full h-20 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--accent)] outline-none" placeholder="Message to hide..."></textarea>
-                            </div>
-                        </div>
-
-                        <div id="keyGroup">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Encryption Key</label>
-                            <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Key / Shift / Password">
-                            
-                            <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
-                        </div>
-
-                        <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all orbitron">
-                            EXECUTE PROCESS
-                        </button>
+                        <button type="submit" class="bg-[var(--primary)] text-black px-4 py-2 rounded-lg font-bold text-xs hover:shadow-[0_0_15px_var(--primary)] transition-all">SEND</button>
                     </div>
-                </div>
-
-                <div class="p-6 bg-black/20 flex flex-col h-full relative overflow-y-auto">
-                    <div class="flex justify-between items-center mb-4"> 
-                        <label class="text-[10px] font-bold text-gray-500 uppercase block font-mono">System Output</label> 
-                        <button id="copyBtn" class="flex items-center gap-2 px-3 py-1 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all rounded text-[10px] font-bold font-mono group">
-                            <span>COPY RESULT</span>
-                        </button>
-                    </div>
-                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm text-[var(--accent)] break-all whitespace-pre-wrap overflow-y-auto relative">
-                        <div id="outputDisplay">// WAITING FOR INPUT...</div>
-                        <canvas id="stegoCanvas" class="hidden"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <main id="libraryPage" class="hidden flex-grow pt-24 px-4 pb-12 overflow-y-auto h-full">
-        <div class="w-full max-w-7xl mx-auto">
-            <div class="text-center mb-10">
-                <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
-                <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">3. PLAYFAIR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Playfair Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">4. VIGENERE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Vigenere Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">5. RAIL FENCE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Rail Fence Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">6. PIGPEN</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Pigpen Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">7. AES-256</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="AES Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">8. RSA</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="RSA Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">9. ECC</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="ECC Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--accent)] bg-black/40 p-4 rounded-xl hover:border-white transition-all"><h3 class="text-lg orbitron text-[var(--accent)] mb-2">10. STEGANOGRAPHY</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Steganography Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" frameborder="0" allowfullscreen></iframe></div></div>
-            </div>
-        </div>
-    </main>
-
-    <div id="vaultModal" class="fixed inset-0 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] flex flex-col h-[600px] md:h-auto p-6">
-            <div class="flex justify-between items-center mb-6 border-b border-[var(--border)] pb-4">
-                <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] orbitron">ZERO-KNOWLEDGE <span class="text-[var(--primary)]">VAULT</span></h3>
-                <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕</button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6">
-                    <label class="text-xs font-mono text-[var(--primary)] mb-2 block tracking-widest">1. SELECT ASSET</label>
-                    <input type="file" id="vaultInput" title="File Upload" aria-label="File Upload" 
-                           onchange="this.classList.add('border-[var(--primary)]', 'shadow-[0_0_10px_rgba(0,243,255,0.3)]')"
-                           class="w-full text-xs text-gray-500 mb-4 border border-[var(--border)] rounded p-2 transition-all duration-200
-                                  file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 
-                                  file:text-xs file:font-black file:bg-[var(--primary)] file:text-black 
-                                  file:cursor-pointer file:transition-transform file:active:scale-90 hover:file:bg-white">
-                    <label class="text-xs font-mono text-[var(--accent)] mb-2 block tracking-widest">2. PASSWORD</label>
-                    <input type="password" id="vaultPass" title="Vault Password" aria-label="Vault Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
-                    <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] font-mono text-xs">ENCRYPT & UPLOAD</button>
-                </div>
-                <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
-                    <div class="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
-                        <label class="text-xs font-mono text-[var(--primary)] tracking-widest">SECURE DATABASE</label>
-                        <button onclick="loadFiles()" class="text-[10px] text-gray-500 hover:text-white font-mono">↻ REFRESH</button>
-                    </div>
-                    <div id="vaultList" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <div id="passwordModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-black/90 border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
-            <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">SECURITY CHECK</h3>
-            <p class="text-[10px] text-gray-400 font-mono mb-4 uppercase">Enter Decryption Key to Access File</p>
-            
-            <input type="password" id="passwordModalInput" class="w-full bg-[#050508] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all focus:shadow-[0_0_15px_rgba(0,243,255,0.2)]" placeholder="••••••••" autocomplete="off">
-            
-            <div class="flex gap-3">
-                <button id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono">CANCEL</button>
-                <button id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_rgba(0,243,255,0.3)] font-mono">UNLOCK</button>
-            </div>
-        </div>
-    </div>
+    <canvas id="procCanvas" class="hidden"></canvas>
 
     <script>
-        // --- AUTH CHECK ---
+        const SoundFX = {
+            ctx: new (window.AudioContext || window.webkitAudioContext)(),
+            muted: false,
+            toggle: function() {
+                this.muted = !this.muted;
+                document.getElementById('muteBtn').innerText = this.muted ? "🔇 OFF" : "🔊 ON";
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            },
+            playOscillator: function(freq, type, duration, vol=0.1) {
+                if(this.muted) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playWhiteNoise: function(duration) {
+                if(this.muted) return;
+                const bufferSize = this.ctx.sampleRate * duration;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                noise.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            },
+            send: function() { this.playOscillator(1200, 'sine', 0.1); },
+            receive: function() { this.playOscillator(800, 'square', 0.1); setTimeout(() => this.playOscillator(1200, 'square', 0.2), 100); },
+            decrypt: function() { this.playOscillator(200, 'sawtooth', 0.5); setTimeout(() => this.playOscillator(600, 'sine', 0.3), 100); },
+            burn: function() { this.playWhiteNoise(0.5); }
+        };
+
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
+        function parseJwt(token) { try { return JSON.parse(atob(token.split('.')[1])); } catch (e) { return null; } }
+        const userPayload = parseJwt(token);
+        const userData = userPayload.user || userPayload;
+        const myId = userData._id || userData.id; 
+        if (!myId) { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
+
+        const socket = io({ auth: { token } });
+        let currentReceiver = null;
+        let activeUsersMap = {}; 
+        const myRSA = new JSEncrypt({ default_key_size: 1024 });
+        
+        let selectedImage = null;
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    selectedImage = e.target.result;
+                    document.getElementById('attachBtn').classList.add('bg-[var(--primary)]', 'text-black', 'border-transparent');
+                    document.getElementById('msgInput').placeholder = "Type secret message to hide in image...";
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveToLocalCache(cipher, plain) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); c[cipher] = plain; localStorage.setItem('sent_cache', JSON.stringify(c)); } catch(e){} }
+        function getFromLocalCache(cipher) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); return c[cipher]; } catch(e) { return null; } }
+
+        async function initIdentity() {
+            let storedPriv = localStorage.getItem('rsa_priv');
+            let storedPub = localStorage.getItem('rsa_pub');
+            if(!storedPriv || !storedPub) {
+                document.getElementById('keyGenStatus').innerText = "GENERATING NEW IDENTITY...";
+                myRSA.getKey();
+                storedPriv = myRSA.getPrivateKey();
+                storedPub = myRSA.getPublicKey();
+                localStorage.setItem('rsa_priv', storedPriv);
+                localStorage.setItem('rsa_pub', storedPub);
+            }
+            myRSA.setPrivateKey(storedPriv);
+            try {
+                await fetch('/api/users/key', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: myId, publicKey: storedPub }) });
+                document.getElementById('keyGenStatus').innerText = "IDENTITY SECURED & SYNCED.";
+                document.getElementById('keyGenStatus').className = "mono text-[10px] text-[var(--primary)] mt-2";
+            } catch(e) {}
+        }
+        setTimeout(initIdentity, 100);
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- GLOBAL STATE ---
-        let mode = 'encrypt';
-        const keyCache = { rsa: null, aes: null };
-
-        // --- DOM REFERENCES (Fixed) ---
-        const DOM = {
-            card: document.getElementById('mainCard'),
-            algo: document.getElementById('algoSelect'),
-            mainIn: document.getElementById('mainInput'),
-            keyIn: document.getElementById('keyInput'),
-            rsaKeyIn: document.getElementById('rsaKeyInput'),
-            out: document.getElementById('outputDisplay'),
-            swapBtn: document.getElementById('swapModeBtn'),
-            modeTitle: document.getElementById('modeTitle'),
-            btnText: document.getElementById('swapBtnText'),
-            processBtn: document.getElementById('processBtn'),
-            stdGroup: document.getElementById('stdInputGroup'),
-            stegoGroup: document.getElementById('stegoInputGroup'),
-            keyGroup: document.getElementById('keyGroup'),
-            stegoFile: document.getElementById('stegoFile'),
-            stegoPayload: document.getElementById('stegoPayload'),
-            stegoTextCont: document.getElementById('stegoTextContainer'),
-            memStatus: document.getElementById('memoryStatus')
-        };
-
-        // --- NEW: PASSWORD MODAL PROMISE WRAPPER ---
-        function askPassword() {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('passwordModal');
-                const content = modal.firstElementChild; // The inner div
-                const input = document.getElementById('passwordModalInput');
-                const submitBtn = document.getElementById('passwordModalSubmit');
-                const cancelBtn = document.getElementById('passwordModalCancel');
-
-                // Show Modal
-                modal.classList.remove('hidden', 'pointer-events-none');
-                // Use small timeout to allow display:block to apply before opacity transition
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    content.classList.remove('scale-95');
-                    content.classList.add('scale-100');
-                }, 10);
-                
-                input.value = '';
-                input.focus();
-
-                const cleanup = () => {
-                    // Hide Modal with animation
-                    modal.classList.add('opacity-0');
-                    content.classList.remove('scale-100');
-                    content.classList.add('scale-95');
-                    
-                    // Wait for transition to finish before hiding completely
-                    setTimeout(() => {
-                        modal.classList.add('hidden', 'pointer-events-none');
-                    }, 300);
-
-                    // Remove listeners
-                    submitBtn.onclick = null;
-                    cancelBtn.onclick = null;
-                    input.onkeydown = null;
-                };
-
-                const resolvePass = () => {
-                    const val = input.value;
-                    if(!val) {
-                        input.classList.add('border-red-500', 'animate-pulse');
-                        setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500);
-                        return;
-                    }
-                    cleanup();
-                    resolve(val);
-                };
-
-                const resolveCancel = () => {
-                    cleanup();
-                    resolve(null);
-                };
-
-                submitBtn.onclick = resolvePass;
-                cancelBtn.onclick = resolveCancel;
-                
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') resolvePass();
-                    if (e.key === 'Escape') resolveCancel();
-                };
-            });
+        function openChatMobile() {
+            document.getElementById('chatMain').classList.remove('translate-x-full');
+            document.getElementById('sidebarPanel').classList.add('pointer-events-none'); 
         }
 
-        // --- NAVIGATION LOGIC ---
-        function showPage(page) {
-            const term = document.getElementById('terminalPage');
-            const lib = document.getElementById('libraryPage');
-            const termBtn = document.getElementById('termBtn');
-            const libBtn = document.getElementById('libBtn');
-
-            if(page === 'terminal') {
-                term.classList.remove('hidden'); term.classList.add('flex');
-                lib.classList.add('hidden');
-                termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all";
-                libBtn.className = "flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
-            } else {
-                term.classList.add('hidden'); term.classList.remove('flex');
-                lib.classList.remove('hidden');
-                libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full transition-all";
-                termBtn.className = "flex items-center gap-2 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
-            }
+        function closeChatMobile() {
+            document.getElementById('chatMain').classList.add('translate-x-full');
+            document.getElementById('sidebarPanel').classList.remove('pointer-events-none');
         }
 
-        // --- ANIMATION ENGINE ---
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-        function animateText(element, finalState) {
-            let iterations = 0;
-            const interval = setInterval(() => {
-                element.innerText = finalState.split("").map((letter, index) => {
-                    if(index < iterations) return finalState[index];
-                    return letters[Math.floor(Math.random() * 26)];
-                }).join("");
-                if(iterations >= finalState.length) { clearInterval(interval); element.innerText = finalState; }
-                iterations += 1;
-            }, 5);
-        }
-
-        // --- UPDATE MEMORY UI ---
-        function updateMemoryStatus() {
-            if (keyCache.rsa || keyCache.aes) {
-                DOM.memStatus.innerText = "ACTIVE";
-                DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
-            } else {
-                DOM.memStatus.innerText = "OFFLINE";
-                DOM.memStatus.className = "text-red-500 font-bold";
-            }
-        }
-
-        // --- FLIP CARD LOGIC ---
-        DOM.swapBtn.onclick = () => {
-            gsap.to(DOM.card, { rotationY: 90, duration: 0.2, onComplete: () => {
-                mode = mode === 'encrypt' ? 'decrypt' : 'encrypt';
-                DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE";
-                DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
-                DOM.btnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT";
-                DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
-                DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
-                DOM.out.innerText = "// WAITING FOR INPUT...";
-                
-                if (DOM.algo.value === 'steganography') {
-                    if (mode === 'encrypt') {
-                        DOM.stegoTextCont.classList.remove('hidden'); 
-                        DOM.processBtn.innerText = "ENCODE & DOWNLOAD";
-                    } else {
-                        DOM.stegoTextCont.classList.add('hidden');
-                        DOM.processBtn.innerText = "DECODE IMAGE";
-                    }
-                }
-                
-                if (DOM.algo.value === 'rsa') {
-                    DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) 
-                        ? "[ACCESSING CACHED PRIVATE KEY...] (Leave empty to use)" 
-                        : (mode === 'encrypt' ? "Paste Public Key... (Auto-Generate)" : "Paste Private Key...");
-                }
-                if (DOM.algo.value === 'aes' && mode === 'decrypt' && keyCache.aes) {
-                    DOM.keyIn.placeholder = "[ACCESSING CACHED KEY...] (Leave empty to use)";
-                }
-
-                gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
-            }});
-        };
-
-        // --- ALGO SELECTION LOGIC ---
-        DOM.algo.addEventListener('change', () => {
-            const val = DOM.algo.value;
-            const isStego = val === 'steganography';
-            const isRSA = val === 'rsa';
-            const isAsym = ['rsa', 'ecc'].includes(val);
+        async function selectUser(user, el) {
+            currentReceiver = user;
+            document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user', 'bg-white/10'));
+            el.classList.add('active-user', 'bg-white/10');
+            const statusText = el.querySelector('.status-text');
+            if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
             
-            DOM.stdGroup.classList.toggle('hidden', isStego);
-            DOM.stegoGroup.classList.toggle('hidden', !isStego);
-            DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA));
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            document.getElementById('messagesArea').classList.remove('hidden');
+            document.getElementById('inputArea').classList.remove('hidden');
+            document.getElementById('chatPartnerName').innerText = user.username;
             
-            if (isRSA) {
-                DOM.keyIn.classList.add('hidden');
-                DOM.rsaKeyIn.classList.remove('hidden');
-            } else {
-                DOM.keyIn.classList.remove('hidden');
-                DOM.rsaKeyIn.classList.add('hidden');
-            }
+            openChatMobile(); 
 
-            DOM.out.innerText = "// WAITING...";
-            if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
-            else DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
-            
-            DOM.modeTitle.innerText = isStego ? "STEGANOGRAPHY LAB" : (mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE");
-            DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
-        });
-
-        // --- PROCESS BUTTON (ENCRYPTION ENGINE) ---
-        DOM.processBtn.onclick = () => {
-            const algo = DOM.algo.value;
-            
-            // 1. STEGANOGRAPHY
-            if (algo === 'steganography') {
-                const cvs = document.getElementById('stegoCanvas');
-                const ctx = cvs.getContext('2d');
-                
-                if (mode === 'encrypt') {
-                    if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return alert("Image and Text required!");
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            cvs.width = img.width; cvs.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                            const imgData = ctx.getImageData(0,0,img.width,img.height);
-                            const msg = DOM.stegoPayload.value;
-                            
-                            let bin = ""; for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
-                            bin += "00000000"; // Terminator
-                            
-                            if(bin.length > imgData.data.length/4) return alert("Message too long for image");
-                            
-                            let dIdx = 0;
-                            for(let i=0; i<bin.length; i++) {
-                                if(dIdx%4===3) dIdx++; // Skip Alpha channel
-                                imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]);
-                                dIdx++;
-                            }
-                            ctx.putImageData(imgData, 0, 0);
-                            const link = document.createElement('a'); link.download = 'secret_stego.png'; link.href = cvs.toDataURL(); link.click();
-                            animateText(DOM.out, "SUCCESS: Encoded Image Downloaded.");
-                        }; img.src = e.target.result;
-                    }; reader.readAsDataURL(DOM.stegoFile.files[0]);
+            try {
+                const res = await fetch('/api/users');
+                const freshUsers = await res.json();
+                const freshUser = freshUsers.find(u => u._id === user._id);
+                if (freshUser) activeUsersMap[user._id] = freshUser;
+                const statusEl = document.getElementById('encryptionStatus');
+                if(freshUser && freshUser.publicKey && freshUser.publicKey.includes("BEGIN PUBLIC KEY")) {
+                    statusEl.innerText = "🔒 SECURE UPLINK ESTABLISHED"; statusEl.className = "text-[9px] mono text-[var(--primary)]";
                 } else {
-                    if(!DOM.stegoFile.files[0]) return alert("Select Image to Decode");
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            cvs.width = img.width; cvs.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                            const data = ctx.getImageData(0,0,img.width,img.height).data;
-                            let bin = "", res = "";
-                            for(let i=0; i<data.length; i++) {
-                                if(i%4===3) continue;
-                                bin += (data[i]&1).toString();
-                                if(bin.length===8) {
-                                    if(bin==="00000000") break;
-                                    res += String.fromCharCode(parseInt(bin, 2));
-                                    bin = "";
-                                }
-                            }
-                            animateText(DOM.out, "DECODED SECRET:\n" + res);
-                        }; img.src = e.target.result;
-                    }; reader.readAsDataURL(DOM.stegoFile.files[0]);
+                    statusEl.innerText = "⚠️ UNSECURED"; statusEl.className = "text-[9px] mono text-red-500 animate-pulse";
                 }
+            } catch(e) {}
+            document.getElementById('messagesArea').innerHTML = ''; 
+            loadHistory(user._id);
+        }
+
+        async function fetchUsers() {
+            try {
+                const res = await fetch('/api/users');
+                const users = await res.json();
+                const list = document.getElementById('usersList');
+                list.innerHTML = '';
+                users.forEach(u => {
+                    if (u._id === myId) return; 
+                    activeUsersMap[u._id] = u;
+                    const div = document.createElement('div');
+                    div.className = 'user-card p-3 cursor-pointer hover:bg-white/5 flex items-center gap-3 border-l-2 border-transparent transition-all rounded bg-black/40 mb-1';
+                    div.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron border border-[var(--border)]">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-gray-300">${u.username}</div><div class="text-[9px] text-gray-600 mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
+                    div.onclick = () => selectUser(u, div);
+                    list.appendChild(div);
+                });
+            } catch(e) {}
+        }
+        fetchUsers();
+
+        function handleCommand(cmd) {
+            const args = cmd.split(' ');
+            const main = args[0].toLowerCase();
+            const area = document.getElementById('messagesArea');
+
+            const sysMsg = (text, isError=false) => {
+                const div = document.createElement('div');
+                div.className = "text-[10px] font-mono p-2 my-2 border-l-2 " + (isError ? "border-red-500 text-red-400 bg-red-900/10" : "border-[var(--primary)] text-[var(--primary)] bg-cyan-900/10");
+                div.innerHTML = `<strong>SYSTEM:</strong> ${text}`;
+                area.appendChild(div);
+                area.scrollTop = area.scrollHeight;
+            };
+
+            switch(main) {
+                case '/clear':
+                    area.innerHTML = '';
+                    sysMsg("TERMINAL BUFFER CLEARED.");
+                    break;
+                case '/burn':
+                    const msgs = document.querySelectorAll('.msg-enter');
+                    if(msgs.length === 0) { sysMsg("NO TARGETS FOUND.", true); return; }
+                    SoundFX.burn();
+                    sysMsg(`INITIATING MASS DELETE SEQUENCE (${msgs.length} OBJECTS)...`);
+                    msgs.forEach((el, i) => {
+                        setTimeout(() => {
+                            el.classList.add('burn-anim');
+                            setTimeout(() => el.remove(), 1000);
+                        }, i * 100);
+                    });
+                    break;
+                case '/id':
+                    const pubKey = localStorage.getItem('rsa_pub') || "UNKNOWN";
+                    const shortKey = pubKey.substring(30, 60) + "...";
+                    sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`);
+                    break;
+                case '/help':
+                    sysMsg(`AVAILABLE COMMANDS:<br>• /clear - Wipe local screen<br>• /burn - Destroy visible msgs<br>• /id - Show identity info<br>• /help - Show this menu`);
+                    break;
+                default:
+                    sysMsg(`UNKNOWN COMMAND: ${main}`, true);
+            }
+        }
+
+        function sendMessage(text, forcedMethod = null, isBurn = false) {
+            if(!currentReceiver) return alert("Select a user first!");
+            const method = forcedMethod || document.getElementById('cipherMethod').value;
+            
+            if (selectedImage) {
+                const img = new Image();
+                img.onload = () => {
+                    const cvs = document.getElementById('procCanvas');
+                    const ctx = cvs.getContext('2d');
+                    cvs.width = img.width; cvs.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0,0,img.width,img.height);
+                    
+                    let bin = ""; 
+                    for(let i=0; i<text.length; i++) bin += text.charCodeAt(i).toString(2).padStart(8,'0');
+                    bin += "00000000"; 
+                    
+                    let dIdx = 0;
+                    for(let i=0; i<bin.length; i++) {
+                        if(dIdx%4===3) dIdx++;
+                        imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]);
+                        dIdx++;
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                    const stegoDataUrl = cvs.toDataURL(); 
+
+                    const payload = {
+                        senderId: myId, receiverId: currentReceiver._id,
+                        text: stegoDataUrl, 
+                        cipherType: 'steganography', 
+                        isBurn: isBurn, timestamp: new Date()
+                    };
+                    socket.emit("private_message", payload);
+                    SoundFX.send();
+                    
+                    selectedImage = null;
+                    document.getElementById('attachBtn').classList.remove('bg-[var(--primary)]', 'text-black', 'border-transparent');
+                    document.getElementById('msgInput').placeholder = "Type a secure message...";
+                    document.getElementById('stegoImgInput').value = "";
+                };
+                img.src = selectedImage;
+                return; 
+            }
+
+            let cipherText = text;
+            if (method === 'rsa') {
+                const partnerData = activeUsersMap[currentReceiver._id];
+                if (!partnerData || !partnerData.publicKey) return alert("User key missing.");
+                const encryptor = new JSEncrypt();
+                encryptor.setPublicKey(partnerData.publicKey);
+                cipherText = encryptor.encrypt(text);
+                if(!cipherText) return alert("Message too long for RSA.");
+                saveToLocalCache(cipherText, text);
+            } 
+            else if (method === 'caesar') {
+                const shift = parseInt(document.getElementById('cipherKey').value) || 3;
+                cipherText = text.replace(/[a-zA-Z]/g, c => {
+                    const b = c >= 'a' ? 97 : 65;
+                    return String.fromCharCode(((c.charCodeAt(0) - b + shift) % 26) + b);
+                });
+            }
+
+            const payload = {
+                senderId: myId, receiverId: currentReceiver._id,
+                text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date()
+            };
+            socket.emit("private_message", payload);
+            SoundFX.send();
+        }
+
+        document.getElementById('chatForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msgInput');
+            const burn = document.getElementById('burnCheck').checked;
+            const val = input.value.trim();
+            
+            if(!val) return;
+
+            if (val.startsWith('/')) {
+                handleCommand(val);
+                input.value = '';
                 return;
             }
 
-            const txt = DOM.mainIn.value;
-            let key = DOM.keyIn.value;
-            let res = "";
+            sendMessage(val, null, burn);
+            input.value = '';
+            document.getElementById('burnCheck').checked = false;
+        });
 
-            if (algo === 'rsa') {
-                const encryptor = new JSEncrypt({default_key_size: 512});
-                const rsaKeyVal = DOM.rsaKeyIn.value.trim();
-                if (mode === 'encrypt') {
-                    let pubKey = rsaKeyVal;
-                    let extra = "";
-                    if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED FOR SESSION]"; encryptor.setPublicKey(pubKey); } 
-                    else { encryptor.setPublicKey(pubKey); }
-                    const enc = encryptor.encrypt(txt);
-                    res = enc ? "CIPHERTEXT:\n" + enc + extra : "ENCRYPTION FAILED";
-                } else {
-                    let privKey = rsaKeyVal || keyCache.rsa;
-                    if(!privKey) return alert("Private Key Required");
-                    encryptor.setPrivateKey(privKey);
-                    const dec = encryptor.decrypt(txt);
-                    res = dec ? "DECRYPTED:\n" + dec : "DECRYPTION FAILED";
-                }
+        socket.on("receive_message", (data) => {
+            const senderString = String(data.senderId || data.sender);
+            const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
+            if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
+                displayMessage(data);
+                if (senderString !== String(myId)) SoundFX.receive();
+            } else if (senderString !== String(myId)) {
+                SoundFX.receive();
+                const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
+                if(userStatus) { userStatus.innerText = "📩 NEW MSG"; userStatus.classList.add('text-[var(--primary)]', 'animate-pulse'); }
+            }
+        });
+
+        socket.on("message_burnt", (msgId) => {
+            const el = document.getElementById(`msg-${msgId}`);
+            if(el) { SoundFX.burn(); el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
+        });
+
+        function displayMessage(msg) {
+            const area = document.getElementById('messagesArea');
+            const senderString = String(msg.sender || msg.senderId);
+            const isMe = (senderString === String(myId));
+            
+            let content = msg.text || msg.cipherText;
+            let method = msg.cipherType || 'plain'; 
+            const isBurn = msg.isBurn;
+            const msgId = msg._id || 'temp-' + Date.now(); 
+
+            if (content.startsWith('data:image')) method = 'steganography';
+
+            if (isMe && method === 'rsa') {
+                const cached = getFromLocalCache(content);
+                if(cached) { content = cached; msg.originalText = cached; } 
+                else if (msg.originalText) { content = msg.originalText; }
+            } else if (isMe && msg.originalText) {
+                content = msg.originalText;
+            }
+
+            const div = document.createElement('div');
+            div.id = `msg-${msgId}`; 
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
+            if (isBurn) div.dataset.burn = "true";
+
+            const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
+            const bg = isMe ? 'bg-white/5' : 'bg-black/40';
+
+            let innerHTML = "";
+
+            if (method === 'steganography') {
+                innerHTML = `
+                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
+                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                        <span>🔍 SCAN</span>
+                    </button>
+                    <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                `;
             } 
-            else if (algo === 'aes') {
-                if (mode === 'encrypt') {
-                    if(!key) return alert("Key Required");
-                    keyCache.aes = key; updateMemoryStatus();
-                    res = CryptoJS.AES.encrypt(txt, key).toString();
-                } else {
-                    let useKey = key || keyCache.aes;
-                    if(!useKey) return alert("Key Required");
-                    try {
-                        const bytes = CryptoJS.AES.decrypt(txt, useKey);
-                        res = bytes.toString(CryptoJS.enc.Utf8) || "DECRYPTION FAILED (Wrong Key)";
-                    } catch(e) { res = "INVALID CIPHERTEXT"; }
+            else if (method === 'rsa') {
+                let isLocked = (!isMe && !getFromLocalCache(msg.text) && !msg.originalText);
+                if (isMe) {
+                    const cached = getFromLocalCache(content) || msg.originalText;
+                    if(cached) { content = cached; isLocked = false; } else { isLocked = true; }
                 }
-            }
-            else {
-                if(algo === 'caesar') {
-                    const shift = parseInt(key) || 3;
-                    const s = mode==='encrypt' ? shift : -shift;
-                    res = txt.replace(/[a-zA-Z]/g, c => { const b = c>='a'?97:65; return String.fromCharCode(((c.charCodeAt(0)-b+s)%26+26)%26+b); });
-                } else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
-            }
-            animateText(DOM.out, res);
-        };
 
-        // --- VAULT LOGIC ---
-        const vaultModal = document.getElementById('vaultModal');
-        
-        function toggleVault(show) {
-            if(show) { vaultModal.classList.remove('hidden','pointer-events-none'); setTimeout(()=>vaultModal.classList.remove('opacity-0'), 10); loadFiles(); } 
-            else { vaultModal.classList.add('opacity-0','pointer-events-none'); setTimeout(()=>vaultModal.classList.add('hidden'), 300); }
-        }
+                if (isLocked) {
+                    innerHTML = `
+                        <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
+                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                            <span>🔓 UNLOCK</span>
+                        </button>
+                        <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                    `;
+                } else {
+                    innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
+                }
+            } else {
+                innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
+            }
 
-        async function uploadEncryptedFile() {
-            const fi = document.getElementById('vaultInput'); 
-            const pw = document.getElementById('vaultPass').value;
-            if(!fi.files[0] || !pw) return alert("File and Password required!");
+            const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
+
+            div.innerHTML = `
+                <div class="max-w-[85%] rounded-lg p-3 border ${color} ${bg} shadow-lg relative" ${clickAction}>
+                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4">
+                        <span>${isMe ? 'YOU' : (currentReceiver ? currentReceiver.username : 'Partner')}</span>
+                        <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
+                    </div>
+                    ${innerHTML}
+                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase">🔒 ${method}</div>` : ''}
+                </div>
+            `;
             
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const enc = CryptoJS.AES.encrypt(e.target.result, pw).toString();
-                const blob = new Blob([enc],{type:'text/plain'});
-                const f = new File([blob], fi.files[0].name+".enc", {type:"text/plain"});
-                const fd = new FormData(); fd.append('vaultFile', f);
-                try {
-                    await fetch('/api/vault/upload', { method:'POST', headers:{'auth-token':token}, body:fd });
-                    loadFiles();
-                    alert("File Encrypted & Uploaded to Vault.");
-                } catch(err) { alert("Upload Failed"); }
-            }; 
-            reader.readAsDataURL(fi.files[0]);
-        }
+            area.appendChild(div);
+            setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
 
-        async function loadFiles() {
-            try { 
-                const res = await fetch('/api/vault/myfiles', {headers:{'auth-token':token}}); 
-                const files = await res.json();
-                const list = document.getElementById('vaultList'); 
-                list.innerHTML = '';
+            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') {
+                socket.emit("message_seen", msgId);
+            }
+        }
+        
+        function scanImage(id, imgSrc) {
+            const img = new Image();
+            img.onload = () => {
+                const cvs = document.getElementById('procCanvas');
+                const ctx = cvs.getContext('2d');
+                cvs.width = img.width; cvs.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const data = ctx.getImageData(0,0,img.width,img.height).data;
                 
-                if(files.length === 0) list.innerHTML = '<div class="text-xs text-gray-500 p-2 font-mono">VAULT EMPTY</div>';
+                let bin = "", res = "";
+                for(let i=0; i<data.length; i++) {
+                    if(i%4===3) continue;
+                    bin += (data[i]&1).toString();
+                    if(bin.length===8) {
+                        if(bin==="00000000") break;
+                        res += String.fromCharCode(parseInt(bin, 2));
+                        bin = "";
+                    }
+                }
+                
+                document.getElementById(`plain-${id}`).innerText = "HIDDEN MSG: " + res;
+                document.getElementById(`plain-${id}`).classList.remove('hidden');
+                SoundFX.decrypt();
 
-                files.forEach(f => { 
-                    list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-black/40 border border-white/5 mb-2 rounded hover:border-[var(--primary)] transition-colors group">
-                        <span class="text-xs text-gray-400 truncate w-40 font-mono group-hover:text-white transition-colors">${f.originalName}</span>
-                        <div class="flex gap-2">
-                            <button onclick="downloadAndDecrypt('${f.filename}','${f.originalName}')" class="text-[var(--primary)] text-[9px] border border-[var(--primary)] px-3 py-1 rounded hover:bg-[var(--primary)] hover:text-black font-bold transition-all active:scale-95">DECRYPT</button>
-                            <button onclick="deleteFile('${f._id}')" class="text-red-500 text-[9px] border border-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-black font-bold transition-all active:scale-95">DELETE</button>
-                        </div>
-                    </div>`; 
-                });
-            } catch(e){ console.log("Vault Load Error", e); }
+                const container = document.getElementById(`msg-${id}`);
+                if (container && container.dataset.burn === "true") {
+                    socket.emit("message_seen", id);
+                }
+            };
+            img.src = imgSrc;
         }
 
-        // --- MODIFIED: DECRYPT WITH CUSTOM MODAL ---
-        async function downloadAndDecrypt(fname, og) {
-            // Replace standard prompt with our custom async modal
-            const pw = await askPassword(); 
-            if(!pw) return;
-            
+        function unlockMessage(id, cipherText) {
             try {
-                const res = await fetch(`/api/vault/file/${fname}?token=${token}`);
-                if(!res.ok) throw new Error("Download failed");
-                const txt = await res.text();
-                const dec = CryptoJS.AES.decrypt(txt, pw).toString(CryptoJS.enc.Utf8);
-                if(!dec.startsWith('data:')) throw new Error("Decryption failed");
-                const a = document.createElement('a'); a.href = dec; a.download = og.replace('.enc',''); a.click();
-            } catch(e) { alert("ACCESS DENIED: INCORRECT PASSWORD"); }
+                const myPriv = localStorage.getItem('rsa_priv');
+                const decryptor = new JSEncrypt();
+                decryptor.setPrivateKey(myPriv);
+                const decrypted = decryptor.decrypt(cipherText);
+                
+                if (decrypted) {
+                    SoundFX.decrypt();
+                    document.getElementById(`plain-${id}`).innerText = decrypted;
+                    document.getElementById(`plain-${id}`).classList.remove('hidden');
+                    document.getElementById(`cipher-${id}`).classList.add('hidden');
+                    
+                    const container = document.getElementById(`msg-${id}`); 
+                    if (container && container.dataset.burn === "true") {
+                        socket.emit("message_seen", id);
+                    }
+                } else { alert("Decryption Failed."); }
+            } catch(e) { alert("Decryption Error"); }
         }
 
-        async function deleteFile(id) {
-            if(!confirm("⚠️ PERMANENTLY DELETE THIS FILE?")) return;
-            try {
-                const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: {'auth-token': token} });
-                if(res.ok) { loadFiles(); } else { alert("Delete Failed"); }
-            } catch(e) { console.error(e); alert("System Error"); }
+        function toggleSpyTools() {
+            const el = document.getElementById('spyTools');
+            if(el.classList.contains('h-0')) {
+                el.classList.remove('h-0'); el.classList.add('h-24');
+                document.getElementById('toolArrow').innerText = '▲';
+            } else {
+                el.classList.add('h-0'); el.classList.remove('h-24');
+                document.getElementById('toolArrow').innerText = '▼';
+            }
         }
-        
-        document.getElementById('copyBtn').onclick = () => navigator.clipboard.writeText(DOM.out.innerText);
+        function decryptCaesar(text, shift) {
+             const s = (26 - parseInt(shift)) % 26;
+             return text.replace(/[a-zA-Z]/g, c => {
+                const b = c >= 'a' ? 97 : 65;
+                return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b);
+            });
+        }
+        async function loadHistory(partnerId) {
+            try {
+                const res = await fetch(`/api/messages/${myId}/${partnerId}`);
+                const msgs = await res.json();
+                msgs.forEach(displayMessage);
+            } catch(e) {}
+        }
+        socket.on('connect', () => {
+            socket.emit("login", myId);
+            document.getElementById('statusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]";
+            document.getElementById('statusText').innerText = "ONLINE";
+            document.getElementById('statusText').className = "text-green-500";
+        });
+        socket.on('get_users', (onlineIds) => {
+            document.querySelectorAll('.status-text').forEach(el => {
+                const uid = el.getAttribute('data-id');
+                if(onlineIds.includes(uid)) {
+                    if (!el.innerText.includes("MSG")) { el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]'); }
+                } else { el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600'); }
+            });
+        });
     </script>
 </body>
 </html>
