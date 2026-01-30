@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="void">
+<html lang="en" data-theme="retro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Vault | Secure Channel</title>
+    <title>CryptPact | Secure Channel</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -13,12 +13,54 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap');
         
-        :root { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; }
+        /* --- THEME SYSTEM ADDED HERE --- */
+        /* 1. RETRO (Warm/Eye-Friendly) - DEFAULT */
+        :root[data-theme="retro"] { 
+            --bg-body: #1c1b1a;       
+            --bg-panel: #262422;      
+            --primary: #ffb347;       
+            --accent: #d48839;        
+            --border: #443f3c;        
+            --text-main: #e7e5e4;     
+            --text-muted: #a8a29e;
+            --msg-sent: rgba(255, 179, 71, 0.1);
+            --msg-recv: rgba(255, 255, 255, 0.05);
+            --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
+        }
+
+        /* 2. ZEN (Cool/Low Contrast) */
+        :root[data-theme="zen"] { 
+            --bg-body: #0f172a;       
+            --bg-panel: #1e293b;      
+            --primary: #38bdf8;       
+            --accent: #818cf8;        
+            --border: #334155; 
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --msg-sent: rgba(56, 189, 248, 0.1);
+            --msg-recv: rgba(255, 255, 255, 0.05);
+            --glow: none;
+        }
+
+        /* 3. VOID (Original Neon) */
+        :root[data-theme="void"] { 
+            --bg-body: #050508; 
+            --bg-panel: #0f1015; 
+            --primary: #00f3ff; 
+            --accent: #bc13fe; 
+            --border: #1e293b; 
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --msg-sent: rgba(0, 243, 255, 0.1);
+            --msg-recv: rgba(0, 0, 0, 0.4);
+            --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
+        }
         
         body { 
-            background-color: var(--bg-body); color: #e2e8f0; font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; 
             height: 100vh; overflow: hidden; display: flex; flex-direction: column;
             background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px; 
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
         
         .orbitron { font-family: 'Orbitron', sans-serif; } 
@@ -28,32 +70,38 @@
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        .active-user { border-left: 2px solid var(--primary); background: rgba(0, 243, 255, 0.05); }
+        .active-user { border-left: 2px solid var(--primary) !important; background: var(--msg-sent) !important; }
         .msg-enter { animation: slideIn 0.2s ease-out forwards; } 
         @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         .burn-anim { animation: burnOut 1.5s forwards; }
         @keyframes burnOut { 0% { opacity: 1; filter: blur(0); } 100% { opacity: 0; filter: blur(10px); transform: scale(0.9); } }
 
-        .encrypted-text { color: #bc13fe; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: -0.5px; opacity: 0.7; }
+        .encrypted-text { color: var(--accent); font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: -0.5px; opacity: 0.7; }
         
         #spyTools { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         #spyTools.open { max-height: 200px; opacity: 1; margin-bottom: 10px; }
+        
+        /* Transition for theme switching */
+        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
 <body>
 
     <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20">
         <div class="flex items-center gap-4">
-            <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition">← TERMINAL</a>
-            <h1 class="orbitron text-lg font-bold tracking-widest text-white hidden md:block">SECURE <span class="text-[var(--primary)]">UPLINK</span></h1>
+            <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition shadow-[var(--glow)]">← TERMINAL</a>
+            <h1 class="orbitron text-lg font-bold tracking-widest text-[var(--text-main)] hidden md:block">SECURE <span class="text-[var(--primary)]">UPLINK</span></h1>
         </div>
         <div class="flex items-center gap-4">
-            <div id="statusIndicator" class="flex items-center gap-2 text-[10px] font-mono text-gray-500 uppercase">
+            <div id="statusIndicator" class="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)] uppercase">
                 <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></span>
                 <span id="statusText">OFFLINE</span>
             </div>
-            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-gray-500 hover:text-white text-xs border border-gray-700 px-3 py-1 rounded">🔊 ON</button>
+            
+            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all" title="Change Theme">🎨</button>
+            
+            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs border border-[var(--border)] px-3 py-1 rounded">🔊 ON</button>
             <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
         </div>
     </nav>
@@ -61,29 +109,29 @@
     <div class="flex flex-1 overflow-hidden">
         <aside class="w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10 hidden md:flex">
             <div class="p-4 border-b border-[var(--border)]">
-                <label for="userSearch" class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
-                <input type="text" id="userSearch" title="Search Users" aria-label="Search Agents" placeholder="SEARCH ID..." class="w-full bg-black border border-[var(--border)] text-xs text-white p-2 rounded outline-none focus:border-[var(--primary)]">
+                <label for="userSearch" class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
+                <input type="text" id="userSearch" title="Search Users" aria-label="Search Agents" placeholder="SEARCH ID..." class="w-full bg-[var(--bg-body)] border border-[var(--border)] text-xs text-[var(--text-main)] p-2 rounded outline-none focus:border-[var(--primary)] placeholder-[var(--text-muted)]">
             </div>
             <div id="usersList" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <div class="text-center text-[10px] text-gray-600 mt-10 mono">SCANNING NETWORK...</div>
+                <div class="text-center text-[10px] text-[var(--text-muted)] mt-10 mono">SCANNING NETWORK...</div>
             </div>
         </aside>
 
         <main class="flex-1 flex flex-col relative bg-black/20">
             <div id="chatHeader" class="h-12 border-b border-[var(--border)] flex items-center px-4 justify-between bg-[var(--bg-panel)] hidden">
                 <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[0_0_10px_var(--primary)]"></div>
+                    <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[var(--glow)]"></div>
                     <div>
-                        <div class="text-xs font-bold text-white orbitron tracking-wide" id="chatPartnerName">Unknown</div>
-                        <div class="text-[9px] mono text-gray-500" id="encryptionStatus">UNSECURED</div>
+                        <div class="text-xs font-bold text-[var(--text-main)] orbitron tracking-wide" id="chatPartnerName">Unknown</div>
+                        <div class="text-[9px] mono text-[var(--text-muted)]" id="encryptionStatus">UNSECURED</div>
                     </div>
                 </div>
             </div>
 
-            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-gray-600">
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)]">
                 <div class="text-4xl mb-2 opacity-20">📡</div>
                 <p class="mono text-xs tracking-widest">SELECT AN AGENT TO BEGIN</p>
-                <p class="mono text-[10px] text-green-500 mt-2" id="keyGenStatus">INITIALIZING ENGINES...</p>
+                <p class="mono text-[10px] text-[var(--primary)] mt-2" id="keyGenStatus">INITIALIZING ENGINES...</p>
             </div>
 
             <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4 hidden pb-20"></div>
@@ -91,16 +139,16 @@
             <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
                 <div class="max-w-4xl mx-auto relative">
                     
-                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-white transition-colors flex items-center gap-2">
+                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-[var(--text-main)] transition-colors flex items-center gap-2">
                         <span>⚙️ ENCRYPTION SETTINGS</span>
                         <span id="toolArrow">▼</span>
                     </button>
 
-                    <div id="spyTools" class="bg-black/50 border border-[var(--border)] rounded-lg p-3 mb-2">
+                    <div id="spyTools" class="bg-[var(--bg-body)] border border-[var(--border)] rounded-lg p-3 mb-2">
                         <div class="flex flex-col md:flex-row gap-3">
                             <div class="flex-1">
                                 <label for="cipherMethod" class="text-[9px] text-[var(--primary)] font-bold block mb-1">PROTOCOL</label>
-                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[#050508] border border-[var(--border)] text-[10px] text-gray-300 p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase">
+                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[var(--bg-panel)] border border-[var(--border)] text-[10px] text-[var(--text-main)] p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase">
                                     <option value="rsa" selected>1. RSA (MILITARY GRADE)</option>
                                     <option value="caesar">2. CAESAR (BASIC)</option>
                                     <option value="plain">3. PLAINTEXT (NONE)</option>
@@ -108,7 +156,7 @@
                             </div>
                             <div class="flex-[1.5]" id="cipherKeyContainer">
                                 <label for="cipherKey" class="text-[9px] text-[var(--accent)] font-bold block mb-1">MANUAL KEY (NON-RSA)</label>
-                                <input id="cipherKey" title="Manual Key" aria-label="Secret Key" type="text" placeholder="Not needed for RSA" class="w-full bg-[#050508] border border-[var(--border)] text-[10px] text-gray-500 p-2 rounded focus:border-[var(--accent)] outline-none font-mono">
+                                <input id="cipherKey" title="Manual Key" aria-label="Secret Key" type="text" placeholder="Not needed for RSA" class="w-full bg-[var(--bg-panel)] border border-[var(--border)] text-[10px] text-[var(--text-muted)] p-2 rounded focus:border-[var(--accent)] outline-none font-mono">
                             </div>
                             <div class="flex items-end">
                                 <label class="flex items-center gap-2 cursor-pointer border border-red-900/50 bg-red-900/10 px-3 py-2 rounded hover:bg-red-900/20 h-[34px]">
@@ -122,12 +170,12 @@
                     <form id="chatForm" class="flex gap-2 items-center">
                         <input type="file" id="stegoImgInput" accept="image/*" class="hidden" onchange="handleFileSelect(this)" title="Steganography Image Upload" aria-label="Upload Image for Steganography">
                         
-                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-gray-500 hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative" id="attachBtn" title="Attach Image" aria-label="Attach Image">
+                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative" id="attachBtn" title="Attach Image" aria-label="Attach Image">
                             📎
                         </button>
 
-                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type message (Select image to hide text inside it)..." autocomplete="off" class="flex-grow bg-black border border-[var(--border)] p-3 rounded text-sm text-white focus:border-[var(--primary)] outline-none font-mono">
-                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[0_0_15px_rgba(0,243,255,0.3)] transition-all text-xs">SEND</button>
+                        <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type message (Select image to hide text inside it)..." autocomplete="off" class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm text-[var(--text-main)] focus:border-[var(--primary)] outline-none font-mono placeholder-[var(--text-muted)]">
+                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[var(--glow)] transition-all text-xs">SEND</button>
                     </form>
                 </div>
             </div>
@@ -137,6 +185,25 @@
     <canvas id="procCanvas" class="hidden"></canvas>
 
     <script>
+        // --- THEME LOGIC ADDED HERE ---
+        const themes = ['retro', 'zen', 'void'];
+        let currentThemeIndex = 0;
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('app-theme') || 'retro';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            currentThemeIndex = themes.indexOf(savedTheme);
+            if(currentThemeIndex === -1) currentThemeIndex = 0;
+        }
+
+        function cycleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('app-theme', newTheme);
+        }
+        initTheme();
+
         // --- 0. SOUND SYSTEM ---
         const SoundFX = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
@@ -271,8 +338,8 @@
                     if (u._id === myId) return; 
                     activeUsersMap[u._id] = u;
                     const div = document.createElement('div');
-                    div.className = 'user-card p-3 cursor-pointer hover:bg-white/5 flex items-center gap-3 border-l-2 border-transparent transition-all';
-                    div.innerHTML = `<div class="w-8 h-8 rounded bg-gray-800 flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-gray-300">${u.username}</div><div class="text-[9px] text-gray-600 mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
+                    div.className = 'user-card p-3 cursor-pointer hover:bg-[var(--bg-body)] flex items-center gap-3 border-l-2 border-transparent transition-all';
+                    div.innerHTML = `<div class="w-8 h-8 rounded bg-[var(--bg-body)] flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron border border-[var(--border)]">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-[var(--text-main)]">${u.username}</div><div class="text-[9px] text-[var(--text-muted)] mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
                     div.onclick = () => selectUser(u, div);
                     list.appendChild(div);
                 });
@@ -289,7 +356,7 @@
             // Helper to add system message
             const sysMsg = (text, isError=false) => {
                 const div = document.createElement('div');
-                div.className = "text-[10px] font-mono p-2 my-2 border-l-2 " + (isError ? "border-red-500 text-red-400 bg-red-900/10" : "border-[var(--primary)] text-[var(--primary)] bg-cyan-900/10");
+                div.className = "text-[10px] font-mono p-2 my-2 border-l-2 " + (isError ? "border-red-500 text-red-400 bg-red-900/10" : "border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]");
                 div.innerHTML = `<strong>SYSTEM:</strong> ${text}`;
                 area.appendChild(div);
                 area.scrollTop = area.scrollHeight;
@@ -300,9 +367,7 @@
                     area.innerHTML = '';
                     sysMsg("TERMINAL BUFFER CLEARED.");
                     break;
-                
                 case '/burn':
-                    // Burn all visible messages
                     const msgs = document.querySelectorAll('.msg-enter');
                     if(msgs.length === 0) { sysMsg("NO TARGETS FOUND.", true); return; }
                     SoundFX.burn();
@@ -311,24 +376,17 @@
                         setTimeout(() => {
                             el.classList.add('burn-anim');
                             setTimeout(() => el.remove(), 1000);
-                        }, i * 100); // Staggered delete
+                        }, i * 100);
                     });
                     break;
-
                 case '/id':
                     const pubKey = localStorage.getItem('rsa_pub') || "UNKNOWN";
                     const shortKey = pubKey.substring(30, 60) + "...";
                     sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`);
                     break;
-
                 case '/help':
-                    sysMsg(`AVAILABLE COMMANDS:<br>
-                    • /clear - Wipe local screen<br>
-                    • /burn - Destroy visible msgs<br>
-                    • /id - Show identity info<br>
-                    • /help - Show this menu`);
+                    sysMsg(`AVAILABLE COMMANDS:<br>• /clear - Wipe local screen<br>• /burn - Destroy visible msgs<br>• /id - Show identity info<br>• /help - Show this menu`);
                     break;
-
                 default:
                     sysMsg(`UNKNOWN COMMAND: ${main}`, true);
             }
@@ -339,7 +397,6 @@
             if(!currentReceiver) return alert("Select a user first!");
             const method = forcedMethod || document.getElementById('cipherMethod').value;
             
-            // STEGANOGRAPHY PATH
             if (selectedImage) {
                 const img = new Image();
                 img.onload = () => {
@@ -371,7 +428,6 @@
                     socket.emit("private_message", payload);
                     SoundFX.send();
                     
-                    // Reset UI
                     selectedImage = null;
                     document.getElementById('attachBtn').classList.remove('bg-[var(--primary)]', 'text-black', 'border-transparent');
                     document.getElementById('msgInput').placeholder = "Type a secure message...";
@@ -456,7 +512,6 @@
             const isBurn = msg.isBurn;
             const msgId = msg._id || 'temp-' + Date.now(); 
 
-            // Auto-detect Stego
             if (content.startsWith('data:image')) method = 'steganography';
 
             if (isMe && method === 'rsa') {
@@ -472,15 +527,16 @@
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             if (isBurn) div.dataset.burn = "true";
 
-            const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-gray-800 text-gray-300';
-            const bg = isMe ? 'bg-white/5' : 'bg-black/40';
+            // THEME-AWARE COLORS
+            const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-[var(--border)] text-[var(--text-main)]';
+            const bgStyle = isMe ? 'background-color: var(--msg-sent)' : 'background-color: var(--msg-recv)';
 
             let innerHTML = "";
 
             if (method === 'steganography') {
                 innerHTML = `
                     <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
-                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
                         <span>🔍 SCAN FOR HIDDEN DATA</span>
                     </button>
                     <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
@@ -496,7 +552,7 @@
                 if (isLocked) {
                     innerHTML = `
                         <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
-                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-white/5 hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
                             <span>🔓 UNLOCK DATA</span>
                         </button>
                         <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
@@ -511,8 +567,8 @@
             const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
 
             div.innerHTML = `
-                <div class="max-w-[75%] rounded-lg p-3 border ${color} ${bg} shadow-lg relative" ${clickAction}>
-                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4">
+                <div class="max-w-[75%] rounded-lg p-3 border shadow-lg relative" style="${bgStyle}; ${color.includes('border') ? '' : 'border-color: var(--border)'}" ${clickAction}>
+                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4 text-[var(--text-muted)]">
                         <span>${isMe ? 'YOU' : (currentReceiver ? currentReceiver.username : 'Partner')}</span>
                         <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
                     </div>
