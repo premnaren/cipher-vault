@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="void">
+<html lang="en" data-theme="retro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,14 +13,54 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
 
-        :root[data-theme="void"] { --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); }
+        /* --- THEME SYSTEM --- */
+        
+        /* 1. RETRO (Warm/Eye-Friendly) - DEFAULT */
+        :root[data-theme="retro"] { 
+            --bg-body: #1c1b1a;       /* Warm dark grey */
+            --bg-panel: #262422;      /* Slightly lighter warm grey */
+            --primary: #ffb347;       /* Soft Amber/Gold */
+            --accent: #d48839;        /* Burnt Orange */
+            --border: #443f3c;        /* Warm border */
+            --text-main: #e7e5e4;     /* Off-white stone */
+            --text-muted: #a8a29e;
+            --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
+            --overlay: rgba(28, 27, 26, 0.8);
+        }
+
+        /* 2. ZEN (Cool/Low Contrast) */
+        :root[data-theme="zen"] { 
+            --bg-body: #0f172a;       /* Slate 900 */
+            --bg-panel: #1e293b;      /* Slate 800 */
+            --primary: #38bdf8;       /* Sky Blue */
+            --accent: #818cf8;        /* Indigo */
+            --border: #334155; 
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --glow: none;
+            --overlay: rgba(15, 23, 42, 0.8);
+        }
+
+        /* 3. VOID (Original Neon) */
+        :root[data-theme="void"] { 
+            --bg-body: #050508; 
+            --bg-panel: #0f1015; 
+            --primary: #00f3ff; 
+            --accent: #bc13fe; 
+            --border: #1e293b; 
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
+            --overlay: rgba(0, 0, 0, 0.85);
+        }
         
         body { 
             background-color: var(--bg-body); 
-            color: #e2e8f0; 
+            color: var(--text-main); 
             font-family: 'Inter', sans-serif; 
             background-image: radial-gradient(var(--border) 1px, transparent 1px); 
             background-size: 30px 30px;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
 
         /* --- UI STYLES --- */
@@ -29,31 +69,50 @@
         .card-inner { transform-style: preserve-3d; }
         .perspective-container { perspective: 1200px; }
 
+        /* Dynamic Component Styling */
+        .theme-panel { background-color: var(--bg-panel); border-color: var(--border); }
+        .theme-input { 
+            background-color: var(--bg-body); 
+            border-color: var(--border); 
+            color: var(--text-main); 
+        }
+        .theme-input:focus { border-color: var(--primary); }
+        
+        .theme-text-primary { color: var(--primary); }
+        .theme-border-primary { border-color: var(--primary); }
+        
         ::-webkit-scrollbar { width: 8px; } 
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        
+        /* Transition for everything */
+        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
 
-    <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/90 backdrop-blur border-b border-[var(--border)]">
+    <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/95 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
-            <button id="termBtn" onclick="showPage('terminal')" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all">
+            <button id="termBtn" onclick="showPage('terminal')" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-[var(--overlay)] px-5 py-2 rounded-full shadow-[var(--glow)] transition-all">
                 <span class="tracking-[0.15em] text-xs font-mono">TERMINAL</span>
             </button>
-            <button id="libBtn" onclick="showPage('library')" class="flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all">
+            <button id="libBtn" onclick="showPage('library')" class="flex items-center gap-3 text-[var(--text-muted)] font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-[var(--text-main)] transition-all">
                 <span class="tracking-[0.15em] text-xs font-mono">VIDEO LIBRARY</span>
             </button>
-            <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
+            <button onclick="toggleVault(true)" class="flex items-center gap-2 text-[var(--accent)] font-bold border border-[var(--border)] bg-[var(--overlay)] px-5 py-2 rounded-full hover:border-[var(--primary)] hover:text-[var(--primary)] group">
                 <span class="text-lg group-hover:animate-pulse">🔒</span> <span class="tracking-[0.15em] text-xs font-mono">VAULT</span>
             </button>
-            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all">
+            <a href="/chat" class="flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--border)] bg-[var(--overlay)] px-5 py-2 rounded-full hover:border-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all">
                 <span class="text-lg">💬</span> <span class="tracking-[0.15em] text-xs font-mono">CHAT</span>
             </a>
         </div>
         <div class="flex items-center gap-4">
+            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all" title="Switch Theme">
+                🎨
+            </button>
+
             <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
             <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
         </div>
@@ -62,10 +121,10 @@
     <main id="terminalPage" class="flex-grow flex items-center justify-center p-4 pt-24 perspective-container h-full">
         <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] border border-[var(--border)] shadow-[var(--glow)] rounded-xl relative overflow-hidden flex flex-col max-h-full">
             
-            <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-black/20 shrink-0">
+            <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-[var(--overlay)] shrink-0">
                 <div>
                     <h2 id="modeTitle" class="text-3xl font-bold tracking-widest orbitron text-[var(--primary)]">ENCRYPTION MODE</h2>
-                    <p class="text-[10px] mono text-gray-500">SYSTEM STATUS: READY // AUTO-KEY MEMORY: <span id="memoryStatus" class="text-red-500 font-bold">OFFLINE</span></p>
+                    <p class="text-[10px] mono text-[var(--text-muted)]">SYSTEM STATUS: READY // AUTO-KEY MEMORY: <span id="memoryStatus" class="text-red-500 font-bold">OFFLINE</span></p>
                 </div>
                 <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
                     <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div><div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div></div>
@@ -77,8 +136,8 @@
                 
                 <div class="p-6 space-y-6 border-r border-[var(--border)] relative overflow-y-auto">
                     <div>
-                        <label for="algoSelect" class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Algorithm Selection</label>
-                        <select id="algoSelect" title="Select Algorithm" aria-label="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-white font-mono">
+                        <label for="algoSelect" class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Algorithm Selection</label>
+                        <select id="algoSelect" title="Select Algorithm" aria-label="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
                             <optgroup label="Classical Ciphers">
                                 <option value="atbash">1. Atbash Cipher</option>
                                 <option value="caesar">2. Caesar Cipher</option>
@@ -100,35 +159,35 @@
 
                     <div id="dynamicInputs" class="space-y-4">
                         <div id="stdInputGroup">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Input Data</label>
-                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none" placeholder="Enter text..."></textarea>
+                            <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
+                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-gray-600" placeholder="Enter text..."></textarea>
                         </div>
 
                         <div id="stegoInputGroup" class="hidden">
                             <label class="text-[10px] font-bold text-[var(--accent)] uppercase mb-2 block font-mono">Image Source</label>
-                            <input type="file" id="stegoFile" title="Upload Source Image" aria-label="Upload Source Image" accept="image/png" class="w-full text-xs text-gray-500 file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold mb-2">
+                            <input type="file" id="stegoFile" title="Upload Source Image" aria-label="Upload Source Image" accept="image/png" class="w-full text-xs text-[var(--text-muted)] file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold mb-2">
                             <div id="stegoTextContainer">
-                                <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Secret Payload</label>
-                                <textarea id="stegoPayload" title="Enter Secret Message" aria-label="Enter Secret Message" class="w-full h-20 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--accent)] outline-none" placeholder="Message to hide..."></textarea>
+                                <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Secret Payload</label>
+                                <textarea id="stegoPayload" title="Enter Secret Message" aria-label="Enter Secret Message" class="w-full h-20 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--accent)] outline-none text-[var(--text-main)]" placeholder="Message to hide..."></textarea>
                             </div>
                         </div>
 
                         <div id="keyGroup">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block font-mono">Encryption Key</label>
-                            <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Key / Shift / Password">
+                            <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
+                            <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none placeholder-gray-600 text-[var(--text-main)]" placeholder="Key / Shift / Password">
                             
                             <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
                         </div>
 
-                        <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_rgba(0,243,255,0.4)] transition-all orbitron">
+                        <button id="processBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_var(--primary)] transition-all orbitron">
                             EXECUTE PROCESS
                         </button>
                     </div>
                 </div>
 
-                <div class="p-6 bg-black/20 flex flex-col h-full relative overflow-y-auto">
+                <div class="p-6 bg-[var(--overlay)] flex flex-col h-full relative overflow-y-auto">
                     <div class="flex justify-between items-center mb-4"> 
-                        <label class="text-[10px] font-bold text-gray-500 uppercase block font-mono">System Output</label> 
+                        <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase block font-mono">System Output</label> 
                         <button id="copyBtn" class="flex items-center gap-2 px-3 py-1 border border-[var(--primary)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all rounded text-[10px] font-bold font-mono group">
                             <span>COPY RESULT</span>
                         </button>
@@ -145,48 +204,48 @@
     <main id="libraryPage" class="hidden flex-grow pt-24 px-4 pb-12 overflow-y-auto h-full">
         <div class="w-full max-w-7xl mx-auto">
             <div class="text-center mb-10">
-                <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-white">ARSENAL</span></h2>
-                <p class="text-gray-500 font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
+                <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-[var(--text-main)]">ARSENAL</span></h2>
+                <p class="text-[var(--text-muted)] font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">3. PLAYFAIR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Playfair Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">4. VIGENERE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Vigenere Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">5. RAIL FENCE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Rail Fence Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">6. PIGPEN</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Pigpen Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">7. AES-256</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="AES Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">8. RSA</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="RSA Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--border)] bg-black/40 p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-white mb-2">9. ECC</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="ECC Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe></div></div>
-                <div class="border border-[var(--accent)] bg-black/40 p-4 rounded-xl hover:border-white transition-all"><h3 class="text-lg orbitron text-[var(--accent)] mb-2">10. STEGANOGRAPHY</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Steganography Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">3. PLAYFAIR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Playfair Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/1q37X_y9-lc" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">4. VIGENERE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Vigenere Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/SkJcmCaHqS0" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">5. RAIL FENCE</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Rail Fence Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/wKjRwJTXQH4" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">6. PIGPEN</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Pigpen Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/vZrTJOhALmA" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">7. AES-256</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="AES Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/O4xNJsjtN6E" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">8. RSA</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="RSA Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/4zahvcJ9glg" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">9. ECC</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="ECC Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/NF1pwjL9-DE" frameborder="0" allowfullscreen></iframe></div></div>
+                <div class="border border-[var(--accent)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--text-main)] transition-all"><h3 class="text-lg orbitron text-[var(--accent)] mb-2">10. STEGANOGRAPHY</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Steganography Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/TWEXCYQKyDc" frameborder="0" allowfullscreen></iframe></div></div>
             </div>
         </div>
     </main>
 
     <div id="vaultModal" class="fixed inset-0 z-[80] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.15)] flex flex-col h-[600px] md:h-auto p-6">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-full max-w-4xl rounded-xl shadow-[0_0_50px_var(--glow)] flex flex-col h-[600px] md:h-auto p-6">
             <div class="flex justify-between items-center mb-6 border-b border-[var(--border)] pb-4">
                 <h3 class="text-2xl font-black tracking-widest text-[var(--accent)] orbitron">ZERO-KNOWLEDGE <span class="text-[var(--primary)]">VAULT</span></h3>
-                <button onclick="toggleVault(false)" class="text-gray-500 hover:text-white font-mono text-xl">✕</button>
+                <button onclick="toggleVault(false)" class="text-[var(--text-muted)] hover:text-white font-mono text-xl">✕</button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="col-span-1 bg-white/5 border border-white/10 rounded p-6">
                     <label class="text-xs font-mono text-[var(--primary)] mb-2 block tracking-widest">1. SELECT ASSET</label>
                     <input type="file" id="vaultInput" title="File Upload" aria-label="File Upload" 
-                           onchange="this.classList.add('border-[var(--primary)]', 'shadow-[0_0_10px_rgba(0,243,255,0.3)]')"
-                           class="w-full text-xs text-gray-500 mb-4 border border-[var(--border)] rounded p-2 transition-all duration-200
+                           onchange="this.classList.add('border-[var(--primary)]', 'shadow-[0_0_10px_var(--glow)]')"
+                           class="w-full text-xs text-[var(--text-muted)] mb-4 border border-[var(--border)] rounded p-2 transition-all duration-200
                                   file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 
                                   file:text-xs file:font-black file:bg-[var(--primary)] file:text-black 
                                   file:cursor-pointer file:transition-transform file:active:scale-90 hover:file:bg-white">
                     <label class="text-xs font-mono text-[var(--accent)] mb-2 block tracking-widest">2. PASSWORD</label>
                     <input type="password" id="vaultPass" title="Vault Password" aria-label="Vault Password" placeholder="Required" class="w-full bg-black border border-[var(--border)] text-xs text-[var(--accent)] p-2 rounded mb-4 focus:border-[var(--accent)] outline-none">
-                    <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_rgba(188,19,254,0.4)] font-mono text-xs">ENCRYPT & UPLOAD</button>
+                    <button onclick="uploadEncryptedFile()" class="w-full py-3 bg-[var(--accent)] text-black font-black tracking-widest rounded hover:shadow-[0_0_15px_var(--accent)] font-mono text-xs">ENCRYPT & UPLOAD</button>
                 </div>
                 <div class="col-span-2 bg-white/5 border border-white/10 rounded p-6 flex flex-col h-[400px]">
                     <div class="flex justify-between items-center mb-4 border-b border-[var(--border)] pb-2">
                         <label class="text-xs font-mono text-[var(--primary)] tracking-widest">SECURE DATABASE</label>
-                        <button onclick="loadFiles()" class="text-[10px] text-gray-500 hover:text-white font-mono">↻ REFRESH</button>
+                        <button onclick="loadFiles()" class="text-[10px] text-[var(--text-muted)] hover:text-white font-mono">↻ REFRESH</button>
                     </div>
                     <div id="vaultList" class="flex-grow overflow-y-auto pr-2 space-y-2"></div>
                 </div>
@@ -195,15 +254,15 @@
     </div>
 
     <div id="passwordModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-black/90 border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_var(--glow)] p-6 text-center transform scale-95 transition-transform duration-200">
             <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">SECURITY CHECK</h3>
-            <p class="text-[10px] text-gray-400 font-mono mb-4 uppercase">Enter Decryption Key to Access File</p>
+            <p class="text-[10px] text-[var(--text-muted)] font-mono mb-4 uppercase">Enter Decryption Key to Access File</p>
             
-            <input type="password" id="passwordModalInput" class="w-full bg-[#050508] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all focus:shadow-[0_0_15px_rgba(0,243,255,0.2)]" placeholder="••••••••" autocomplete="off">
+            <input type="password" id="passwordModalInput" class="w-full bg-[var(--bg-body)] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all focus:shadow-[0_0_15px_var(--glow)]" placeholder="••••••••" autocomplete="off">
             
             <div class="flex gap-3">
                 <button id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono">CANCEL</button>
-                <button id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_rgba(0,243,255,0.3)] font-mono">UNLOCK</button>
+                <button id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_var(--glow)] font-mono">UNLOCK</button>
             </div>
         </div>
     </div>
@@ -214,11 +273,32 @@
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
+        // --- THEME LOGIC (NEW) ---
+        const themes = ['retro', 'zen', 'void'];
+        let currentThemeIndex = 0;
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('app-theme') || 'retro'; // Default to Retro (Warm)
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            currentThemeIndex = themes.indexOf(savedTheme);
+            if(currentThemeIndex === -1) currentThemeIndex = 0;
+        }
+
+        function cycleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('app-theme', newTheme);
+        }
+        
+        // Initialize theme on load
+        initTheme();
+
         // --- GLOBAL STATE ---
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        // --- DOM REFERENCES (Fixed) ---
+        // --- DOM REFERENCES ---
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -239,67 +319,35 @@
             memStatus: document.getElementById('memoryStatus')
         };
 
-        // --- NEW: PASSWORD MODAL PROMISE WRAPPER ---
+        // --- PASSWORD MODAL PROMISE ---
         function askPassword() {
             return new Promise((resolve) => {
                 const modal = document.getElementById('passwordModal');
-                const content = modal.firstElementChild; // The inner div
+                const content = modal.firstElementChild; 
                 const input = document.getElementById('passwordModalInput');
                 const submitBtn = document.getElementById('passwordModalSubmit');
                 const cancelBtn = document.getElementById('passwordModalCancel');
 
-                // Show Modal
                 modal.classList.remove('hidden', 'pointer-events-none');
-                // Use small timeout to allow display:block to apply before opacity transition
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    content.classList.remove('scale-95');
-                    content.classList.add('scale-100');
-                }, 10);
-                
-                input.value = '';
-                input.focus();
+                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+                input.value = ''; input.focus();
 
                 const cleanup = () => {
-                    // Hide Modal with animation
-                    modal.classList.add('opacity-0');
-                    content.classList.remove('scale-100');
-                    content.classList.add('scale-95');
-                    
-                    // Wait for transition to finish before hiding completely
-                    setTimeout(() => {
-                        modal.classList.add('hidden', 'pointer-events-none');
-                    }, 300);
-
-                    // Remove listeners
-                    submitBtn.onclick = null;
-                    cancelBtn.onclick = null;
-                    input.onkeydown = null;
+                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
+                    submitBtn.onclick = null; cancelBtn.onclick = null; input.onkeydown = null;
                 };
 
                 const resolvePass = () => {
                     const val = input.value;
-                    if(!val) {
-                        input.classList.add('border-red-500', 'animate-pulse');
-                        setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500);
-                        return;
-                    }
-                    cleanup();
-                    resolve(val);
+                    if(!val) { input.classList.add('border-red-500', 'animate-pulse'); setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500); return; }
+                    cleanup(); resolve(val);
                 };
-
-                const resolveCancel = () => {
-                    cleanup();
-                    resolve(null);
-                };
+                const resolveCancel = () => { cleanup(); resolve(null); };
 
                 submitBtn.onclick = resolvePass;
                 cancelBtn.onclick = resolveCancel;
-                
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter') resolvePass();
-                    if (e.key === 'Escape') resolveCancel();
-                };
+                input.onkeydown = (e) => { if (e.key === 'Enter') resolvePass(); if (e.key === 'Escape') resolveCancel(); };
             });
         }
 
@@ -313,13 +361,13 @@
             if(page === 'terminal') {
                 term.classList.remove('hidden'); term.classList.add('flex');
                 lib.classList.add('hidden');
-                termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-black/40 px-5 py-2 rounded-full shadow-[0_0_15px_rgba(0,243,255,0.2)] transition-all";
-                libBtn.className = "flex items-center gap-3 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
+                termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-[var(--overlay)] px-5 py-2 rounded-full shadow-[var(--glow)] transition-all";
+                libBtn.className = "flex items-center gap-3 text-[var(--text-muted)] font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-[var(--text-main)] transition-all";
             } else {
                 term.classList.add('hidden'); term.classList.remove('flex');
                 lib.classList.remove('hidden');
-                libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-black/20 px-5 py-2 rounded-full transition-all";
-                termBtn.className = "flex items-center gap-2 text-gray-500 font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-white transition-all";
+                libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-[var(--overlay)] px-5 py-2 rounded-full transition-all";
+                termBtn.className = "flex items-center gap-2 text-[var(--text-muted)] font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-[var(--text-main)] transition-all";
             }
         }
 
@@ -340,12 +388,8 @@
         // --- UPDATE MEMORY UI ---
         function updateMemoryStatus() {
             if (keyCache.rsa || keyCache.aes) {
-                DOM.memStatus.innerText = "ACTIVE";
-                DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
-            } else {
-                DOM.memStatus.innerText = "OFFLINE";
-                DOM.memStatus.className = "text-red-500 font-bold";
-            }
+                DOM.memStatus.innerText = "ACTIVE"; DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
+            } else { DOM.memStatus.innerText = "OFFLINE"; DOM.memStatus.className = "text-red-500 font-bold"; }
         }
 
         // --- FLIP CARD LOGIC ---
@@ -360,29 +404,17 @@
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
                 if (DOM.algo.value === 'steganography') {
-                    if (mode === 'encrypt') {
-                        DOM.stegoTextCont.classList.remove('hidden'); 
-                        DOM.processBtn.innerText = "ENCODE & DOWNLOAD";
-                    } else {
-                        DOM.stegoTextCont.classList.add('hidden');
-                        DOM.processBtn.innerText = "DECODE IMAGE";
-                    }
+                    if (mode === 'encrypt') { DOM.stegoTextCont.classList.remove('hidden'); DOM.processBtn.innerText = "ENCODE & DOWNLOAD"; } 
+                    else { DOM.stegoTextCont.classList.add('hidden'); DOM.processBtn.innerText = "DECODE IMAGE"; }
                 }
                 
-                if (DOM.algo.value === 'rsa') {
-                    DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) 
-                        ? "[ACCESSING CACHED PRIVATE KEY...] (Leave empty to use)" 
-                        : (mode === 'encrypt' ? "Paste Public Key... (Auto-Generate)" : "Paste Private Key...");
-                }
-                if (DOM.algo.value === 'aes' && mode === 'decrypt' && keyCache.aes) {
-                    DOM.keyIn.placeholder = "[ACCESSING CACHED KEY...] (Leave empty to use)";
-                }
+                if (DOM.algo.value === 'rsa') DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key..." : "Paste Private Key...");
+                if (DOM.algo.value === 'aes' && mode === 'decrypt' && keyCache.aes) DOM.keyIn.placeholder = "[ACCESSING CACHED KEY...]";
 
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
             }});
         };
 
-        // --- ALGO SELECTION LOGIC ---
         DOM.algo.addEventListener('change', () => {
             const val = DOM.algo.value;
             const isStego = val === 'steganography';
@@ -393,13 +425,8 @@
             DOM.stegoGroup.classList.toggle('hidden', !isStego);
             DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA));
             
-            if (isRSA) {
-                DOM.keyIn.classList.add('hidden');
-                DOM.rsaKeyIn.classList.remove('hidden');
-            } else {
-                DOM.keyIn.classList.remove('hidden');
-                DOM.rsaKeyIn.classList.add('hidden');
-            }
+            if (isRSA) { DOM.keyIn.classList.add('hidden'); DOM.rsaKeyIn.classList.remove('hidden'); } 
+            else { DOM.keyIn.classList.remove('hidden'); DOM.rsaKeyIn.classList.add('hidden'); }
 
             DOM.out.innerText = "// WAITING...";
             if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
@@ -409,15 +436,13 @@
             DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
         });
 
-        // --- PROCESS BUTTON (ENCRYPTION ENGINE) ---
+        // --- ENCRYPTION ENGINE ---
         DOM.processBtn.onclick = () => {
             const algo = DOM.algo.value;
             
-            // 1. STEGANOGRAPHY
             if (algo === 'steganography') {
                 const cvs = document.getElementById('stegoCanvas');
                 const ctx = cvs.getContext('2d');
-                
                 if (mode === 'encrypt') {
                     if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return alert("Image and Text required!");
                     const reader = new FileReader();
@@ -428,25 +453,18 @@
                             ctx.drawImage(img, 0, 0);
                             const imgData = ctx.getImageData(0,0,img.width,img.height);
                             const msg = DOM.stegoPayload.value;
-                            
                             let bin = ""; for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
-                            bin += "00000000"; // Terminator
-                            
-                            if(bin.length > imgData.data.length/4) return alert("Message too long for image");
-                            
+                            bin += "00000000";
+                            if(bin.length > imgData.data.length/4) return alert("Message too long");
                             let dIdx = 0;
-                            for(let i=0; i<bin.length; i++) {
-                                if(dIdx%4===3) dIdx++; // Skip Alpha channel
-                                imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]);
-                                dIdx++;
-                            }
+                            for(let i=0; i<bin.length; i++) { if(dIdx%4===3) dIdx++; imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]); dIdx++; }
                             ctx.putImageData(imgData, 0, 0);
                             const link = document.createElement('a'); link.download = 'secret_stego.png'; link.href = cvs.toDataURL(); link.click();
                             animateText(DOM.out, "SUCCESS: Encoded Image Downloaded.");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 } else {
-                    if(!DOM.stegoFile.files[0]) return alert("Select Image to Decode");
+                    if(!DOM.stegoFile.files[0]) return alert("Select Image");
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = new Image();
@@ -455,15 +473,7 @@
                             ctx.drawImage(img, 0, 0);
                             const data = ctx.getImageData(0,0,img.width,img.height).data;
                             let bin = "", res = "";
-                            for(let i=0; i<data.length; i++) {
-                                if(i%4===3) continue;
-                                bin += (data[i]&1).toString();
-                                if(bin.length===8) {
-                                    if(bin==="00000000") break;
-                                    res += String.fromCharCode(parseInt(bin, 2));
-                                    bin = "";
-                                }
-                            }
+                            for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; res += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
                             animateText(DOM.out, "DECODED SECRET:\n" + res);
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
@@ -481,16 +491,16 @@
                 if (mode === 'encrypt') {
                     let pubKey = rsaKeyVal;
                     let extra = "";
-                    if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED FOR SESSION]"; encryptor.setPublicKey(pubKey); } 
+                    if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED]"; encryptor.setPublicKey(pubKey); } 
                     else { encryptor.setPublicKey(pubKey); }
                     const enc = encryptor.encrypt(txt);
-                    res = enc ? "CIPHERTEXT:\n" + enc + extra : "ENCRYPTION FAILED";
+                    res = enc ? "CIPHERTEXT:\n" + enc + extra : "FAILED";
                 } else {
                     let privKey = rsaKeyVal || keyCache.rsa;
                     if(!privKey) return alert("Private Key Required");
                     encryptor.setPrivateKey(privKey);
                     const dec = encryptor.decrypt(txt);
-                    res = dec ? "DECRYPTED:\n" + dec : "DECRYPTION FAILED";
+                    res = dec ? "DECRYPTED:\n" + dec : "FAILED";
                 }
             } 
             else if (algo === 'aes') {
@@ -501,10 +511,7 @@
                 } else {
                     let useKey = key || keyCache.aes;
                     if(!useKey) return alert("Key Required");
-                    try {
-                        const bytes = CryptoJS.AES.decrypt(txt, useKey);
-                        res = bytes.toString(CryptoJS.enc.Utf8) || "DECRYPTION FAILED (Wrong Key)";
-                    } catch(e) { res = "INVALID CIPHERTEXT"; }
+                    try { const bytes = CryptoJS.AES.decrypt(txt, useKey); res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)"; } catch(e) { res = "INVALID"; }
                 }
             }
             else {
@@ -552,12 +559,12 @@
                 const list = document.getElementById('vaultList'); 
                 list.innerHTML = '';
                 
-                if(files.length === 0) list.innerHTML = '<div class="text-xs text-gray-500 p-2 font-mono">VAULT EMPTY</div>';
+                if(files.length === 0) list.innerHTML = '<div class="text-xs text-[var(--text-muted)] p-2 font-mono">VAULT EMPTY</div>';
 
                 files.forEach(f => { 
                     list.innerHTML += `
                     <div class="flex justify-between items-center p-3 bg-black/40 border border-white/5 mb-2 rounded hover:border-[var(--primary)] transition-colors group">
-                        <span class="text-xs text-gray-400 truncate w-40 font-mono group-hover:text-white transition-colors">${f.originalName}</span>
+                        <span class="text-xs text-[var(--text-muted)] truncate w-40 font-mono group-hover:text-[var(--text-main)] transition-colors">${f.originalName}</span>
                         <div class="flex gap-2">
                             <button onclick="downloadAndDecrypt('${f.filename}','${f.originalName}')" class="text-[var(--primary)] text-[9px] border border-[var(--primary)] px-3 py-1 rounded hover:bg-[var(--primary)] hover:text-black font-bold transition-all active:scale-95">DECRYPT</button>
                             <button onclick="deleteFile('${f._id}')" class="text-red-500 text-[9px] border border-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-black font-bold transition-all active:scale-95">DELETE</button>
@@ -567,10 +574,8 @@
             } catch(e){ console.log("Vault Load Error", e); }
         }
 
-        // --- MODIFIED: DECRYPT WITH CUSTOM MODAL ---
         async function downloadAndDecrypt(fname, og) {
-            // Replace standard prompt with our custom async modal
-            const pw = await askPassword(); 
+            const pw = await askPassword(); // Using Custom Modal
             if(!pw) return;
             
             try {
