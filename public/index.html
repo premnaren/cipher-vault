@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cipher Vault | Secure Terminal</title>
+    <title>CryptPact | Secure Terminal</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
@@ -33,7 +33,7 @@
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-        .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        .modal-bg { background: rgba(0, 0, 0, 0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
@@ -54,7 +54,7 @@
             </a>
         </div>
         <div class="flex items-center gap-4">
-            <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">CIPHER <span class="text-[var(--primary)]">VAULT</span></h1>
+            <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
             <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
         </div>
     </nav>
@@ -195,7 +195,7 @@
     </div>
 
     <div id="passwordModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
+        <div class="relative bg-black/90 border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_rgba(0,243,255,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
             <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">SECURITY CHECK</h3>
             <p class="text-[10px] text-gray-400 font-mono mb-4 uppercase">Enter Decryption Key to Access File</p>
             
