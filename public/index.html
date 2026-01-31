@@ -15,43 +15,60 @@
 
         /* --- THEME SYSTEM --- */
         
-        /* 1. RETRO (Warm/Eye-Friendly) - DEFAULT */
+        /* 1. RETRO (Warm/Eye-Friendly) */
         :root[data-theme="retro"] { 
-            --bg-body: #1c1b1a;       /* Warm dark grey */
-            --bg-panel: #262422;      /* Slightly lighter warm grey */
-            --primary: #ffb347;       /* Soft Amber/Gold */
-            --accent: #d48839;        /* Burnt Orange */
-            --border: #443f3c;        /* Warm border */
-            --text-main: #e7e5e4;     /* Off-white stone */
+            --bg-body: #1c1b1a;       
+            --bg-panel: #262422;      
+            --primary: #ffb347;       
+            --accent: #d48839;        
+            --border: #57534e;        
+            --text-main: #e7e5e4;     
             --text-muted: #a8a29e;
             --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
             --overlay: rgba(28, 27, 26, 0.8);
+            --shadow-3d: 8px 8px 0px #443f3c; /* 3D Effect */
         }
 
         /* 2. ZEN (Cool/Low Contrast) */
         :root[data-theme="zen"] { 
-            --bg-body: #0f172a;       /* Slate 900 */
-            --bg-panel: #1e293b;      /* Slate 800 */
-            --primary: #38bdf8;       /* Sky Blue */
-            --accent: #818cf8;        /* Indigo */
-            --border: #334155; 
+            --bg-body: #0f172a;       
+            --bg-panel: #1e293b;      
+            --primary: #38bdf8;       
+            --accent: #818cf8;        
+            --border: #475569; 
             --text-main: #f1f5f9;
             --text-muted: #94a3b8;
             --glow: none;
             --overlay: rgba(15, 23, 42, 0.8);
+            --shadow-3d: 8px 8px 0px #334155; 
         }
 
-        /* 3. VOID (Original Neon) */
+        /* 3. LIGHT (New - High Visibility) */
+        :root[data-theme="light"] { 
+            --bg-body: #e5e5e5;       
+            --bg-panel: #ffffff;      
+            --primary: #2563eb;       
+            --accent: #db2777;        
+            --border: #a3a3a3;        
+            --text-main: #171717;     
+            --text-muted: #525252;
+            --glow: 0 4px 6px rgba(0,0,0,0.1);
+            --overlay: rgba(255, 255, 255, 0.9);
+            --shadow-3d: 8px 8px 0px #737373; 
+        }
+
+        /* 4. VOID (Original Neon) */
         :root[data-theme="void"] { 
             --bg-body: #050508; 
             --bg-panel: #0f1015; 
             --primary: #00f3ff; 
             --accent: #bc13fe; 
-            --border: #1e293b; 
+            --border: #334155; 
             --text-main: #e2e8f0;
             --text-muted: #64748b;
             --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
             --overlay: rgba(0, 0, 0, 0.85);
+            --shadow-3d: 8px 8px 0px #1e293b; 
         }
         
         body { 
@@ -60,7 +77,7 @@
             font-family: 'Inter', sans-serif; 
             background-image: radial-gradient(var(--border) 1px, transparent 1px); 
             background-size: 30px 30px;
-            transition: background-color 0.5s ease, color 0.5s ease;
+            transition: all 0.5s ease;
         }
 
         /* --- UI STYLES --- */
@@ -69,26 +86,20 @@
         .card-inner { transform-style: preserve-3d; }
         .perspective-container { perspective: 1200px; }
 
-        /* Dynamic Component Styling */
-        .theme-panel { background-color: var(--bg-panel); border-color: var(--border); }
-        .theme-input { 
-            background-color: var(--bg-body); 
-            border-color: var(--border); 
-            color: var(--text-main); 
+        /* THE 3D CARD EFFECT */
+        #mainCard {
+            border: 2px solid var(--border); /* Thicker Border */
+            box-shadow: var(--shadow-3d);    /* The 3D Pop */
+            transition: all 0.3s ease;
         }
-        .theme-input:focus { border-color: var(--primary); }
-        
-        .theme-text-primary { color: var(--primary); }
-        .theme-border-primary { border-color: var(--primary); }
-        
+
         ::-webkit-scrollbar { width: 8px; } 
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
         
-        /* Transition for everything */
-        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
+        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
@@ -109,7 +120,7 @@
             </a>
         </div>
         <div class="flex items-center gap-4">
-            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all" title="Switch Theme">
+            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] transition-all" title="Switch Theme">
                 🎨
             </button>
 
@@ -119,7 +130,7 @@
     </nav>
 
     <main id="terminalPage" class="flex-grow flex items-center justify-center p-4 pt-24 perspective-container h-full">
-        <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] border border-[var(--border)] shadow-[var(--glow)] rounded-xl relative overflow-hidden flex flex-col max-h-full">
+        <div id="mainCard" class="card-inner w-full max-w-5xl bg-[var(--bg-panel)] rounded-xl relative overflow-hidden flex flex-col max-h-full">
             
             <div class="p-6 border-b border-[var(--border)] flex justify-between items-center bg-[var(--overlay)] shrink-0">
                 <div>
@@ -127,8 +138,8 @@
                     <p class="text-[10px] mono text-[var(--text-muted)]">SYSTEM STATUS: READY // AUTO-KEY MEMORY: <span id="memoryStatus" class="text-red-500 font-bold">OFFLINE</span></p>
                 </div>
                 <button id="swapModeBtn" class="flex items-center gap-3 px-6 py-3 bg-[var(--border)] hover:bg-[var(--primary)] hover:text-black transition-all rounded group">
-                    <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50">Current Mode</div><div class="text-sm font-bold" id="swapBtnText">ENCRYPT</div></div>
-                    <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                    <div class="text-right"><div class="text-[10px] font-bold uppercase opacity-50 text-[var(--text-main)]">Current Mode</div><div class="text-sm font-bold text-[var(--text-main)] group-hover:text-black" id="swapBtnText">ENCRYPT</div></div>
+                    <svg class="w-6 h-6 group-hover:rotate-180 transition-transform duration-500 text-[var(--text-main)] group-hover:text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
                 </button>
             </div>
 
@@ -160,7 +171,7 @@
                     <div id="dynamicInputs" class="space-y-4">
                         <div id="stdInputGroup">
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
-                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-gray-600" placeholder="Enter text..."></textarea>
+                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)]" placeholder="Enter text..."></textarea>
                         </div>
 
                         <div id="stegoInputGroup" class="hidden">
@@ -174,7 +185,7 @@
 
                         <div id="keyGroup">
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
-                            <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none placeholder-gray-600 text-[var(--text-main)]" placeholder="Key / Shift / Password">
+                            <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none placeholder-[var(--text-muted)] text-[var(--text-main)]" placeholder="Key / Shift / Password">
                             
                             <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
                         </div>
@@ -257,9 +268,7 @@
         <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_var(--glow)] p-6 text-center transform scale-95 transition-transform duration-200">
             <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">SECURITY CHECK</h3>
             <p class="text-[10px] text-[var(--text-muted)] font-mono mb-4 uppercase">Enter Decryption Key to Access File</p>
-            
-            <input type="password" id="passwordModalInput" class="w-full bg-[var(--bg-body)] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all focus:shadow-[0_0_15px_var(--glow)]" placeholder="••••••••" autocomplete="off">
-            
+            <input type="password" id="passwordModalInput" class="w-full bg-[var(--bg-body)] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all" placeholder="••••••••" autocomplete="off">
             <div class="flex gap-3">
                 <button id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono">CANCEL</button>
                 <button id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_var(--glow)] font-mono">UNLOCK</button>
@@ -273,12 +282,12 @@
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- THEME LOGIC (NEW) ---
-        const themes = ['retro', 'zen', 'void'];
+        // --- THEME LOGIC ---
+        const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
         function initTheme() {
-            const savedTheme = localStorage.getItem('app-theme') || 'retro'; // Default to Retro (Warm)
+            const savedTheme = localStorage.getItem('app-theme') || 'retro'; 
             document.documentElement.setAttribute('data-theme', savedTheme);
             currentThemeIndex = themes.indexOf(savedTheme);
             if(currentThemeIndex === -1) currentThemeIndex = 0;
@@ -290,8 +299,6 @@
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('app-theme', newTheme);
         }
-        
-        // Initialize theme on load
         initTheme();
 
         // --- GLOBAL STATE ---
@@ -319,7 +326,7 @@
             memStatus: document.getElementById('memoryStatus')
         };
 
-        // --- PASSWORD MODAL PROMISE ---
+        // --- PROMPT MODAL WRAPPER ---
         function askPassword() {
             return new Promise((resolve) => {
                 const modal = document.getElementById('passwordModal');
@@ -575,7 +582,7 @@
         }
 
         async function downloadAndDecrypt(fname, og) {
-            const pw = await askPassword(); // Using Custom Modal
+            const pw = await askPassword(); 
             if(!pw) return;
             
             try {

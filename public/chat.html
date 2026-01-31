@@ -13,8 +13,9 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap');
         
-        /* --- THEME SYSTEM ADDED HERE --- */
-        /* 1. RETRO (Warm/Eye-Friendly) - DEFAULT */
+        /* --- THEME SYSTEM --- */
+        
+        /* 1. RETRO (Warm/Eye-Friendly) */
         :root[data-theme="retro"] { 
             --bg-body: #1c1b1a;       
             --bg-panel: #262422;      
@@ -42,7 +43,21 @@
             --glow: none;
         }
 
-        /* 3. VOID (Original Neon) */
+        /* 3. LIGHT (High Visibility - NEW) */
+        :root[data-theme="light"] { 
+            --bg-body: #e5e5e5;       
+            --bg-panel: #ffffff;      
+            --primary: #2563eb;       
+            --accent: #db2777;        
+            --border: #a3a3a3;        
+            --text-main: #171717;     
+            --text-muted: #525252;
+            --msg-sent: rgba(37, 99, 235, 0.1);
+            --msg-recv: rgba(0, 0, 0, 0.05);
+            --glow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+
+        /* 4. VOID (Original Neon) */
         :root[data-theme="void"] { 
             --bg-body: #050508; 
             --bg-panel: #0f1015; 
@@ -88,9 +103,9 @@
 </head>
 <body>
 
-    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20">
+    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20 shadow-[var(--glow)]">
         <div class="flex items-center gap-4">
-            <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-black transition shadow-[var(--glow)]">← TERMINAL</a>
+            <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-[var(--bg-panel)] transition shadow-[var(--glow)]">← TERMINAL</a>
             <h1 class="orbitron text-lg font-bold tracking-widest text-[var(--text-main)] hidden md:block">SECURE <span class="text-[var(--primary)]">UPLINK</span></h1>
         </div>
         <div class="flex items-center gap-4">
@@ -99,7 +114,7 @@
                 <span id="statusText">OFFLINE</span>
             </div>
             
-            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all" title="Change Theme">🎨</button>
+            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-panel)] transition-all" title="Change Theme">🎨</button>
             
             <button onclick="SoundFX.toggle()" id="muteBtn" class="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs border border-[var(--border)] px-3 py-1 rounded">🔊 ON</button>
             <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
@@ -117,7 +132,7 @@
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col relative bg-black/20">
+        <main class="flex-1 flex flex-col relative bg-[var(--bg-body)]">
             <div id="chatHeader" class="h-12 border-b border-[var(--border)] flex items-center px-4 justify-between bg-[var(--bg-panel)] hidden">
                 <div class="flex items-center gap-3">
                     <div class="w-2 h-2 rounded-full bg-[var(--primary)] shadow-[var(--glow)]"></div>
@@ -186,7 +201,7 @@
 
     <script>
         // --- THEME LOGIC ADDED HERE ---
-        const themes = ['retro', 'zen', 'void'];
+        const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
         function initTheme() {
