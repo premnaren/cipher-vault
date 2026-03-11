@@ -100,7 +100,7 @@
                         <label for="algoSelect" class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Algorithm Selection</label>
                         <select id="algoSelect" title="Select Algorithm" aria-label="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
                             <optgroup label="Classical Ciphers">
-                                <option value="atbash">1. Atbash Cipher</option>
+                                <option value="atbash" selected>1. Atbash Cipher</option>
                                 <option value="caesar">2. Caesar Cipher</option>
                                 <option value="playfair">3. Playfair Cipher</option>
                                 <option value="vigenere">4. Vigenère Cipher</option>
@@ -108,7 +108,7 @@
                                 <option value="pigpen">6. Pigpen Cipher</option>
                             </optgroup>
                             <optgroup label="Modern Encryption">
-                                <option value="aes" selected>7. AES-256 (Standard)</option>
+                                <option value="aes">7. AES-256 (Standard)</option>
                                 <option value="rsa">8. RSA (Asymmetric)</option>
                                 <option value="ecc">9. ECC (Elliptic Curve)</option>
                             </optgroup>
@@ -134,7 +134,7 @@
                         </div>
 
                         <div id="keyGroup">
-                            <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
+                            <label id="keyLabel" class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
                             <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none placeholder-[var(--text-muted)] text-[var(--text-main)]" placeholder="Key / Shift / Password">
                             <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
                         </div>
@@ -167,7 +167,6 @@
                 <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-[var(--text-main)]">ARSENAL</span></h2>
                 <p class="text-[var(--text-muted)] font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
             </div>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                 <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
                 <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
@@ -226,12 +225,10 @@
     </div>
 
     <script>
-        // --- AUTH CHECK ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- THEME LOGIC ---
         const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
@@ -250,11 +247,9 @@
         }
         initTheme();
 
-        // --- GLOBAL STATE ---
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        // --- DOM REFERENCES ---
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -269,13 +264,13 @@
             stdGroup: document.getElementById('stdInputGroup'),
             stegoGroup: document.getElementById('stegoInputGroup'),
             keyGroup: document.getElementById('keyGroup'),
+            keyLabel: document.getElementById('keyLabel'), // Added ID for dynamic updates
             stegoFile: document.getElementById('stegoFile'),
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
             memStatus: document.getElementById('memoryStatus')
         };
 
-        // --- PROMPT MODAL WRAPPER ---
         function askPassword() {
             return new Promise((resolve) => {
                 const modal = document.getElementById('passwordModal');
@@ -307,7 +302,6 @@
             });
         }
 
-        // --- NAVIGATION LOGIC ---
         function showPage(page) {
             const term = document.getElementById('terminalPage');
             const lib = document.getElementById('libraryPage');
@@ -327,7 +321,6 @@
             }
         }
 
-        // --- ANIMATION ENGINE ---
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
         function animateText(element, finalState) {
             let iterations = 0;
@@ -341,14 +334,12 @@
             }, 5);
         }
 
-        // --- UPDATE MEMORY UI ---
         function updateMemoryStatus() {
             if (keyCache.rsa || keyCache.aes) {
                 DOM.memStatus.innerText = "ACTIVE"; DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
             } else { DOM.memStatus.innerText = "OFFLINE"; DOM.memStatus.className = "text-red-500 font-bold"; }
         }
 
-        // --- FLIP CARD LOGIC ---
         DOM.swapBtn.onclick = () => {
             gsap.to(DOM.card, { rotationY: 90, duration: 0.2, onComplete: () => {
                 mode = mode === 'encrypt' ? 'decrypt' : 'encrypt';
@@ -359,40 +350,72 @@
                 DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
-                if (DOM.algo.value === 'steganography') {
-                    if (mode === 'encrypt') { DOM.stegoTextCont.classList.remove('hidden'); DOM.processBtn.innerText = "ENCODE & DOWNLOAD"; } 
-                    else { DOM.stegoTextCont.classList.add('hidden'); DOM.processBtn.innerText = "DECODE IMAGE"; }
-                }
-                
-                if (DOM.algo.value === 'rsa') DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key..." : "Paste Private Key...");
-                if (DOM.algo.value === 'aes' && mode === 'decrypt' && keyCache.aes) DOM.keyIn.placeholder = "[ACCESSING CACHED KEY...]";
+                // Trigger change event to refresh UI state based on mode
+                DOM.algo.dispatchEvent(new Event('change'));
 
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
             }});
         };
 
+        // --- DYNAMIC UI UPDATES ---
         DOM.algo.addEventListener('change', () => {
             const val = DOM.algo.value;
             const isStego = val === 'steganography';
             const isRSA = val === 'rsa';
-            const isAsym = ['rsa', 'ecc'].includes(val);
+            const isECC = val === 'ecc';
+            
+            // Algorithms that do not use a standard key input field
+            const noKeyCiphers = ['atbash', 'pigpen', 'ecc', 'steganography', 'rsa'];
             
             DOM.stdGroup.classList.toggle('hidden', isStego);
             DOM.stegoGroup.classList.toggle('hidden', !isStego);
-            DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA));
             
-            if (isRSA) { DOM.keyIn.classList.add('hidden'); DOM.rsaKeyIn.classList.remove('hidden'); } 
-            else { DOM.keyIn.classList.remove('hidden'); DOM.rsaKeyIn.classList.add('hidden'); }
+            // Handle Key Group Visibility
+            if (noKeyCiphers.includes(val) && !isRSA) {
+                DOM.keyGroup.classList.add('hidden');
+            } else {
+                DOM.keyGroup.classList.remove('hidden');
+            }
+            
+            // Handle RSA Specifics
+            if (isRSA) { 
+                DOM.keyIn.classList.add('hidden'); 
+                DOM.rsaKeyIn.classList.remove('hidden'); 
+                DOM.keyLabel.innerText = "RSA PUBLIC/PRIVATE KEY";
+                DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key... (Leave blank to Auto-Generate)" : "Paste Private Key...");
+            } else { 
+                DOM.keyIn.classList.remove('hidden'); 
+                DOM.rsaKeyIn.classList.add('hidden'); 
+            }
+
+            // Update Labels and Placeholders dynamically
+            if (val === 'caesar') {
+                DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)";
+                DOM.keyIn.placeholder = "e.g., 3";
+            } else if (val === 'vigenere' || val === 'playfair') {
+                DOM.keyLabel.innerText = "KEYWORD (LETTERS ONLY)";
+                DOM.keyIn.placeholder = "e.g., SECRET";
+            } else if (val === 'rail_fence') {
+                DOM.keyLabel.innerText = "NUMBER OF RAILS (NUMBER > 1)";
+                DOM.keyIn.placeholder = "e.g., 3";
+            } else if (val === 'aes') {
+                DOM.keyLabel.innerText = "ENCRYPTION PASSWORD / KEY";
+                DOM.keyIn.placeholder = (mode === 'decrypt' && keyCache.aes) ? "[ACCESSING CACHED KEY...]" : "Enter secure password...";
+            }
 
             DOM.out.innerText = "// WAITING...";
             if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
+            else if (isStego) DOM.processBtn.innerText = mode === 'encrypt' ? "ENCODE & DOWNLOAD" : "DECODE IMAGE";
             else DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
             
             DOM.modeTitle.innerText = isStego ? "STEGANOGRAPHY LAB" : (mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE");
             DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
         });
 
-        // --- CORE ENCRYPTION ENGINE ---
+        // Initialize UI on page load to match "Atbash" default
+        DOM.algo.dispatchEvent(new Event('change'));
+
+        // --- ENCRYPTION ENGINE ---
         DOM.processBtn.onclick = () => {
             const algo = DOM.algo.value;
             const txt = DOM.mainIn.value;
@@ -401,7 +424,6 @@
 
             if (!txt && algo !== 'steganography') return alert("Input text is required.");
 
-            // 1. STEGANOGRAPHY (Image based)
             if (algo === 'steganography') {
                 const cvs = document.getElementById('stegoCanvas');
                 const ctx = cvs.getContext('2d');
@@ -443,12 +465,12 @@
                 return;
             }
 
-            // 2. RSA (Asymmetric)
             if (algo === 'rsa') {
                 const encryptor = new JSEncrypt({default_key_size: 512});
                 const rsaKeyVal = DOM.rsaKeyIn.value.trim();
                 if (mode === 'encrypt') {
-                    let pubKey = rsaKeyVal; let extra = "";
+                    let pubKey = rsaKeyVal;
+                    let extra = "";
                     if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED]"; encryptor.setPublicKey(pubKey); } 
                     else { encryptor.setPublicKey(pubKey); }
                     const enc = encryptor.encrypt(txt);
@@ -461,7 +483,6 @@
                     res = dec ? "DECRYPTED:\n" + dec : "FAILED";
                 }
             } 
-            // 3. AES-256 (Symmetric)
             else if (algo === 'aes') {
                 if (mode === 'encrypt') {
                     if(!key) return alert("Key Required");
@@ -473,20 +494,17 @@
                     try { const bytes = CryptoJS.AES.decrypt(txt, useKey); res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)"; } catch(e) { res = "INVALID"; }
                 }
             }
-            // 4. CAESAR CIPHER
             else if (algo === 'caesar') {
                 const shift = parseInt(key) || 3;
                 const s = mode === 'encrypt' ? shift : -shift;
                 res = txt.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26 + 26) % 26 + b); });
             }
-            // 5. ATBASH CIPHER
             else if (algo === 'atbash') {
                 res = txt.replace(/[a-zA-Z]/g, c => {
                     const base = c >= 'a' ? 97 : 65;
                     return String.fromCharCode(base + 25 - (c.charCodeAt(0) - base));
                 });
             }
-            // 6. VIGENÈRE CIPHER
             else if (algo === 'vigenere') {
                 if (!key) { res = "ERROR: KEY REQUIRED FOR VIGENERE"; }
                 else {
@@ -503,7 +521,6 @@
                     }
                 }
             }
-            // 7. RAIL FENCE CIPHER
             else if (algo === 'rail_fence') {
                 let rails = parseInt(key);
                 if (isNaN(rails) || rails < 2) { res = "ERROR: KEY MUST BE A NUMBER > 1 FOR RAIL FENCE"; }
@@ -529,7 +546,6 @@
                     }
                 }
             }
-            // 8. PLAYFAIR CIPHER
             else if (algo === 'playfair') {
                 if (!key) { res = "ERROR: KEY REQUIRED FOR PLAYFAIR"; }
                 else {
@@ -565,7 +581,6 @@
                     }
                 }
             }
-            // 9. PIGPEN CIPHER (Symbolic Map)
             else if (algo === 'pigpen') {
                 const pigMap = {'A':'┘','B':'⊔','C':'└','D':'⊐','E':'◻','F':'⊏','G':'┐','H':'⊓','I':'┌','J':'⨼','K':'∿','L':'⨽','M':'⊪','N':'⊡','O':'⊩','P':'⨅','Q':'⍝','R':'⨆','S':'⋁','T':'>','U':'<','V':'⋀','W':'⍱','X':'⪢','Y':'⪡','Z':'⍲'};
                 const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
@@ -575,7 +590,6 @@
                     res = txt.replace(/\s+/g, '').split('').map(c => reversePigMap[c] || c).join('');
                 }
             }
-            // 10. ECC (STILL A SIMULATION)
             else { 
                 res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
             }
