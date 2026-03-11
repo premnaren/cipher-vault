@@ -14,91 +14,45 @@
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
 
         /* --- THEME SYSTEM --- */
-        
-        /* 1. RETRO (Warm/Eye-Friendly) */
         :root[data-theme="retro"] { 
-            --bg-body: #1c1b1a;       
-            --bg-panel: #262422;      
-            --primary: #ffb347;       
-            --accent: #d48839;        
-            --border: #57534e;        
-            --text-main: #e7e5e4;     
-            --text-muted: #a8a29e;
-            --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
-            --overlay: rgba(28, 27, 26, 0.8);
-            --shadow-3d: 8px 8px 0px #443f3c; /* 3D Effect */
+            --bg-body: #1c1b1a; --bg-panel: #262422; --primary: #ffb347; --accent: #d48839; --border: #57534e; 
+            --text-main: #e7e5e4; --text-muted: #a8a29e; --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
+            --overlay: rgba(28, 27, 26, 0.8); --shadow-3d: 8px 8px 0px #443f3c; 
         }
-
-        /* 2. ZEN (Cool/Low Contrast) */
         :root[data-theme="zen"] { 
-            --bg-body: #0f172a;       
-            --bg-panel: #1e293b;      
-            --primary: #38bdf8;       
-            --accent: #818cf8;        
-            --border: #475569; 
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --glow: none;
-            --overlay: rgba(15, 23, 42, 0.8);
+            --bg-body: #0f172a; --bg-panel: #1e293b; --primary: #38bdf8; --accent: #818cf8; --border: #475569; 
+            --text-main: #f1f5f9; --text-muted: #94a3b8; --glow: none; --overlay: rgba(15, 23, 42, 0.8); 
             --shadow-3d: 8px 8px 0px #334155; 
         }
-
-        /* 3. LIGHT (New - High Visibility) */
         :root[data-theme="light"] { 
-            --bg-body: #e5e5e5;       
-            --bg-panel: #ffffff;      
-            --primary: #2563eb;       
-            --accent: #db2777;        
-            --border: #a3a3a3;        
-            --text-main: #171717;     
-            --text-muted: #525252;
-            --glow: 0 4px 6px rgba(0,0,0,0.1);
-            --overlay: rgba(255, 255, 255, 0.9);
-            --shadow-3d: 8px 8px 0px #737373; 
+            --bg-body: #e5e5e5; --bg-panel: #ffffff; --primary: #2563eb; --accent: #db2777; --border: #a3a3a3; 
+            --text-main: #171717; --text-muted: #525252; --glow: 0 4px 6px rgba(0,0,0,0.1); 
+            --overlay: rgba(255, 255, 255, 0.9); --shadow-3d: 8px 8px 0px #737373; 
         }
-
-        /* 4. VOID (Original Neon) */
         :root[data-theme="void"] { 
-            --bg-body: #050508; 
-            --bg-panel: #0f1015; 
-            --primary: #00f3ff; 
-            --accent: #bc13fe; 
-            --border: #334155; 
-            --text-main: #e2e8f0;
-            --text-muted: #64748b;
-            --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
-            --overlay: rgba(0, 0, 0, 0.85);
-            --shadow-3d: 8px 8px 0px #1e293b; 
+            --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #334155; 
+            --text-main: #e2e8f0; --text-muted: #64748b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
+            --overlay: rgba(0, 0, 0, 0.85); --shadow-3d: 8px 8px 0px #1e293b; 
         }
         
         body { 
-            background-color: var(--bg-body); 
-            color: var(--text-main); 
-            font-family: 'Inter', sans-serif; 
-            background-image: radial-gradient(var(--border) 1px, transparent 1px); 
-            background-size: 30px 30px;
+            background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px;
             transition: all 0.5s ease;
         }
 
-        /* --- UI STYLES --- */
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
         .card-inner { transform-style: preserve-3d; }
         .perspective-container { perspective: 1200px; }
 
-        /* THE 3D CARD EFFECT */
-        #mainCard {
-            border: 2px solid var(--border); /* Thicker Border */
-            box-shadow: var(--shadow-3d);    /* The 3D Pop */
-            transition: all 0.3s ease;
-        }
+        #mainCard { border: 2px solid var(--border); box-shadow: var(--shadow-3d); transition: all 0.3s ease; }
 
         ::-webkit-scrollbar { width: 8px; } 
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-        
         * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
     </style>
 </head>
@@ -120,10 +74,7 @@
             </a>
         </div>
         <div class="flex items-center gap-4">
-            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] transition-all" title="Switch Theme">
-                🎨
-            </button>
-
+            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] transition-all" title="Switch Theme">🎨</button>
             <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
             <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
         </div>
@@ -144,7 +95,6 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-grow overflow-hidden">
-                
                 <div class="p-6 space-y-6 border-r border-[var(--border)] relative overflow-y-auto">
                     <div>
                         <label for="algoSelect" class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Algorithm Selection</label>
@@ -186,7 +136,6 @@
                         <div id="keyGroup">
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
                             <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none placeholder-[var(--text-muted)] text-[var(--text-main)]" placeholder="Key / Shift / Password">
-                            
                             <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
                         </div>
 
@@ -443,10 +392,16 @@
             DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
         });
 
-        // --- ENCRYPTION ENGINE ---
+        // --- CORE ENCRYPTION ENGINE ---
         DOM.processBtn.onclick = () => {
             const algo = DOM.algo.value;
-            
+            const txt = DOM.mainIn.value;
+            let key = DOM.keyIn.value;
+            let res = "";
+
+            if (!txt && algo !== 'steganography') return alert("Input text is required.");
+
+            // 1. STEGANOGRAPHY (Image based)
             if (algo === 'steganography') {
                 const cvs = document.getElementById('stegoCanvas');
                 const ctx = cvs.getContext('2d');
@@ -479,25 +434,21 @@
                             cvs.width = img.width; cvs.height = img.height;
                             ctx.drawImage(img, 0, 0);
                             const data = ctx.getImageData(0,0,img.width,img.height).data;
-                            let bin = "", res = "";
-                            for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; res += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
-                            animateText(DOM.out, "DECODED SECRET:\n" + res);
+                            let bin = "", resText = "";
+                            for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; resText += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
+                            animateText(DOM.out, "DECODED SECRET:\n" + resText);
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 }
                 return;
             }
 
-            const txt = DOM.mainIn.value;
-            let key = DOM.keyIn.value;
-            let res = "";
-
+            // 2. RSA (Asymmetric)
             if (algo === 'rsa') {
                 const encryptor = new JSEncrypt({default_key_size: 512});
                 const rsaKeyVal = DOM.rsaKeyIn.value.trim();
                 if (mode === 'encrypt') {
-                    let pubKey = rsaKeyVal;
-                    let extra = "";
+                    let pubKey = rsaKeyVal; let extra = "";
                     if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED]"; encryptor.setPublicKey(pubKey); } 
                     else { encryptor.setPublicKey(pubKey); }
                     const enc = encryptor.encrypt(txt);
@@ -510,6 +461,7 @@
                     res = dec ? "DECRYPTED:\n" + dec : "FAILED";
                 }
             } 
+            // 3. AES-256 (Symmetric)
             else if (algo === 'aes') {
                 if (mode === 'encrypt') {
                     if(!key) return alert("Key Required");
@@ -521,13 +473,113 @@
                     try { const bytes = CryptoJS.AES.decrypt(txt, useKey); res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)"; } catch(e) { res = "INVALID"; }
                 }
             }
-            else {
-                if(algo === 'caesar') {
-                    const shift = parseInt(key) || 3;
-                    const s = mode==='encrypt' ? shift : -shift;
-                    res = txt.replace(/[a-zA-Z]/g, c => { const b = c>='a'?97:65; return String.fromCharCode(((c.charCodeAt(0)-b+s)%26+26)%26+b); });
-                } else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
+            // 4. CAESAR CIPHER
+            else if (algo === 'caesar') {
+                const shift = parseInt(key) || 3;
+                const s = mode === 'encrypt' ? shift : -shift;
+                res = txt.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26 + 26) % 26 + b); });
             }
+            // 5. ATBASH CIPHER
+            else if (algo === 'atbash') {
+                res = txt.replace(/[a-zA-Z]/g, c => {
+                    const base = c >= 'a' ? 97 : 65;
+                    return String.fromCharCode(base + 25 - (c.charCodeAt(0) - base));
+                });
+            }
+            // 6. VIGENÈRE CIPHER
+            else if (algo === 'vigenere') {
+                if (!key) { res = "ERROR: KEY REQUIRED FOR VIGENERE"; }
+                else {
+                    let k = key.toUpperCase().replace(/[^A-Z]/g, '');
+                    if (!k) { res = "ERROR: INVALID KEY"; } else {
+                        let kIdx = 0;
+                        res = txt.replace(/[a-zA-Z]/g, c => {
+                            const base = c >= 'a' ? 97 : 65;
+                            const shift = k.charCodeAt(kIdx % k.length) - 65;
+                            const s = mode === 'encrypt' ? shift : -shift;
+                            kIdx++;
+                            return String.fromCharCode(((c.charCodeAt(0) - base + s) % 26 + 26) % 26 + base);
+                        });
+                    }
+                }
+            }
+            // 7. RAIL FENCE CIPHER
+            else if (algo === 'rail_fence') {
+                let rails = parseInt(key);
+                if (isNaN(rails) || rails < 2) { res = "ERROR: KEY MUST BE A NUMBER > 1 FOR RAIL FENCE"; }
+                else {
+                    if (mode === 'encrypt') {
+                        let fence = Array.from({length: rails}, () => []);
+                        let r = 0, dir = 1;
+                        for (let char of txt) { fence[r].push(char); r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
+                        res = fence.map(row => row.join('')).join('');
+                    } else {
+                        let fence = Array.from({length: rails}, () => Array(txt.length).fill(null));
+                        let r = 0, dir = 1;
+                        for (let i = 0; i < txt.length; i++) { fence[r][i] = '*'; r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
+                        let idx = 0;
+                        for (let row = 0; row < rails; row++) {
+                            for (let c = 0; c < txt.length; c++) {
+                                if (fence[row][c] === '*' && idx < txt.length) { fence[row][c] = txt[idx++]; }
+                            }
+                        }
+                        let resText = ''; r = 0; dir = 1;
+                        for (let c = 0; c < txt.length; c++) { resText += fence[r][c]; r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
+                        res = resText;
+                    }
+                }
+            }
+            // 8. PLAYFAIR CIPHER
+            else if (algo === 'playfair') {
+                if (!key) { res = "ERROR: KEY REQUIRED FOR PLAYFAIR"; }
+                else {
+                    let k = key.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
+                    let alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+                    let gridStr = Array.from(new Set((k + alphabet).split(''))).join('');
+                    let grid = [];
+                    for (let i=0; i<5; i++) grid.push(gridStr.slice(i*5, i*5+5).split(''));
+                    let findPos = (char) => { for (let r=0; r<5; r++) for (let c=0; c<5; c++) if (grid[r][c]===char) return [r,c]; return [0,0]; };
+
+                    let pt = txt.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
+                    if (mode === 'encrypt') {
+                        let pairs = [];
+                        for(let i=0; i<pt.length; i++) {
+                            let a = pt[i], b = pt[i+1];
+                            if(b && a===b) { pairs.push([a, 'X']); }
+                            else if (b) { pairs.push([a, b]); i++; }
+                            else { pairs.push([a, 'X']); }
+                        }
+                        pt = pairs;
+                    } else {
+                        let pairs = [];
+                        for(let i=0; i<pt.length; i+=2) pairs.push([pt[i], pt[i+1] || 'X']);
+                        pt = pairs;
+                    }
+                    res = "";
+                    let shift = mode === 'encrypt' ? 1 : -1;
+                    for (let [a,b] of pt) {
+                        let [r1,c1] = findPos(a); let [r2,c2] = findPos(b);
+                        if (r1===r2) { res += grid[r1][(c1+shift+5)%5] + grid[r2][(c2+shift+5)%5]; }
+                        else if (c1===c2) { res += grid[(r1+shift+5)%5][c1] + grid[(r2+shift+5)%5][c2]; }
+                        else { res += grid[r1][c2] + grid[r2][c1]; }
+                    }
+                }
+            }
+            // 9. PIGPEN CIPHER (Symbolic Map)
+            else if (algo === 'pigpen') {
+                const pigMap = {'A':'┘','B':'⊔','C':'└','D':'⊐','E':'◻','F':'⊏','G':'┐','H':'⊓','I':'┌','J':'⨼','K':'∿','L':'⨽','M':'⊪','N':'⊡','O':'⊩','P':'⨅','Q':'⍝','R':'⨆','S':'⋁','T':'>','U':'<','V':'⋀','W':'⍱','X':'⪢','Y':'⪡','Z':'⍲'};
+                const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
+                if (mode === 'encrypt') {
+                    res = txt.toUpperCase().split('').map(c => pigMap[c] || c).join(' ');
+                } else {
+                    res = txt.replace(/\s+/g, '').split('').map(c => reversePigMap[c] || c).join('');
+                }
+            }
+            // 10. ECC (STILL A SIMULATION)
+            else { 
+                res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
+            }
+
             animateText(DOM.out, res);
         };
 
