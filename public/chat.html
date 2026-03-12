@@ -43,7 +43,7 @@
             --glow: none;
         }
 
-        /* 3. LIGHT (High Visibility - NEW) */
+        /* 3. LIGHT (High Visibility) */
         :root[data-theme="light"] { 
             --bg-body: #e5e5e5;       
             --bg-panel: #ffffff;      
@@ -97,7 +97,6 @@
         #spyTools { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         #spyTools.open { max-height: 200px; opacity: 1; margin-bottom: 10px; }
         
-        /* Transition for theme switching */
         * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
@@ -110,8 +109,8 @@
         </div>
         <div class="flex items-center gap-4">
             <div id="statusIndicator" class="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)] uppercase">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></span>
-                <span id="statusText">OFFLINE</span>
+                <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse" id="statusDot"></span>
+                <span id="statusText" class="text-green-500 font-bold">ONLINE</span>
             </div>
             
             <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-panel)] transition-all" title="Change Theme">🎨</button>
@@ -200,7 +199,7 @@
     <canvas id="procCanvas" class="hidden"></canvas>
 
     <script>
-        // --- THEME LOGIC ADDED HERE ---
+        // --- THEME LOGIC ---
         const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
@@ -320,8 +319,12 @@
             currentReceiver = user;
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
+            
             const statusText = el.querySelector('.status-text');
-            if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
+            if(statusText.innerText.includes("MSG")) {
+                statusText.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1 shadow-[0_0_5px_#22c55e] animate-pulse"></span><span class="text-green-500 font-bold">ONLINE</span>`;
+            }
+
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
@@ -354,7 +357,17 @@
                     activeUsersMap[u._id] = u;
                     const div = document.createElement('div');
                     div.className = 'user-card p-3 cursor-pointer hover:bg-[var(--bg-body)] flex items-center gap-3 border-l-2 border-transparent transition-all';
-                    div.innerHTML = `<div class="w-8 h-8 rounded bg-[var(--bg-body)] flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron border border-[var(--border)]">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-[var(--text-main)]">${u.username}</div><div class="text-[9px] text-[var(--text-muted)] mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
+                    
+                    // NEW HTML: Includes inline glowing dot logic for status text
+                    div.innerHTML = `
+                    <div class="w-8 h-8 rounded bg-[var(--bg-body)] flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron border border-[var(--border)]">${u.username.substring(0,2).toUpperCase()}</div>
+                    <div>
+                        <div class="text-sm font-bold text-[var(--text-main)]">${u.username}</div>
+                        <div class="text-[9px] mono status-text flex items-center mt-0.5" data-id="${u._id}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-gray-600 inline-block mr-1"></span><span class="text-[var(--text-muted)]">OFFLINE</span>
+                        </div>
+                    </div>`;
+                    
                     div.onclick = () => selectUser(u, div);
                     list.appendChild(div);
                 });
@@ -368,7 +381,6 @@
             const main = args[0].toLowerCase();
             const area = document.getElementById('messagesArea');
 
-            // Helper to add system message
             const sysMsg = (text, isError=false) => {
                 const div = document.createElement('div');
                 div.className = "text-[10px] font-mono p-2 my-2 border-l-2 " + (isError ? "border-red-500 text-red-400 bg-red-900/10" : "border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]");
@@ -378,32 +390,20 @@
             };
 
             switch(main) {
-                case '/clear':
-                    area.innerHTML = '';
-                    sysMsg("TERMINAL BUFFER CLEARED.");
-                    break;
+                case '/clear': area.innerHTML = ''; sysMsg("TERMINAL BUFFER CLEARED."); break;
                 case '/burn':
                     const msgs = document.querySelectorAll('.msg-enter');
                     if(msgs.length === 0) { sysMsg("NO TARGETS FOUND.", true); return; }
                     SoundFX.burn();
                     sysMsg(`INITIATING MASS DELETE SEQUENCE (${msgs.length} OBJECTS)...`);
-                    msgs.forEach((el, i) => {
-                        setTimeout(() => {
-                            el.classList.add('burn-anim');
-                            setTimeout(() => el.remove(), 1000);
-                        }, i * 100);
-                    });
+                    msgs.forEach((el, i) => { setTimeout(() => { el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1000); }, i * 100); });
                     break;
                 case '/id':
                     const pubKey = localStorage.getItem('rsa_pub') || "UNKNOWN";
                     const shortKey = pubKey.substring(30, 60) + "...";
-                    sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`);
-                    break;
-                case '/help':
-                    sysMsg(`AVAILABLE COMMANDS:<br>• /clear - Wipe local screen<br>• /burn - Destroy visible msgs<br>• /id - Show identity info<br>• /help - Show this menu`);
-                    break;
-                default:
-                    sysMsg(`UNKNOWN COMMAND: ${main}`, true);
+                    sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`); break;
+                case '/help': sysMsg(`AVAILABLE COMMANDS:<br>• /clear - Wipe local screen<br>• /burn - Destroy visible msgs<br>• /id - Show identity info<br>• /help - Show this menu`); break;
+                default: sysMsg(`UNKNOWN COMMAND: ${main}`, true);
             }
         }
 
@@ -434,12 +434,7 @@
                     ctx.putImageData(imgData, 0, 0);
                     const stegoDataUrl = cvs.toDataURL(); 
 
-                    const payload = {
-                        senderId: myId, receiverId: currentReceiver._id,
-                        text: stegoDataUrl, 
-                        cipherType: 'steganography', 
-                        isBurn: isBurn, timestamp: new Date()
-                    };
+                    const payload = { senderId: myId, receiverId: currentReceiver._id, text: stegoDataUrl, cipherType: 'steganography', isBurn: isBurn, timestamp: new Date() };
                     socket.emit("private_message", payload);
                     SoundFX.send();
                     
@@ -452,7 +447,6 @@
                 return; 
             }
 
-            // NORMAL PATH
             let cipherText = text;
             if (method === 'rsa') {
                 const partnerData = activeUsersMap[currentReceiver._id];
@@ -471,10 +465,7 @@
                 });
             }
 
-            const payload = {
-                senderId: myId, receiverId: currentReceiver._id,
-                text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date()
-            };
+            const payload = { senderId: myId, receiverId: currentReceiver._id, text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date() };
             socket.emit("private_message", payload);
             SoundFX.send();
         }
@@ -486,14 +477,7 @@
             const val = input.value.trim();
             
             if(!val) return;
-
-            // --- CLI CHECK ---
-            if (val.startsWith('/')) {
-                handleCommand(val);
-                input.value = '';
-                return;
-            }
-
+            if (val.startsWith('/')) { handleCommand(val); input.value = ''; return; }
             sendMessage(val, null, burn);
             input.value = '';
             document.getElementById('burnCheck').checked = false;
@@ -502,13 +486,17 @@
         socket.on("receive_message", (data) => {
             const senderString = String(data.senderId || data.sender);
             const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
+            
             if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
                 displayMessage(data);
                 if (senderString !== String(myId)) SoundFX.receive();
             } else if (senderString !== String(myId)) {
                 SoundFX.receive();
                 const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
-                if(userStatus) { userStatus.innerText = "📩 NEW MSG"; userStatus.classList.add('text-[var(--primary)]', 'animate-pulse'); }
+                // INJECT NEW MESSAGE DOT UI
+                if(userStatus) { 
+                    userStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)] inline-block mr-1 shadow-[0_0_5px_var(--primary)] animate-pulse"></span><span class="text-[var(--primary)] font-bold animate-pulse">📩 NEW MSG</span>`; 
+                }
             }
         });
 
@@ -542,7 +530,6 @@
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
             if (isBurn) div.dataset.burn = "true";
 
-            // THEME-AWARE COLORS
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-[var(--border)] text-[var(--text-main)]';
             const bgStyle = isMe ? 'background-color: var(--msg-sent)' : 'background-color: var(--msg-recv)';
 
@@ -572,12 +559,8 @@
                         </button>
                         <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
                     `;
-                } else {
-                    innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
-                }
-            } else {
-                innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
-            }
+                } else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
+            } else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
 
             const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
 
@@ -594,10 +577,7 @@
             
             area.appendChild(div);
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
-
-            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') {
-                socket.emit("message_seen", msgId);
-            }
+            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') socket.emit("message_seen", msgId);
         }
         
         function scanImage(id, imgSrc) {
@@ -608,7 +588,6 @@
                 cvs.width = img.width; cvs.height = img.height;
                 ctx.drawImage(img, 0, 0);
                 const data = ctx.getImageData(0,0,img.width,img.height).data;
-                
                 let bin = "", res = "";
                 for(let i=0; i<data.length; i++) {
                     if(i%4===3) continue;
@@ -619,15 +598,11 @@
                         bin = "";
                     }
                 }
-                
                 document.getElementById(`plain-${id}`).innerText = "HIDDEN MSG: " + res;
                 document.getElementById(`plain-${id}`).classList.remove('hidden');
                 SoundFX.decrypt();
-
                 const container = document.getElementById(`msg-${id}`);
-                if (container && container.dataset.burn === "true") {
-                    socket.emit("message_seen", id);
-                }
+                if (container && container.dataset.burn === "true") socket.emit("message_seen", id);
             };
             img.src = imgSrc;
         }
@@ -638,17 +613,13 @@
                 const decryptor = new JSEncrypt();
                 decryptor.setPrivateKey(myPriv);
                 const decrypted = decryptor.decrypt(cipherText);
-                
                 if (decrypted) {
                     SoundFX.decrypt();
                     document.getElementById(`plain-${id}`).innerText = decrypted;
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
-                    
                     const container = document.getElementById(`msg-${id}`); 
-                    if (container && container.dataset.burn === "true") {
-                        socket.emit("message_seen", id);
-                    }
+                    if (container && container.dataset.burn === "true") socket.emit("message_seen", id);
                 } else { alert("Decryption Failed."); }
             } catch(e) { alert("Decryption Error"); }
         }
@@ -672,18 +643,23 @@
                 msgs.forEach(displayMessage);
             } catch(e) {}
         }
+        
         socket.on('connect', () => {
             socket.emit("login", myId);
-            document.getElementById('statusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]";
-            document.getElementById('statusText').innerText = "ONLINE";
-            document.getElementById('statusText').className = "text-green-500";
+            // Ignore the top nav bar dot, this is for overall connection
         });
+
+        // --- INJECT INLINE HTML DOTS FOR SIDEBAR ---
         socket.on('get_users', (onlineIds) => {
             document.querySelectorAll('.status-text').forEach(el => {
                 const uid = el.getAttribute('data-id');
                 if(onlineIds.includes(uid)) {
-                    if (!el.innerText.includes("MSG")) { el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]'); }
-                } else { el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600'); }
+                    if (!el.innerText.includes("MSG")) { 
+                        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1 shadow-[0_0_5px_#22c55e] animate-pulse"></span><span class="text-green-500 font-bold">ONLINE</span>`; 
+                    }
+                } else { 
+                    el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-gray-600 inline-block mr-1"></span><span class="text-[var(--text-muted)]">OFFLINE</span>`; 
+                }
             });
         });
     </script>
