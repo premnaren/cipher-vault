@@ -253,8 +253,13 @@
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        // --- GLOBAL PIGPEN MAP ---
-        const pigMap = {'A':'┘','B':'⊔','C':'└','D':'⊐','E':'◻','F':'⊏','G':'┐','H':'⊓','I':'┌','J':'⨼','K':'∿','L':'⨽','M':'⊪','N':'⊡','O':'⊩','P':'⨅','Q':'⍝','R':'⨆','S':'⋁','T':'>','U':'<','V':'⋀','W':'⍱','X':'⪢','Y':'⪡','Z':'⍲'};
+        // --- NEW: REFINED EXACT UNICODE PIGPEN MAP ---
+        const pigMap = {
+            'A':'┘', 'B':'⊔', 'C':'└', 'D':'⊐', 'E':'◻', 'F':'⊏', 'G':'┐', 'H':'⊓', 'I':'┌',
+            'J':'┘\u0307', 'K':'⊔\u0307', 'L':'└\u0307', 'M':'⊐\u0307', 'N':'⊡', 'O':'⊏\u0307', 'P':'┐\u0323', 'Q':'⊓\u0323', 'R':'┌\u0323',
+            'S':'∨', 'T':'>', 'U':'<', 'V':'∧',
+            'W':'⩒', 'X':'⋗', 'Y':'⋖', 'Z':'⩑'
+        };
         const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
 
         const DOM = {
@@ -272,7 +277,7 @@
             stegoGroup: document.getElementById('stegoInputGroup'),
             keyGroup: document.getElementById('keyGroup'),
             keyLabel: document.getElementById('keyLabel'),
-            pigpenKb: document.getElementById('pigpenKeyboard'), // NEW KEYBOARD REF
+            pigpenKb: document.getElementById('pigpenKeyboard'),
             stegoFile: document.getElementById('stegoFile'),
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
@@ -396,7 +401,6 @@
                 DOM.keyGroup.classList.remove('hidden');
             }
             
-            // Show/Hide Virtual Keyboard
             if (val === 'pigpen' && mode === 'decrypt') {
                 DOM.pigpenKb.classList.remove('hidden');
                 DOM.pigpenKb.classList.add('grid');
@@ -617,11 +621,14 @@
                     }
                 }
             }
+            // --- UPDATED PIGPEN LOGIC ---
             else if (algo === 'pigpen') {
                 if (mode === 'encrypt') {
                     res = txt.toUpperCase().split('').map(c => pigMap[c] || c).join(' ');
                 } else {
-                    res = txt.split('').map(c => reversePigMap[c] || c).join('');
+                    // Safe regex split to prevent breaking combining characters
+                    const chars = txt.replace(/\s+/g, '').match(/[\s\S][\u0300-\u036F]*/g) || [];
+                    res = chars.map(c => reversePigMap[c] || c).join('');
                 }
             }
             else { 
