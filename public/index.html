@@ -340,7 +340,6 @@
             } else { DOM.memStatus.innerText = "OFFLINE"; DOM.memStatus.className = "text-red-500 font-bold"; }
         }
 
-        // --- CLEAR INPUTS ON FLIP ---
         DOM.swapBtn.onclick = () => {
             gsap.to(DOM.card, { rotationY: 90, duration: 0.2, onComplete: () => {
                 mode = mode === 'encrypt' ? 'decrypt' : 'encrypt';
@@ -351,7 +350,6 @@
                 DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
-                // Clear inputs to prevent cross-contamination
                 DOM.mainIn.value = "";
                 DOM.keyIn.value = "";
                 DOM.rsaKeyIn.value = "";
@@ -578,6 +576,23 @@
                         if (r1===r2) { res += grid[r1][(c1+shift+5)%5] + grid[r2][(c2+shift+5)%5]; }
                         else if (c1===c2) { res += grid[(r1+shift+5)%5][c1] + grid[(r2+shift+5)%5][c2]; }
                         else { res += grid[r1][c2] + grid[r2][c1]; }
+                    }
+                    
+                    // NEW: STRIP 'X' PADDING ONLY DURING DECRYPTION
+                    if (mode === 'decrypt') {
+                        let cleanedRes = "";
+                        for (let i = 0; i < res.length; i++) {
+                            // If it's an X, and it's sandwiched between two identical letters, skip it.
+                            if (res[i] === 'X' && i > 0 && i < res.length - 1 && res[i-1] === res[i+1]) {
+                                continue; 
+                            }
+                            // If it's a trailing X at the very end of the string, skip it.
+                            if (res[i] === 'X' && i === res.length - 1) {
+                                continue;
+                            }
+                            cleanedRes += res[i];
+                        }
+                        res = cleanedRes;
                     }
                 }
             }
