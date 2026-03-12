@@ -122,6 +122,9 @@
                         <div id="stdInputGroup">
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
                             <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)]" placeholder="Enter text..."></textarea>
+                            
+                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
+                                </div>
                         </div>
 
                         <div id="stegoInputGroup" class="hidden">
@@ -250,6 +253,10 @@
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
+        // --- GLOBAL PIGPEN MAP ---
+        const pigMap = {'A':'┘','B':'⊔','C':'└','D':'⊐','E':'◻','F':'⊏','G':'┐','H':'⊓','I':'┌','J':'⨼','K':'∿','L':'⨽','M':'⊪','N':'⊡','O':'⊩','P':'⨅','Q':'⍝','R':'⨆','S':'⋁','T':'>','U':'<','V':'⋀','W':'⍱','X':'⪢','Y':'⪡','Z':'⍲'};
+        const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
+
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -265,11 +272,21 @@
             stegoGroup: document.getElementById('stegoInputGroup'),
             keyGroup: document.getElementById('keyGroup'),
             keyLabel: document.getElementById('keyLabel'),
+            pigpenKb: document.getElementById('pigpenKeyboard'), // NEW KEYBOARD REF
             stegoFile: document.getElementById('stegoFile'),
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
             memStatus: document.getElementById('memoryStatus')
         };
+
+        // --- BUILD VIRTUAL KEYBOARD ---
+        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
+        Object.values(pigMap).forEach(sym => {
+            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black hover:border-[var(--primary)] rounded text-xl transition-all flex items-center justify-center font-bold">${sym}</button>`;
+        });
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">SPACE</button>`;
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">⌫ DEL</button>`;
+        DOM.pigpenKb.innerHTML = kbHTML;
 
         function askPassword() {
             return new Promise((resolve) => {
@@ -379,6 +396,17 @@
                 DOM.keyGroup.classList.remove('hidden');
             }
             
+            // Show/Hide Virtual Keyboard
+            if (val === 'pigpen' && mode === 'decrypt') {
+                DOM.pigpenKb.classList.remove('hidden');
+                DOM.pigpenKb.classList.add('grid');
+                DOM.mainIn.placeholder = "Use the virtual pad below to enter symbols...";
+            } else {
+                DOM.pigpenKb.classList.add('hidden');
+                DOM.pigpenKb.classList.remove('grid');
+                DOM.mainIn.placeholder = "Enter text...";
+            }
+
             if (isRSA) { 
                 DOM.keyIn.classList.add('hidden'); 
                 DOM.rsaKeyIn.classList.remove('hidden'); 
@@ -578,18 +606,11 @@
                         else { res += grid[r1][c2] + grid[r2][c1]; }
                     }
                     
-                    // NEW: STRIP 'X' PADDING ONLY DURING DECRYPTION
                     if (mode === 'decrypt') {
                         let cleanedRes = "";
                         for (let i = 0; i < res.length; i++) {
-                            // If it's an X, and it's sandwiched between two identical letters, skip it.
-                            if (res[i] === 'X' && i > 0 && i < res.length - 1 && res[i-1] === res[i+1]) {
-                                continue; 
-                            }
-                            // If it's a trailing X at the very end of the string, skip it.
-                            if (res[i] === 'X' && i === res.length - 1) {
-                                continue;
-                            }
+                            if (res[i] === 'X' && i > 0 && i < res.length - 1 && res[i-1] === res[i+1]) continue; 
+                            if (res[i] === 'X' && i === res.length - 1) continue;
                             cleanedRes += res[i];
                         }
                         res = cleanedRes;
@@ -597,12 +618,10 @@
                 }
             }
             else if (algo === 'pigpen') {
-                const pigMap = {'A':'┘','B':'⊔','C':'└','D':'⊐','E':'◻','F':'⊏','G':'┐','H':'⊓','I':'┌','J':'⨼','K':'∿','L':'⨽','M':'⊪','N':'⊡','O':'⊩','P':'⨅','Q':'⍝','R':'⨆','S':'⋁','T':'>','U':'<','V':'⋀','W':'⍱','X':'⪢','Y':'⪡','Z':'⍲'};
-                const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
                 if (mode === 'encrypt') {
                     res = txt.toUpperCase().split('').map(c => pigMap[c] || c).join(' ');
                 } else {
-                    res = txt.replace(/\s+/g, '').split('').map(c => reversePigMap[c] || c).join('');
+                    res = txt.split('').map(c => reversePigMap[c] || c).join('');
                 }
             }
             else { 
