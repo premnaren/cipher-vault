@@ -264,7 +264,7 @@
             stdGroup: document.getElementById('stdInputGroup'),
             stegoGroup: document.getElementById('stegoInputGroup'),
             keyGroup: document.getElementById('keyGroup'),
-            keyLabel: document.getElementById('keyLabel'), // Added ID for dynamic updates
+            keyLabel: document.getElementById('keyLabel'),
             stegoFile: document.getElementById('stegoFile'),
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
@@ -340,6 +340,7 @@
             } else { DOM.memStatus.innerText = "OFFLINE"; DOM.memStatus.className = "text-red-500 font-bold"; }
         }
 
+        // --- CLEAR INPUTS ON FLIP ---
         DOM.swapBtn.onclick = () => {
             gsap.to(DOM.card, { rotationY: 90, duration: 0.2, onComplete: () => {
                 mode = mode === 'encrypt' ? 'decrypt' : 'encrypt';
@@ -350,34 +351,36 @@
                 DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
-                // Trigger change event to refresh UI state based on mode
+                // Clear inputs to prevent cross-contamination
+                DOM.mainIn.value = "";
+                DOM.keyIn.value = "";
+                DOM.rsaKeyIn.value = "";
+                DOM.stegoPayload.value = "";
+                DOM.stegoFile.value = "";
+
                 DOM.algo.dispatchEvent(new Event('change'));
 
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
             }});
         };
 
-        // --- DYNAMIC UI UPDATES ---
         DOM.algo.addEventListener('change', () => {
             const val = DOM.algo.value;
             const isStego = val === 'steganography';
             const isRSA = val === 'rsa';
             const isECC = val === 'ecc';
             
-            // Algorithms that do not use a standard key input field
             const noKeyCiphers = ['atbash', 'pigpen', 'ecc', 'steganography', 'rsa'];
             
             DOM.stdGroup.classList.toggle('hidden', isStego);
             DOM.stegoGroup.classList.toggle('hidden', !isStego);
             
-            // Handle Key Group Visibility
             if (noKeyCiphers.includes(val) && !isRSA) {
                 DOM.keyGroup.classList.add('hidden');
             } else {
                 DOM.keyGroup.classList.remove('hidden');
             }
             
-            // Handle RSA Specifics
             if (isRSA) { 
                 DOM.keyIn.classList.add('hidden'); 
                 DOM.rsaKeyIn.classList.remove('hidden'); 
@@ -388,7 +391,6 @@
                 DOM.rsaKeyIn.classList.add('hidden'); 
             }
 
-            // Update Labels and Placeholders dynamically
             if (val === 'caesar') {
                 DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)";
                 DOM.keyIn.placeholder = "e.g., 3";
@@ -412,10 +414,8 @@
             DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
         });
 
-        // Initialize UI on page load to match "Atbash" default
         DOM.algo.dispatchEvent(new Event('change'));
 
-        // --- ENCRYPTION ENGINE ---
         DOM.processBtn.onclick = () => {
             const algo = DOM.algo.value;
             const txt = DOM.mainIn.value;
@@ -597,7 +597,6 @@
             animateText(DOM.out, res);
         };
 
-        // --- VAULT LOGIC ---
         const vaultModal = document.getElementById('vaultModal');
         
         function toggleVault(show) {
