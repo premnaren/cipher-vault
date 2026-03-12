@@ -12,6 +12,9 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+        
+        /* NEW: IMPORT PIGPEN CIPHER FONT */
+        @import url('https://fonts.cdnfonts.com/css/pigpen-cipher');
 
         /* --- THEME SYSTEM --- */
         :root[data-theme="retro"] { 
@@ -43,6 +46,10 @@
 
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
+        
+        /* NEW: CUSTOM FONT CLASS */
+        .font-pigpen { font-family: 'Pigpen Cipher', sans-serif !important; letter-spacing: 4px; font-weight: normal; }
+
         .card-inner { transform-style: preserve-3d; }
         .perspective-container { perspective: 1200px; }
 
@@ -121,7 +128,7 @@
                     <div id="dynamicInputs" class="space-y-4">
                         <div id="stdInputGroup">
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
-                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)]" placeholder="Enter text..."></textarea>
+                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)] transition-all" placeholder="Enter text..."></textarea>
                             
                             <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
                                 </div>
@@ -155,7 +162,7 @@
                             <span>COPY RESULT</span>
                         </button>
                     </div>
-                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm text-[var(--accent)] break-all whitespace-pre-wrap overflow-y-auto relative">
+                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm text-[var(--accent)] break-all whitespace-pre-wrap overflow-y-auto relative transition-all" id="outputWrapper">
                         <div id="outputDisplay">// WAITING FOR INPUT...</div>
                         <canvas id="stegoCanvas" class="hidden"></canvas>
                     </div>
@@ -253,15 +260,6 @@
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        // --- NEW: REFINED EXACT UNICODE PIGPEN MAP ---
-        const pigMap = {
-            'A':'┘', 'B':'⊔', 'C':'└', 'D':'⊐', 'E':'◻', 'F':'⊏', 'G':'┐', 'H':'⊓', 'I':'┌',
-            'J':'┘\u0307', 'K':'⊔\u0307', 'L':'└\u0307', 'M':'⊐\u0307', 'N':'⊡', 'O':'⊏\u0307', 'P':'┐\u0323', 'Q':'⊓\u0323', 'R':'┌\u0323',
-            'S':'∨', 'T':'>', 'U':'<', 'V':'∧',
-            'W':'⩒', 'X':'⋗', 'Y':'⋖', 'Z':'⩑'
-        };
-        const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
-
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -269,6 +267,7 @@
             keyIn: document.getElementById('keyInput'),
             rsaKeyIn: document.getElementById('rsaKeyInput'),
             out: document.getElementById('outputDisplay'),
+            outWrap: document.getElementById('outputWrapper'),
             swapBtn: document.getElementById('swapModeBtn'),
             modeTitle: document.getElementById('modeTitle'),
             btnText: document.getElementById('swapBtnText'),
@@ -284,10 +283,10 @@
             memStatus: document.getElementById('memoryStatus')
         };
 
-        // --- BUILD VIRTUAL KEYBOARD ---
+        // --- NEW: BUILD VIRTUAL KEYBOARD USING TRUE PIGPEN FONT ---
         let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
-        Object.values(pigMap).forEach(sym => {
-            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black hover:border-[var(--primary)] rounded text-xl transition-all flex items-center justify-center font-bold">${sym}</button>`;
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
+            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded text-xl transition-all flex items-center justify-center font-pigpen shadow-md">${sym}</button>`;
         });
         kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">SPACE</button>`;
         kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">⌫ DEL</button>`;
@@ -388,7 +387,6 @@
             const val = DOM.algo.value;
             const isStego = val === 'steganography';
             const isRSA = val === 'rsa';
-            const isECC = val === 'ecc';
             
             const noKeyCiphers = ['atbash', 'pigpen', 'ecc', 'steganography', 'rsa'];
             
@@ -401,39 +399,38 @@
                 DOM.keyGroup.classList.remove('hidden');
             }
             
-            if (val === 'pigpen' && mode === 'decrypt') {
-                DOM.pigpenKb.classList.remove('hidden');
-                DOM.pigpenKb.classList.add('grid');
-                DOM.mainIn.placeholder = "Use the virtual pad below to enter symbols...";
+            // Handle Pigpen Font CSS Application
+            if (val === 'pigpen') {
+                if (mode === 'decrypt') {
+                    DOM.pigpenKb.classList.remove('hidden'); DOM.pigpenKb.classList.add('grid');
+                    DOM.mainIn.classList.add('font-pigpen', 'text-2xl');
+                    DOM.mainIn.placeholder = ""; // Placeholder looks weird in symbols
+                    DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
+                } else {
+                    DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                    DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
+                    DOM.mainIn.placeholder = "Enter text to convert to symbols...";
+                    DOM.outWrap.classList.add('font-pigpen', 'text-3xl');
+                }
             } else {
-                DOM.pigpenKb.classList.add('hidden');
-                DOM.pigpenKb.classList.remove('grid');
+                DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
                 DOM.mainIn.placeholder = "Enter text...";
+                DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
             }
 
             if (isRSA) { 
-                DOM.keyIn.classList.add('hidden'); 
-                DOM.rsaKeyIn.classList.remove('hidden'); 
+                DOM.keyIn.classList.add('hidden'); DOM.rsaKeyIn.classList.remove('hidden'); 
                 DOM.keyLabel.innerText = "RSA PUBLIC/PRIVATE KEY";
                 DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key... (Leave blank to Auto-Generate)" : "Paste Private Key...");
             } else { 
-                DOM.keyIn.classList.remove('hidden'); 
-                DOM.rsaKeyIn.classList.add('hidden'); 
+                DOM.keyIn.classList.remove('hidden'); DOM.rsaKeyIn.classList.add('hidden'); 
             }
 
-            if (val === 'caesar') {
-                DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)";
-                DOM.keyIn.placeholder = "e.g., 3";
-            } else if (val === 'vigenere' || val === 'playfair') {
-                DOM.keyLabel.innerText = "KEYWORD (LETTERS ONLY)";
-                DOM.keyIn.placeholder = "e.g., SECRET";
-            } else if (val === 'rail_fence') {
-                DOM.keyLabel.innerText = "NUMBER OF RAILS (NUMBER > 1)";
-                DOM.keyIn.placeholder = "e.g., 3";
-            } else if (val === 'aes') {
-                DOM.keyLabel.innerText = "ENCRYPTION PASSWORD / KEY";
-                DOM.keyIn.placeholder = (mode === 'decrypt' && keyCache.aes) ? "[ACCESSING CACHED KEY...]" : "Enter secure password...";
-            }
+            if (val === 'caesar') { DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)"; DOM.keyIn.placeholder = "e.g., 3"; } 
+            else if (val === 'vigenere' || val === 'playfair') { DOM.keyLabel.innerText = "KEYWORD (LETTERS ONLY)"; DOM.keyIn.placeholder = "e.g., SECRET"; } 
+            else if (val === 'rail_fence') { DOM.keyLabel.innerText = "NUMBER OF RAILS (NUMBER > 1)"; DOM.keyIn.placeholder = "e.g., 3"; } 
+            else if (val === 'aes') { DOM.keyLabel.innerText = "ENCRYPTION PASSWORD / KEY"; DOM.keyIn.placeholder = (mode === 'decrypt' && keyCache.aes) ? "[ACCESSING CACHED KEY...]" : "Enter secure password..."; }
 
             DOM.out.innerText = "// WAITING...";
             if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
@@ -609,7 +606,6 @@
                         else if (c1===c2) { res += grid[(r1+shift+5)%5][c1] + grid[(r2+shift+5)%5][c2]; }
                         else { res += grid[r1][c2] + grid[r2][c1]; }
                     }
-                    
                     if (mode === 'decrypt') {
                         let cleanedRes = "";
                         for (let i = 0; i < res.length; i++) {
@@ -621,25 +617,21 @@
                     }
                 }
             }
-            // --- UPDATED PIGPEN LOGIC ---
+            // --- NEW PIGPEN FONT LOGIC ---
             else if (algo === 'pigpen') {
-                if (mode === 'encrypt') {
-                    res = txt.toUpperCase().split('').map(c => pigMap[c] || c).join(' ');
-                } else {
-                    // Safe regex split to prevent breaking combining characters
-                    const chars = txt.replace(/\s+/g, '').match(/[\s\S][\u0300-\u036F]*/g) || [];
-                    res = chars.map(c => reversePigMap[c] || c).join('');
-                }
+                res = txt.toUpperCase();
             }
-            else { 
-                res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
-            }
+            else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
 
-            animateText(DOM.out, res);
+            // Turn off animation for Pigpen so the font renders immediately without glitching
+            if (algo === 'pigpen') {
+                DOM.out.innerText = res;
+            } else {
+                animateText(DOM.out, res);
+            }
         };
 
         const vaultModal = document.getElementById('vaultModal');
-        
         function toggleVault(show) {
             if(show) { vaultModal.classList.remove('hidden','pointer-events-none'); setTimeout(()=>vaultModal.classList.remove('opacity-0'), 10); loadFiles(); } 
             else { vaultModal.classList.add('opacity-0','pointer-events-none'); setTimeout(()=>vaultModal.classList.add('hidden'), 300); }
