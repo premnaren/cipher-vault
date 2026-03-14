@@ -178,7 +178,7 @@
     <canvas id="procCanvas" class="hidden"></canvas>
 
     <script>
-        // --- TOAST NOTIFICATION SYSTEM ---
+        // --- CUSTOM TOAST NOTIFICATION SYSTEM ---
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -200,9 +200,7 @@
             toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
             
             container.appendChild(toast);
-            
             setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
-            
             setTimeout(() => {
                 toast.classList.add('translate-x-[120%]');
                 setTimeout(() => toast.remove(), 300);
@@ -228,7 +226,7 @@
         }
         initTheme();
 
-        // --- 0. SOUND SYSTEM ---
+        // --- SOUND SYSTEM ---
         const SoundFX = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
             muted: false,
@@ -605,6 +603,7 @@
                     `;
                 } else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
             } 
+            // --- UPDATED UX: CAESAR UNLOCK NO LONGER DISAPPEARS ---
             else if (method === 'caesar') {
                 let isLocked = !isMe;
                 if (isMe) {
@@ -653,21 +652,36 @@
             });
         }
 
+        // --- UPDATED: RE-USABLE CAESAR UNLOCK BUTTON ---
         async function unlockCaesar(id) {
             const shiftVal = await askShift();
             if(!shiftVal) return;
             const cipherEl = document.getElementById(`cipher-${id}`);
             if(!cipherEl) return;
+            
             const shift = parseInt(shiftVal);
             const decrypted = decryptCaesar(cipherEl.innerText, shift);
             SoundFX.decrypt();
-            document.getElementById(`plain-${id}`).innerText = decrypted;
-            document.getElementById(`plain-${id}`).classList.remove('hidden');
-            cipherEl.classList.add('hidden');
+            
+            // Show result with context
+            const plainEl = document.getElementById(`plain-${id}`);
+            plainEl.innerHTML = `<span class="text-[var(--text-muted)] text-[9px] mr-2">SHIFT [${shift}]:</span><span class="text-green-400">${decrypted}</span>`;
+            plainEl.classList.remove('hidden');
+            
+            // Change button to "RETRY" instead of hiding it
             const btn = document.getElementById(`btn-${id}`);
-            if(btn) btn.classList.add('hidden');
+            if(btn) {
+                btn.innerHTML = `<span>🔄 INCORRECT? RETRY SHIFT</span>`;
+                btn.classList.replace('text-[var(--primary)]', 'text-[var(--accent)]');
+                btn.classList.replace('border-[var(--border)]', 'border-[var(--accent)]');
+            }
+            
             const container = document.getElementById(`msg-${id}`); 
-            if (container && container.dataset.burn === "true") socket.emit("message_seen", id);
+            // Ensure seen event is only fired once for burning messages
+            if (container && container.dataset.burn === "true" && !container.dataset.seenFired) {
+                socket.emit("message_seen", id);
+                container.dataset.seenFired = "true";
+            }
         }
 
         function scanImage(id, imgSrc) {
