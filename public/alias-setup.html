@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptPact | Initialize Identity</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/login.css">
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden bg-[var(--bg-body)] text-[var(--text-main)]">
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3"></div>
+
+    <div id="authCard" class="w-full max-w-[420px] rounded-2xl p-8 z-10">
+        <div class="text-center mb-8">
+            <h2 class="font-brand text-2xl tracking-widest uppercase mb-2">Initialize Identity</h2>
+            <p class="font-mono text-[10px] text-[var(--text-muted)] uppercase tracking-tighter">Choose your permanent agent codename</p>
+        </div>
+
+        <form onsubmit="finalizeAlias(event)" class="space-y-6">
+            <div class="space-y-1">
+                <label class="text-[10px] text-[var(--text-muted)] tracking-widest uppercase ml-1">New Alias</label>
+                <input type="text" id="newAlias" required minlength="3" class="w-full modern-input p-3 rounded-lg font-mono text-sm focus:outline-none" placeholder="e.g. ShadowCipher">
+            </div>
+
+            <button type="submit" class="w-full py-4 bg-[var(--primary)] text-[var(--bg-body)] font-semibold text-xs tracking-[0.2em] rounded-lg font-mono hover:opacity-90">
+                CONFIRM CODENAME
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // Apply theme from login
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('app-theme') || 'void');
+
+        async function finalizeAlias(e) {
+            e.preventDefault();
+            const alias = document.getElementById('newAlias').value;
+            const token = localStorage.getItem('auth-token');
+
+            try {
+                const res = await fetch('/api/auth/update-alias', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'auth-token': token 
+                    },
+                    body: JSON.stringify({ newUsername: alias })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    window.location.href = '/'; // Identity fixed, go to terminal
+                } else {
+                    alert(data.message || "Alias already taken.");
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>

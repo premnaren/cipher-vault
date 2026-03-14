@@ -56,11 +56,9 @@ router.post('/google', async (req, res) => {
         });
         const payload = ticket.getPayload();
         
-        // Find user by email (OAuth users)
         let user = await User.findOne({ email: payload.email });
         
         if (!user) {
-            // Create a temp username from email
             const tempUsername = payload.email.split('@')[0];
             const randomPassword = crypto.randomBytes(16).toString('hex'); 
             const salt = await bcrypt.genSalt(10);
@@ -70,7 +68,7 @@ router.post('/google', async (req, res) => {
                 username: tempUsername,
                 email: payload.email,
                 password: hashedPassword,
-                setupComplete: false // Triggers alias-setup.html redirect
+                setupComplete: false 
             });
             await user.save();
         }
@@ -88,6 +86,40 @@ router.post('/google', async (req, res) => {
     } catch (error) {
         console.error("Google Auth Error:", error);
         res.status(400).json({ message: "Invalid Google Security Token" });
+    }
+});
+
+// --- NEW: ALIAS UPDATE ROUTE ---
+// This handles users picking their custom codename after Google Login
+router.post('/update-alias', async (req, res) => {
+    try {
+        const token = req.header('auth-token');
+        if (!token) return res.status(401).json({ message: "Unauthorized Entry" });
+
+        // Verify the user session
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        const { newUsername } = req.body;
+
+        // Check if the chosen codename is already taken
+        const nameTaken = await User.findOne({ username: newUsername });
+        if (nameTaken) return res.status(400).json({ message: "Alias already claimed by another agent." });
+
+        // Update user and finalize setup
+        const updatedUser = await User.findByIdAndUpdate(
+            verified._id, 
+            { username: newUsername, setupComplete: true },
+            { new: true }
+        );
+
+        // We issue a NEW token with the updated username so the frontend is current
+        const newToken = jwt.sign(
+            { _id: updatedUser._id, username: updatedUser.username }, 
+            process.env.JWT_SECRET
+        );
+
+        res.json({ token: newToken, message: "Identity Finalized." });
+    } catch (err) {
+        res.status(400).json({ message: "Session Expired or Invalid." });
     }
 });
 
