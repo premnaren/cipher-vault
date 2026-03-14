@@ -175,6 +175,17 @@
         </div>
     </div>
 
+    <div id="confirmModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-red-500 w-96 rounded-xl shadow-[0_0_50px_rgba(239,68,68,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-red-500 orbitron mb-4 tracking-widest">SYSTEM ALERT</h3>
+            <p id="confirmModalText" class="text-xs text-[var(--text-main)] font-mono mb-6 uppercase">Are you sure?</p>
+            <div class="flex gap-3">
+                <button id="confirmModalCancel" class="flex-1 py-2 border border-[var(--border)] text-[var(--text-muted)] rounded font-bold hover:bg-[var(--bg-body)] text-xs tracking-widest font-mono transition-all">CANCEL</button>
+                <button id="confirmModalSubmit" class="flex-1 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-500 text-xs tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.5)] font-mono transition-all">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
     <canvas id="procCanvas" class="hidden"></canvas>
 
     <script>
@@ -205,6 +216,30 @@
                 toast.classList.add('translate-x-[120%]');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        // --- CUSTOM CONFIRMATION PROMPT ---
+        function askConfirm(msg) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const content = modal.firstElementChild; 
+                const text = document.getElementById('confirmModalText');
+                const submitBtn = document.getElementById('confirmModalSubmit');
+                const cancelBtn = document.getElementById('confirmModalCancel');
+
+                text.innerText = msg;
+                modal.classList.remove('hidden', 'pointer-events-none');
+                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+
+                const cleanup = () => {
+                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
+                    submitBtn.onclick = null; cancelBtn.onclick = null;
+                };
+
+                submitBtn.onclick = () => { cleanup(); resolve(true); };
+                cancelBtn.onclick = () => { cleanup(); resolve(false); };
+            });
         }
 
         // --- THEME LOGIC ---
@@ -282,38 +317,6 @@
         let currentReceiver = null;
         let activeUsersMap = {}; 
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
-        
-        // --- PROMPT MODAL WRAPPER FOR CAESAR ---
-        function askShift() {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('passwordModal');
-                const content = modal.firstElementChild; 
-                const input = document.getElementById('passwordModalInput');
-                const submitBtn = document.getElementById('passwordModalSubmit');
-                const cancelBtn = document.getElementById('passwordModalCancel');
-
-                modal.classList.remove('hidden', 'pointer-events-none');
-                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
-                input.value = ''; input.focus();
-
-                const cleanup = () => {
-                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
-                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
-                    submitBtn.onclick = null; cancelBtn.onclick = null; input.onkeydown = null;
-                };
-
-                const resolvePass = () => {
-                    const val = input.value;
-                    if(!val) { input.classList.add('border-red-500', 'animate-pulse'); setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500); return; }
-                    cleanup(); resolve(val);
-                };
-                const resolveCancel = () => { cleanup(); resolve(null); };
-
-                submitBtn.onclick = resolvePass;
-                cancelBtn.onclick = resolveCancel;
-                input.onkeydown = (e) => { if (e.key === 'Enter') resolvePass(); if (e.key === 'Escape') resolveCancel(); };
-            });
-        }
 
         let selectedImage = null;
         function handleFileSelect(input) {
@@ -603,7 +606,6 @@
                     `;
                 } else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
             } 
-            // --- UPDATED UX: CAESAR UNLOCK NO LONGER DISAPPEARS ---
             else if (method === 'caesar') {
                 let isLocked = !isMe;
                 if (isMe) {
@@ -614,9 +616,11 @@
                 if (isLocked) {
                     innerHTML = `
                         <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content}</div>
-                        <button id="btn-${msgId}" onclick="unlockCaesar('${msgId}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
-                            <span>🔓 DECRYPT SHIFT</span>
-                        </button>
+                        <div id="btn-${msgId}" class="w-full mt-2">
+                            <button onclick="unlockCaesar('${msgId}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                                <span>🔓 DECRYPT SHIFT</span>
+                            </button>
+                        </div>
                         <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-[var(--border)] pt-2"></div>
                     `;
                 } else {
@@ -652,7 +656,7 @@
             });
         }
 
-        // --- UPDATED: RE-USABLE CAESAR UNLOCK BUTTON ---
+        // --- UPDATED UX: CAESAR UNLOCK DUAL-BUTTON ---
         async function unlockCaesar(id) {
             const shiftVal = await askShift();
             if(!shiftVal) return;
@@ -668,20 +672,34 @@
             plainEl.innerHTML = `<span class="text-[var(--text-muted)] text-[9px] mr-2">SHIFT [${shift}]:</span><span class="text-green-400">${decrypted}</span>`;
             plainEl.classList.remove('hidden');
             
-            // Change button to "RETRY" instead of hiding it
+            // Upgrade button to ACCEPT / RETRY
             const btn = document.getElementById(`btn-${id}`);
             if(btn) {
-                btn.innerHTML = `<span>🔄 INCORRECT? RETRY SHIFT</span>`;
-                btn.classList.replace('text-[var(--primary)]', 'text-[var(--accent)]');
-                btn.classList.replace('border-[var(--border)]', 'border-[var(--accent)]');
+                btn.outerHTML = `
+                <div id="btn-${id}" class="flex gap-2 w-full mt-2">
+                    <button onclick="acceptDecryption('${id}')" class="flex-1 bg-green-900/20 hover:bg-green-500 hover:text-black border border-green-500/50 text-green-500 text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1"><span>✅</span> <span>ACCEPT</span></button>
+                    <button onclick="unlockCaesar('${id}')" class="flex-1 bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1"><span>🔄</span> <span>RETRY</span></button>
+                </div>`;
             }
             
             const container = document.getElementById(`msg-${id}`); 
-            // Ensure seen event is only fired once for burning messages
             if (container && container.dataset.burn === "true" && !container.dataset.seenFired) {
                 socket.emit("message_seen", id);
                 container.dataset.seenFired = "true";
             }
+        }
+
+        // --- NEW: LOCK IN CORRECT DECRYPTION ---
+        function acceptDecryption(id) {
+            const btn = document.getElementById(`btn-${id}`);
+            if(btn) btn.remove();
+            
+            const cipherEl = document.getElementById(`cipher-${id}`);
+            const plainEl = document.getElementById(`plain-${id}`);
+            if(cipherEl && plainEl) {
+                saveToLocalCache(cipherEl.innerText, plainEl.innerText);
+            }
+            showToast("Decryption locked & saved.", "success");
         }
 
         function scanImage(id, imgSrc) {
