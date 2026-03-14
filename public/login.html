@@ -6,7 +6,8 @@
     <title>CryptPact | Gateway</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap');
 
@@ -97,7 +98,7 @@
         <div class="px-8 pt-8 pb-4">
             <div class="flex p-1 bg-black/20 rounded-lg border border-[var(--border)] relative">
                 <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative">SIGN IN</button>
-                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative">CREATE ID</button>
+                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent">CREATE ID</button>
             </div>
         </div>
 
@@ -119,6 +120,31 @@
                         AUTHENTICATE
                     </button>
                 </div>
+
+                <div class="relative flex items-center justify-center mt-6 mb-6">
+                    <div class="absolute w-full border-t border-[var(--border)]"></div>
+                    <span class="relative bg-transparent px-3 text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase" style="background-color: var(--bg-panel);">OR</span>
+                </div>
+
+                <div class="flex justify-center w-full mt-4">
+                    <div id="g_id_onload"
+                        data-client_id="298361900430-hocues839g7fp7nogs3db9vei548mi3l.apps.googleusercontent.com"
+                        data-context="signin"
+                        data-ux_mode="popup"
+                        data-callback="handleGoogleAuth"
+                        data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                        data-type="standard"
+                        data-shape="rectangular"
+                        data-theme="filled_black"
+                        data-text="continue_with"
+                        data-size="large"
+                        data-logo_alignment="left"
+                        data-width="356">
+                    </div>
+                </div>
+
             </form>
         </div>
     </div>
@@ -179,7 +205,7 @@
 
         // --- TAB SWITCHING & ANIMATION ---
         function switchTab(mode) {
-            if (currentMode === mode) return; // Don't do anything if clicking the active tab
+            if (currentMode === mode) return; 
             
             currentMode = mode;
             const tabLogin = document.getElementById('tabLogin');
@@ -189,16 +215,13 @@
             const userInput = document.getElementById('username');
             const passInput = document.getElementById('password');
 
-            // 1. Clear previous inputs (immediate)
             userInput.value = '';
             passInput.value = '';
 
-            // 2. Trigger CSS Reflow to restart animation seamlessly
             form.classList.remove('animate-form-switch');
-            void form.offsetWidth; // Force reflow
+            void form.offsetWidth; 
             form.classList.add('animate-form-switch');
 
-            // 3. Update active pill UI & button text
             if (mode === 'login') {
                 tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative";
                 tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent";
@@ -212,7 +235,32 @@
             userInput.focus();
         }
 
-        // --- AUTH API LOGIC ---
+        // --- GOOGLE OAUTH CALLBACK ---
+        async function handleGoogleAuth(response) {
+            showToast("Verifying Google Auth Matrix...", "info");
+            
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    showToast("Access Granted via Google.", "success");
+                    localStorage.setItem('auth-token', data.token);
+                    setTimeout(() => { window.location.href = '/'; }, 800);
+                } else {
+                    showToast(data.message || "Google Auth rejected.", "error");
+                }
+            } catch (err) {
+                showToast("Network protocol failure.", "error");
+            }
+        }
+
+        // --- STANDARD AUTH API LOGIC ---
         async function handleAuth(e) {
             e.preventDefault();
             const user = document.getElementById('username').value.trim();

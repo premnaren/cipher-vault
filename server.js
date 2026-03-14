@@ -1,3 +1,6 @@
+const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
