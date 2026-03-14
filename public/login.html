@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="retro">
+<html lang="en" data-theme="void">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,82 +8,114 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap');
 
-        /* --- THEME SYSTEM --- */
+        /* --- MODERN THEME SYSTEM --- */
         :root[data-theme="retro"] { 
-            --bg-body: #1c1b1a; --bg-panel: #262422; --primary: #ffb347; --accent: #d48839; --border: #57534e; 
-            --text-main: #e7e5e4; --text-muted: #a8a29e; --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
-            --shadow-3d: 8px 8px 0px #443f3c; 
+            --bg-body: #131211; --bg-panel: rgba(38, 36, 34, 0.7); --primary: #ffb347; --accent: #d48839; --border: rgba(255, 179, 71, 0.2); 
+            --text-main: #e7e5e4; --text-muted: #8a8581; --glow: 0 0 20px rgba(255, 179, 71, 0.1); 
         }
         :root[data-theme="zen"] { 
-            --bg-body: #0f172a; --bg-panel: #1e293b; --primary: #38bdf8; --accent: #818cf8; --border: #475569; 
-            --text-main: #f1f5f9; --text-muted: #94a3b8; --glow: none; 
-            --shadow-3d: 8px 8px 0px #334155; 
+            --bg-body: #0a0f1c; --bg-panel: rgba(15, 23, 42, 0.7); --primary: #38bdf8; --accent: #818cf8; --border: rgba(56, 189, 248, 0.2); 
+            --text-main: #f1f5f9; --text-muted: #64748b; --glow: 0 10px 30px rgba(0,0,0,0.5); 
         }
         :root[data-theme="light"] { 
-            --bg-body: #e5e5e5; --bg-panel: #ffffff; --primary: #2563eb; --accent: #db2777; --border: #a3a3a3; 
-            --text-main: #171717; --text-muted: #525252; --glow: 0 4px 6px rgba(0,0,0,0.1); 
-            --shadow-3d: 8px 8px 0px #737373; 
+            --bg-body: #f3f4f6; --bg-panel: rgba(255, 255, 255, 0.8); --primary: #2563eb; --accent: #db2777; --border: rgba(0, 0, 0, 0.1); 
+            --text-main: #111827; --text-muted: #6b7280; --glow: 0 10px 40px rgba(0,0,0,0.08); 
         }
         :root[data-theme="void"] { 
-            --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #334155; 
-            --text-main: #e2e8f0; --text-muted: #64748b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
-            --shadow-3d: 8px 8px 0px #1e293b; 
+            --bg-body: #030305; --bg-panel: rgba(10, 10, 14, 0.6); --primary: #ffffff; --accent: #888888; --border: rgba(255, 255, 255, 0.1); 
+            --text-main: #ffffff; --text-muted: #666666; --glow: 0 0 40px rgba(255,255,255,0.03); 
         }
         
         body { 
             background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; 
-            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px;
-            transition: all 0.5s ease;
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 40px 40px;
+            transition: background-color 0.8s ease, color 0.8s ease;
         }
 
-        .orbitron { font-family: 'Orbitron', sans-serif; } 
-        .mono { font-family: 'Space Mono', monospace; }
+        .font-brand { font-family: 'Rajdhani', sans-serif; } 
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        #authCard { border: 2px solid var(--border); box-shadow: var(--shadow-3d); transition: all 0.3s ease; }
+        /* Sleek Glassmorphism Card */
+        #authCard { 
+            background: var(--bg-panel);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border); 
+            box-shadow: var(--glow); 
+            transition: all 0.5s ease; 
+        }
+
+        /* Minimalist Input Fields */
+        .modern-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid transparent;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        .modern-input:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--primary);
+        }
+        :root[data-theme="light"] .modern-input { background: rgba(255,255,255,0.5); }
+        :root[data-theme="light"] .modern-input:focus { background: rgba(255,255,255,0.9); }
         
-        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
+        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
 
     <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
-    <div class="fixed top-6 right-6 z-50">
-        <button onclick="cycleTheme()" class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-[var(--border)] bg-[var(--bg-panel)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] hover:scale-110 transition-all shadow-[var(--glow)] text-xl" title="Switch Theme">🎨</button>
+    <div class="fixed top-8 right-8 z-50">
+        <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all backdrop-blur text-sm" title="Switch Theme">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
     </div>
 
-    <div class="mb-8 text-center">
-        <h1 class="text-5xl font-black tracking-widest orbitron mb-2">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
-        <p class="text-[var(--text-muted)] font-mono text-xs tracking-[0.3em]">SECURE ACCESS GATEWAY</p>
+    <div class="mb-10 text-center transform translate-y-4">
+        <h1 class="text-4xl font-brand font-semibold tracking-[0.2em] mb-3">CRYPT<span class="text-[var(--primary)]">PACT</span></h1>
+        <div class="flex items-center justify-center gap-4 opacity-60">
+            <div class="h-px w-8 bg-[var(--text-muted)]"></div>
+            <p class="font-mono text-[10px] tracking-[0.4em] uppercase text-[var(--text-muted)]">Authentication</p>
+            <div class="h-px w-8 bg-[var(--text-muted)]"></div>
+        </div>
     </div>
 
-    <div id="authCard" class="bg-[var(--bg-panel)] w-full max-w-md rounded-xl relative overflow-hidden flex flex-col">
+    <div id="authCard" class="w-full max-w-[420px] rounded-2xl relative overflow-hidden flex flex-col z-10">
         
-        <div class="flex border-b border-[var(--border)]">
-            <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--bg-body)] transition-all">LOGIN</button>
-            <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--text-muted)] border-b-2 border-transparent hover:text-[var(--text-main)] transition-all">REGISTER</button>
+        <div class="px-8 pt-8 pb-4">
+            <div class="flex p-1 bg-black/20 rounded-lg border border-[var(--border)]">
+                <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm">SIGN IN</button>
+                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all">CREATE ID</button>
+            </div>
         </div>
 
-        <div class="p-8 space-y-6">
+        <div class="px-8 pb-8 pt-2">
             <form id="authForm" onsubmit="handleAuth(event)" class="space-y-6">
-                <div>
-                    <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">AGENT ID (USERNAME)</label>
-                    <input type="text" id="username" required autocomplete="off" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none text-[var(--text-main)] transition-colors" placeholder="Enter username...">
+                
+                <div class="space-y-1">
+                    <label class="text-[10px] text-[var(--text-muted)] tracking-widest uppercase ml-1">Identity Alias</label>
+                    <input type="text" id="username" required autocomplete="off" class="w-full modern-input p-3 rounded-lg font-mono text-sm text-[var(--text-main)] focus:outline-none" placeholder="Enter your alias">
                 </div>
                 
-                <div>
-                    <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">PASSPHRASE</label>
-                    <input type="password" id="password" required class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none text-[var(--text-main)] transition-colors" placeholder="••••••••">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-[var(--text-muted)] tracking-widest uppercase ml-1">Security Key</label>
+                    <input type="password" id="password" required class="w-full modern-input p-3 rounded-lg font-mono text-sm text-[var(--text-main)] focus:outline-none tracking-widest" placeholder="••••••••">
                 </div>
 
-                <button type="submit" id="submitBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_var(--primary)] transition-all orbitron mt-4">
-                    INITIALIZE UPLINK
-                </button>
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn" class="w-full py-4 bg-[var(--primary)] text-[var(--bg-body)] font-semibold text-xs tracking-[0.2em] rounded-lg hover:opacity-90 transition-all font-mono">
+                        AUTHENTICATE
+                    </button>
+                </div>
             </form>
         </div>
     </div>
+
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--primary)] rounded-full mix-blend-multiply filter blur-[128px] opacity-10 pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--accent)] rounded-full mix-blend-multiply filter blur-[128px] opacity-10 pointer-events-none"></div>
 
     <script>
         let currentMode = 'login';
@@ -94,20 +126,20 @@
             const toast = document.createElement('div');
             
             let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
-            let icon = 'ℹ️';
+            let icon = '⚡';
             
             if (type === 'error') {
-                colorClass = 'border-red-500 text-red-500 bg-red-900/10';
-                icon = '⚠️';
+                colorClass = 'border-red-500/50 text-red-500 bg-red-900/10';
+                icon = '✕';
             } else if (type === 'success') {
-                colorClass = 'border-green-500 text-green-500 bg-green-900/10';
-                icon = '✅';
+                colorClass = 'border-green-500/50 text-green-500 bg-green-900/10';
+                icon = '✓';
             } else {
-                colorClass = 'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
+                colorClass = 'border-[var(--border)] text-[var(--text-main)] bg-[var(--bg-panel)]';
             }
 
-            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
-            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
+            toast.className = `backdrop-blur-md border ${colorClass} px-4 py-3 rounded-lg shadow-2xl font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto`;
+            toast.innerHTML = `<span class="text-sm opacity-80">${icon}</span> <span class="tracking-wide">${msg}</span>`;
             
             container.appendChild(toast);
             setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
@@ -118,11 +150,11 @@
         }
 
         // --- THEME LOGIC ---
-        const themes = ['retro', 'light', 'zen', 'void'];
+        const themes = ['void', 'retro', 'zen', 'light'];
         let currentThemeIndex = 0;
 
         function initTheme() {
-            const savedTheme = localStorage.getItem('app-theme') || 'retro'; 
+            const savedTheme = localStorage.getItem('app-theme') || 'void'; 
             document.documentElement.setAttribute('data-theme', savedTheme);
             currentThemeIndex = themes.indexOf(savedTheme);
             if(currentThemeIndex === -1) currentThemeIndex = 0;
@@ -136,7 +168,7 @@
         }
         initTheme();
 
-        // --- TAB SWITCHING ---
+        // --- TAB SWITCHING (Minimalist) ---
         function switchTab(mode) {
             currentMode = mode;
             const tabLogin = document.getElementById('tabLogin');
@@ -144,13 +176,13 @@
             const btn = document.getElementById('submitBtn');
 
             if (mode === 'login') {
-                tabLogin.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--bg-body)] transition-all";
-                tabRegister.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--text-muted)] border-b-2 border-transparent hover:text-[var(--text-main)] transition-all";
-                btn.innerText = "INITIALIZE UPLINK";
+                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm";
+                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all";
+                btn.innerText = "AUTHENTICATE";
             } else {
-                tabRegister.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--bg-body)] transition-all";
-                tabLogin.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--text-muted)] border-b-2 border-transparent hover:text-[var(--text-main)] transition-all";
-                btn.innerText = "REGISTER AGENT";
+                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm";
+                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all";
+                btn.innerText = "ESTABLISH IDENTITY";
             }
         }
 
@@ -167,9 +199,9 @@
             const endpoint = currentMode === 'login' ? '/api/auth/login' : '/api/auth/register';
             const btn = document.getElementById('submitBtn');
             const originalText = btn.innerText;
-            btn.innerText = "PROCESSING...";
+            btn.innerText = "VERIFYING...";
             btn.disabled = true;
-            btn.classList.add('opacity-50');
+            btn.classList.add('opacity-50', 'cursor-wait');
 
             try {
                 const res = await fetch(endpoint, {
@@ -182,11 +214,11 @@
 
                 if (res.ok) {
                     if (currentMode === 'register') {
-                        showToast("Agent Registered. Redirecting...", "success");
-                        setTimeout(() => switchTab('login'), 1000);
+                        showToast("Identity established. Redirecting...", "success");
+                        setTimeout(() => switchTab('login'), 1200);
                         document.getElementById('password').value = '';
                     } else {
-                        showToast("Access Granted. Securing connection...", "success");
+                        showToast("Access Granted.", "success");
                         localStorage.setItem('auth-token', data.token);
                         setTimeout(() => { window.location.href = '/'; }, 800);
                     }
@@ -194,11 +226,11 @@
                     showToast(data.message || "Authentication failed.", "error");
                 }
             } catch (err) {
-                showToast("Server connection lost.", "error");
+                showToast("Network protocol failure.", "error");
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
-                btn.classList.remove('opacity-50');
+                btn.classList.remove('opacity-50', 'cursor-wait');
             }
         }
     </script>
