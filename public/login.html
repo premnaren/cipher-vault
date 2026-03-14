@@ -38,7 +38,6 @@
         .font-brand { font-family: 'Rajdhani', sans-serif; } 
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         
-        /* Sleek Glassmorphism Card */
         #authCard { 
             background: var(--bg-panel);
             -webkit-backdrop-filter: blur(20px);
@@ -48,7 +47,6 @@
             transition: all 0.5s ease; 
         }
 
-        /* Minimalist Input Fields */
         .modern-input {
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid transparent;
@@ -62,7 +60,6 @@
         :root[data-theme="light"] .modern-input { background: rgba(255,255,255,0.5); }
         :root[data-theme="light"] .modern-input:focus { background: rgba(255,255,255,0.9); }
         
-        /* Smooth Form Transition Animation */
         @keyframes formFadeSlide {
             0% { opacity: 0; transform: translateY(15px); }
             100% { opacity: 1; transform: translateY(0); }
@@ -155,26 +152,15 @@
     <script>
         let currentMode = 'login';
 
-        // --- TOAST NOTIFICATION SYSTEM ---
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
+            let colorClass = type === 'error' ? 'border-red-500/50 text-red-500 bg-red-900/10' : 
+                             type === 'success' ? 'border-green-500/50 text-green-500 bg-green-900/10' : 
+                             'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-panel)]';
             
-            let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
-            let icon = '⚡';
-            
-            if (type === 'error') {
-                colorClass = 'border-red-500/50 text-red-500 bg-red-900/10';
-                icon = '✕';
-            } else if (type === 'success') {
-                colorClass = 'border-green-500/50 text-green-500 bg-green-900/10';
-                icon = '✓';
-            } else {
-                colorClass = 'border-[var(--border)] text-[var(--text-main)] bg-[var(--bg-panel)]';
-            }
-
             toast.className = `backdrop-blur-md border ${colorClass} px-4 py-3 rounded-lg shadow-2xl font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto`;
-            toast.innerHTML = `<span class="text-sm opacity-80">${icon}</span> <span class="tracking-wide">${msg}</span>`;
+            toast.innerHTML = `<span class="tracking-wide">${msg}</span>`;
             
             container.appendChild(toast);
             setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
@@ -184,39 +170,29 @@
             }, 3000);
         }
 
-        // --- THEME LOGIC ---
         const themes = ['void', 'retro', 'zen', 'light']; 
-        let currentThemeIndex = 0;
-
         function initTheme() {
             const savedTheme = localStorage.getItem('app-theme') || 'void'; 
             document.documentElement.setAttribute('data-theme', savedTheme);
-            currentThemeIndex = themes.indexOf(savedTheme);
-            if(currentThemeIndex === -1) currentThemeIndex = 0;
         }
-
         function cycleTheme() {
-            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-            const newTheme = themes[currentThemeIndex];
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('app-theme', newTheme);
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = themes[(themes.indexOf(current) + 1) % themes.length];
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('app-theme', next);
         }
         initTheme();
 
-        // --- TAB SWITCHING & ANIMATION ---
         function switchTab(mode) {
             if (currentMode === mode) return; 
-            
             currentMode = mode;
             const tabLogin = document.getElementById('tabLogin');
             const tabRegister = document.getElementById('tabRegister');
             const btn = document.getElementById('submitBtn');
             const form = document.getElementById('authForm');
-            const userInput = document.getElementById('username');
-            const passInput = document.getElementById('password');
 
-            userInput.value = '';
-            passInput.value = '';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
 
             form.classList.remove('animate-form-switch');
             void form.offsetWidth; 
@@ -231,27 +207,27 @@
                 tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent";
                 btn.innerText = "ESTABLISH IDENTITY";
             }
-            
-            userInput.focus();
         }
 
-        // --- GOOGLE OAUTH CALLBACK ---
         async function handleGoogleAuth(response) {
             showToast("Verifying Google Auth Matrix...", "info");
-            
             try {
                 const res = await fetch('/api/auth/google', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ credential: response.credential })
                 });
-
                 const data = await res.json();
-
                 if (res.ok) {
-                    showToast("Access Granted via Google.", "success");
                     localStorage.setItem('auth-token', data.token);
-                    setTimeout(() => { window.location.href = '/'; }, 800);
+                    // NEW: Check if agent needs to choose a codename
+                    if (data.setupComplete === false) {
+                        showToast("New Agent Detected. Redirecting to Alias Setup...", "success");
+                        setTimeout(() => { window.location.href = '/alias-setup.html'; }, 1000);
+                    } else {
+                        showToast("Access Granted.", "success");
+                        setTimeout(() => { window.location.href = '/'; }, 800);
+                    }
                 } else {
                     showToast(data.message || "Google Auth rejected.", "error");
                 }
@@ -260,52 +236,38 @@
             }
         }
 
-        // --- STANDARD AUTH API LOGIC ---
         async function handleAuth(e) {
             e.preventDefault();
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
-            
-            if(!user || !pass) {
-                return showToast("Credentials required.", "error");
-            }
-
             const endpoint = currentMode === 'login' ? '/api/auth/login' : '/api/auth/register';
             const btn = document.getElementById('submitBtn');
-            const originalText = btn.innerText;
-            btn.innerText = "VERIFYING...";
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-wait');
 
+            btn.disabled = true;
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: user, password: pass })
                 });
-
                 const data = await res.json();
-
                 if (res.ok) {
                     if (currentMode === 'register') {
-                        showToast("Identity established. Redirecting...", "success");
+                        showToast("Identity established. Sign in now.", "success");
                         setTimeout(() => switchTab('login'), 1200);
                     } else {
                         showToast("Access Granted.", "success");
                         localStorage.setItem('auth-token', data.token);
+                        // Standard login users have setupComplete: true by default
                         setTimeout(() => { window.location.href = '/'; }, 800);
                     }
                 } else {
-                    showToast(data.message || "Authentication failed.", "error");
+                    showToast(data.message || data.error || "Auth failed.", "error");
                 }
             } catch (err) {
-                showToast("Network protocol failure.", "error");
+                showToast("Server unreachable.", "error");
             } finally {
-                if (currentMode !== 'login' || !res || !res.ok) {
-                    btn.innerText = originalText;
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-wait');
-                }
+                btn.disabled = false;
             }
         }
     </script>
