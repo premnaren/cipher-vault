@@ -189,13 +189,13 @@
             const userInput = document.getElementById('username');
             const passInput = document.getElementById('password');
 
-            // 1. Clear previous inputs
+            // 1. Clear previous inputs (immediate)
             userInput.value = '';
             passInput.value = '';
 
-            // 2. Trigger CSS Reflow to restart animation
+            // 2. Trigger CSS Reflow to restart animation seamlessly
             form.classList.remove('animate-form-switch');
-            void form.offsetWidth; // Magic browser trick to force a repaint
+            void form.offsetWidth; // Force reflow
             form.classList.add('animate-form-switch');
 
             // 3. Update active pill UI & button text
