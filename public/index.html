@@ -12,6 +12,9 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+        
+        /* PIGPEN CIPHER FONT */
+        @import url('https://fonts.cdnfonts.com/css/pigpen-cipher');
 
         /* --- THEME SYSTEM --- */
         :root[data-theme="retro"] { 
@@ -43,6 +46,8 @@
 
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
+        .font-pigpen { font-family: 'Pigpen Cipher', sans-serif !important; letter-spacing: 4px; font-weight: normal; }
+
         .card-inner { transform-style: preserve-3d; }
         .perspective-container { perspective: 1200px; }
 
@@ -57,6 +62,8 @@
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/95 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
@@ -123,12 +130,11 @@
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
                             <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)] transition-all" placeholder="Enter text..."></textarea>
                             
-                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
-                                </div>
+                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner"></div>
                         </div>
 
                         <div id="stegoInputGroup" class="hidden">
-                            <label class="text-[10px] font-bold text(--accent) uppercase mb-2 block font-mono">Image Source</label>
+                            <label class="text-[10px] font-bold text-[var(--accent)] uppercase mb-2 block font-mono">Image Source</label>
                             <input type="file" id="stegoFile" title="Upload Source Image" aria-label="Upload Source Image" accept="image/png" class="w-full text-xs text-[var(--text-muted)] file:bg-[var(--accent)] file:text-black file:border-0 file:px-2 file:py-1 file:rounded file:font-bold mb-2">
                             <div id="stegoTextContainer">
                                 <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Secret Payload</label>
@@ -227,10 +233,76 @@
         </div>
     </div>
 
+    <div id="confirmModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-red-500 w-96 rounded-xl shadow-[0_0_50px_rgba(239,68,68,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-red-500 orbitron mb-4 tracking-widest">SYSTEM ALERT</h3>
+            <p id="confirmModalText" class="text-xs text-[var(--text-main)] font-mono mb-6 uppercase">Are you sure?</p>
+            <div class="flex gap-3">
+                <button id="confirmModalCancel" class="flex-1 py-2 border border-[var(--border)] text-[var(--text-muted)] rounded font-bold hover:bg-[var(--bg-body)] text-xs tracking-widest font-mono transition-all">CANCEL</button>
+                <button id="confirmModalSubmit" class="flex-1 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-500 text-xs tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.5)] font-mono transition-all">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
+
+        // --- NEW: CUSTOM TOAST NOTIFICATION SYSTEM ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
+            let icon = 'ℹ️';
+            
+            if (type === 'error') {
+                colorClass = 'border-red-500 text-red-500 bg-red-900/10';
+                icon = '⚠️';
+            } else if (type === 'success') {
+                colorClass = 'border-green-500 text-green-500 bg-green-900/10';
+                icon = '✅';
+            } else {
+                colorClass = 'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
+            }
+
+            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- NEW: CUSTOM CONFIRMATION PROMPT ---
+        function askConfirm(msg) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const content = modal.firstElementChild; 
+                const text = document.getElementById('confirmModalText');
+                const submitBtn = document.getElementById('confirmModalSubmit');
+                const cancelBtn = document.getElementById('confirmModalCancel');
+
+                text.innerText = msg;
+                modal.classList.remove('hidden', 'pointer-events-none');
+                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+
+                const cleanup = () => {
+                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
+                    submitBtn.onclick = null; cancelBtn.onclick = null;
+                };
+
+                submitBtn.onclick = () => { cleanup(); resolve(true); };
+                cancelBtn.onclick = () => { cleanup(); resolve(false); };
+            });
+        }
 
         const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
@@ -253,15 +325,13 @@
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        // --- NEW: REFINED UNICODE SHAPES FOR MAXIMUM PORTABILITY ---
-        // Using specific combinations and base shapes for consistency
-        const pigMap = {
-            'A':'┘', 'B':'⊔', 'C':'└', 'D':'⊐', 'E':'◻', 'F':'⊏', 'G':'┐', 'H':'⊓', 'I':'┌',
-            'J':'┘\u0307', 'K':'⊔\u0307', 'L':'└\u0307', 'M':'⊐\u0307', 'N':'⊡', 'O':'⊏\u0307', 'P':'┐\u0307', 'Q':'⊓\u0307', 'R':'┌\u0307',
-            'S':'∨', 'T':'>', 'U':'<', 'V':'∧',
-            'W':'∨\u0307', 'X':'>\u0307', 'Y':'<\u0307', 'Z':'∧\u0307'
-        };
-        const reversePigMap = Object.fromEntries(Object.entries(pigMap).map(([k, v]) => [v, k]));
+        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
+            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded text-xl transition-all flex items-center justify-center font-pigpen shadow-md">${sym}</button>`;
+        });
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">SPACE</button>`;
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">⌫ DEL</button>`;
+        document.getElementById('pigpenKeyboard').innerHTML = kbHTML;
 
         const DOM = {
             card: document.getElementById('mainCard'),
@@ -270,6 +340,7 @@
             keyIn: document.getElementById('keyInput'),
             rsaKeyIn: document.getElementById('rsaKeyInput'),
             out: document.getElementById('outputDisplay'),
+            outWrap: document.getElementById('outputWrapper'),
             swapBtn: document.getElementById('swapModeBtn'),
             modeTitle: document.getElementById('modeTitle'),
             btnText: document.getElementById('swapBtnText'),
@@ -284,15 +355,6 @@
             stegoTextCont: document.getElementById('stegoTextContainer'),
             memStatus: document.getElementById('memoryStatus')
         };
-
-        // --- NEW: BUILD VIRTUAL KEYBOARD WITH UNICODE SYMBOLS ---
-        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
-        Object.values(pigMap).forEach(sym => {
-            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded text-xl transition-all flex items-center justify-center font-bold shadow-md">${sym}</button>`;
-        });
-        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">SPACE</button>`;
-        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">⌫ DEL</button>`;
-        DOM.pigpenKb.innerHTML = kbHTML;
 
         function askPassword() {
             return new Promise((resolve) => {
@@ -401,25 +463,31 @@
                 DOM.keyGroup.classList.remove('hidden');
             }
             
-            // Show/Hide Virtual Keyboard
-            if (val === 'pigpen' && mode === 'decrypt') {
-                DOM.pigpenKb.classList.remove('hidden');
-                DOM.pigpenKb.classList.add('grid');
-                DOM.mainIn.placeholder = "Use the virtual pad below to enter symbols...";
+            if (val === 'pigpen') {
+                if (mode === 'decrypt') {
+                    DOM.pigpenKb.classList.remove('hidden'); DOM.pigpenKb.classList.add('grid');
+                    DOM.mainIn.classList.add('font-pigpen', 'text-2xl');
+                    DOM.mainIn.placeholder = ""; 
+                    DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
+                } else {
+                    DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                    DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
+                    DOM.mainIn.placeholder = "Enter text to convert to symbols...";
+                    DOM.outWrap.classList.add('font-pigpen', 'text-3xl');
+                }
             } else {
-                DOM.pigpenKb.classList.add('hidden');
-                DOM.pigpenKb.classList.remove('grid');
+                DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
                 DOM.mainIn.placeholder = "Enter text...";
+                DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
             }
 
             if (isRSA) { 
-                DOM.keyIn.classList.add('hidden'); 
-                DOM.rsaKeyIn.classList.remove('hidden'); 
+                DOM.keyIn.classList.add('hidden'); DOM.rsaKeyIn.classList.remove('hidden'); 
                 DOM.keyLabel.innerText = "RSA PUBLIC/PRIVATE KEY";
                 DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key... (Leave blank to Auto-Generate)" : "Paste Private Key...");
             } else { 
-                DOM.keyIn.classList.remove('hidden'); 
-                DOM.rsaKeyIn.classList.add('hidden'); 
+                DOM.keyIn.classList.remove('hidden'); DOM.rsaKeyIn.classList.add('hidden'); 
             }
 
             if (val === 'caesar') { DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)"; DOM.keyIn.placeholder = "e.g., 3"; } 
@@ -444,13 +512,16 @@
             let key = DOM.keyIn.value;
             let res = "";
 
-            if (!txt && algo !== 'steganography') return alert("Input text is required.");
+            if (!txt && algo !== 'steganography') {
+                showToast("Input text is required.", "error");
+                return;
+            }
 
             if (algo === 'steganography') {
                 const cvs = document.getElementById('stegoCanvas');
                 const ctx = cvs.getContext('2d');
                 if (mode === 'encrypt') {
-                    if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return alert("Image and Text required!");
+                    if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return showToast("Image and Text required!", "error");
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = new Image();
@@ -461,16 +532,17 @@
                             const msg = DOM.stegoPayload.value;
                             let bin = ""; for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
                             bin += "00000000";
-                            if(bin.length > imgData.data.length/4) return alert("Message too long");
+                            if(bin.length > imgData.data.length/4) return showToast("Message too long", "error");
                             let dIdx = 0;
                             for(let i=0; i<bin.length; i++) { if(dIdx%4===3) dIdx++; imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]); dIdx++; }
                             ctx.putImageData(imgData, 0, 0);
                             const link = document.createElement('a'); link.download = 'secret_stego.png'; link.href = cvs.toDataURL(); link.click();
-                            animateText(DOM.out, "SUCCESS: Encoded Image Downloaded.");
+                            DOM.out.innerText = "SUCCESS: Encoded Image Downloaded.";
+                            showToast("Encoded Image Downloaded.", "success");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 } else {
-                    if(!DOM.stegoFile.files[0]) return alert("Select Image");
+                    if(!DOM.stegoFile.files[0]) return showToast("Select Image", "error");
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = new Image();
@@ -481,6 +553,7 @@
                             let bin = "", resText = "";
                             for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; resText += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
                             animateText(DOM.out, "DECODED SECRET:\n" + resText);
+                            showToast("Image Decoded.", "success");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 }
@@ -497,23 +570,33 @@
                     else { encryptor.setPublicKey(pubKey); }
                     const enc = encryptor.encrypt(txt);
                     res = enc ? "CIPHERTEXT:\n" + enc + extra : "FAILED";
+                    if(enc) showToast("Encryption Successful", "success"); else showToast("Encryption Failed", "error");
                 } else {
                     let privKey = rsaKeyVal || keyCache.rsa;
-                    if(!privKey) return alert("Private Key Required");
+                    if(!privKey) return showToast("Private Key Required", "error");
                     encryptor.setPrivateKey(privKey);
                     const dec = encryptor.decrypt(txt);
                     res = dec ? "DECRYPTED:\n" + dec : "FAILED";
+                    if(dec) showToast("Decryption Successful", "success"); else showToast("Decryption Failed", "error");
                 }
             } 
             else if (algo === 'aes') {
                 if (mode === 'encrypt') {
-                    if(!key) return alert("Key Required");
+                    if(!key) return showToast("Password/Key Required", "error");
                     keyCache.aes = key; updateMemoryStatus();
                     res = CryptoJS.AES.encrypt(txt, key).toString();
+                    showToast("Encryption Successful", "success");
                 } else {
                     let useKey = key || keyCache.aes;
-                    if(!useKey) return alert("Key Required");
-                    try { const bytes = CryptoJS.AES.decrypt(txt, useKey); res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)"; } catch(e) { res = "INVALID"; }
+                    if(!useKey) return showToast("Password/Key Required", "error");
+                    try { 
+                        const bytes = CryptoJS.AES.decrypt(txt, useKey); 
+                        res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)";
+                        if(res !== "FAILED (Wrong Key)") showToast("Decryption Successful", "success"); else showToast("Wrong Key", "error");
+                    } catch(e) { 
+                        res = "INVALID"; 
+                        showToast("Decryption Failed", "error");
+                    }
                 }
             }
             else if (algo === 'caesar') {
@@ -528,10 +611,10 @@
                 });
             }
             else if (algo === 'vigenere') {
-                if (!key) { res = "ERROR: KEY REQUIRED FOR VIGENERE"; }
+                if (!key) { res = "ERROR: KEY REQUIRED FOR VIGENERE"; showToast("Keyword Required", "error"); }
                 else {
                     let k = key.toUpperCase().replace(/[^A-Z]/g, '');
-                    if (!k) { res = "ERROR: INVALID KEY"; } else {
+                    if (!k) { res = "ERROR: INVALID KEY"; showToast("Letters Only", "error"); } else {
                         let kIdx = 0;
                         res = txt.replace(/[a-zA-Z]/g, c => {
                             const base = c >= 'a' ? 97 : 65;
@@ -545,7 +628,7 @@
             }
             else if (algo === 'rail_fence') {
                 let rails = parseInt(key);
-                if (isNaN(rails) || rails < 2) { res = "ERROR: KEY MUST BE A NUMBER > 1 FOR RAIL FENCE"; }
+                if (isNaN(rails) || rails < 2) { res = "ERROR: KEY MUST BE A NUMBER > 1 FOR RAIL FENCE"; showToast("Number > 1 Required", "error"); }
                 else {
                     if (mode === 'encrypt') {
                         let fence = Array.from({length: rails}, () => []);
@@ -569,7 +652,7 @@
                 }
             }
             else if (algo === 'playfair') {
-                if (!key) { res = "ERROR: KEY REQUIRED FOR PLAYFAIR"; }
+                if (!key) { res = "ERROR: KEY REQUIRED FOR PLAYFAIR"; showToast("Keyword Required", "error"); }
                 else {
                     let k = key.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
                     let alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
@@ -601,7 +684,6 @@
                         else if (c1===c2) { res += grid[(r1+shift+5)%5][c1] + grid[(r2+shift+5)%5][c2]; }
                         else { res += grid[r1][c2] + grid[r2][c1]; }
                     }
-                    
                     if (mode === 'decrypt') {
                         let cleanedRes = "";
                         for (let i = 0; i < res.length; i++) {
@@ -613,25 +695,17 @@
                     }
                 }
             }
-            // --- UPDATED PIGPEN EXECUTION LOGIC ---
             else if (algo === 'pigpen') {
-                if (mode === 'encrypt') {
-                    res = txt.toUpperCase().split('').map(c => pigMap[c] || c).join(' ');
-                } else {
-                    // Safe regex split to prevent breaking combining dot characters
-                    const chars = txt.replace(/\s+/g, '').match(/[\s\S][\u0300-\u036F]*/g) || [];
-                    res = chars.map(c => reversePigMap[c] || c).join('');
-                }
+                res = txt.toUpperCase();
             }
-            else { 
-                res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
-            }
+            else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
 
-            // Remove animation for pigpen output to prevent visual glitches on complex characters
-            if (algo === 'pigpen' && mode === 'encrypt') {
+            if (algo === 'pigpen') {
                 DOM.out.innerText = res;
-            } else {
+            } else if (!res.includes("ERROR")) {
                 animateText(DOM.out, res);
+            } else {
+                DOM.out.innerText = res;
             }
         };
 
@@ -645,7 +719,9 @@
         async function uploadEncryptedFile() {
             const fi = document.getElementById('vaultInput'); 
             const pw = document.getElementById('vaultPass').value;
-            if(!fi.files[0] || !pw) return alert("File and Password required!");
+            if(!fi.files[0] || !pw) return showToast("File and Password required!", "error");
+            
+            showToast("Encrypting file...", "info");
             
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -656,8 +732,10 @@
                 try {
                     await fetch('/api/vault/upload', { method:'POST', headers:{'auth-token':token}, body:fd });
                     loadFiles();
-                    alert("File Encrypted & Uploaded to Vault.");
-                } catch(err) { alert("Upload Failed"); }
+                    showToast("File Encrypted & Uploaded to Vault.", "success");
+                    fi.value = "";
+                    document.getElementById('vaultPass').value = "";
+                } catch(err) { showToast("Upload Failed", "error"); }
             }; 
             reader.readAsDataURL(fi.files[0]);
         }
@@ -681,7 +759,7 @@
                         </div>
                     </div>`; 
                 });
-            } catch(e){ console.log("Vault Load Error", e); }
+            } catch(e){ showToast("Vault Load Error", "error"); }
         }
 
         async function downloadAndDecrypt(fname, og) {
@@ -695,18 +773,29 @@
                 const dec = CryptoJS.AES.decrypt(txt, pw).toString(CryptoJS.enc.Utf8);
                 if(!dec.startsWith('data:')) throw new Error("Decryption failed");
                 const a = document.createElement('a'); a.href = dec; a.download = og.replace('.enc',''); a.click();
-            } catch(e) { alert("ACCESS DENIED: INCORRECT PASSWORD"); }
+                showToast("File Decrypted & Downloaded.", "success");
+            } catch(e) { showToast("ACCESS DENIED: INCORRECT PASSWORD", "error"); }
         }
 
         async function deleteFile(id) {
-            if(!confirm("⚠️ PERMANENTLY DELETE THIS FILE?")) return;
+            const proceed = await askConfirm("WARNING: PERMANENTLY DELETE THIS FILE?");
+            if(!proceed) return;
+            
             try {
                 const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: {'auth-token': token} });
-                if(res.ok) { loadFiles(); } else { alert("Delete Failed"); }
-            } catch(e) { console.error(e); alert("System Error"); }
+                if(res.ok) { 
+                    loadFiles(); 
+                    showToast("File Deleted.", "success"); 
+                } else { 
+                    showToast("Delete Failed", "error"); 
+                }
+            } catch(e) { showToast("System Error", "error"); }
         }
         
-        document.getElementById('copyBtn').onclick = () => navigator.clipboard.writeText(DOM.out.innerText);
+        document.getElementById('copyBtn').onclick = () => {
+            navigator.clipboard.writeText(DOM.out.innerText);
+            showToast("Copied to clipboard!", "success");
+        };
     </script>
 </body>
 </html>
