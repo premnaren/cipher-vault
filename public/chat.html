@@ -70,7 +70,7 @@
 
     <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
-    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20 shadow-[var(--glow)]">
+    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20 shadow-[var(--glow)] relative">
         <div class="flex items-center gap-4">
             <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-[var(--bg-panel)] transition shadow-[var(--glow)]">← TERMINAL</a>
             <h1 class="orbitron text-lg font-bold tracking-widest text-[var(--text-main)] hidden md:block">SECURE <span class="text-[var(--primary)]">UPLINK</span></h1>
@@ -81,13 +81,13 @@
                 <span id="statusText" class="text-green-500 font-bold">ONLINE</span>
             </div>
             
-            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all" title="Change Theme">🎨</button>
-            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs border border-[var(--border)] px-3 py-1 rounded">🔊 ON</button>
-            <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
+            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all cursor-pointer" title="Change Theme">🎨</button>
+            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs border border-[var(--border)] px-3 py-1 rounded cursor-pointer">🔊 ON</button>
+            <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded cursor-pointer">LOGOUT</button>
         </div>
     </nav>
 
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 overflow-hidden relative">
         <aside class="w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10 hidden md:flex">
             <div class="p-4 border-b border-[var(--border)]">
                 <label for="userSearch" class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
@@ -109,18 +109,18 @@
                 </div>
             </div>
 
-            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)]">
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] bg-[var(--bg-body)] z-0">
                 <div class="text-4xl mb-2 opacity-20">📡</div>
                 <p class="mono text-xs tracking-widest">SELECT AN AGENT TO BEGIN</p>
                 <p class="mono text-[10px] text-[var(--primary)] mt-2" id="keyGenStatus">INITIALIZING ENGINES...</p>
             </div>
 
-            <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4 hidden pb-20"></div>
+            <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4 hidden pb-20 relative z-10"></div>
 
-            <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
+            <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden relative z-20">
                 <div class="max-w-4xl mx-auto relative">
                     
-                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-[var(--text-main)] transition-colors flex items-center gap-2">
+                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-[var(--text-main)] transition-colors flex items-center gap-2 cursor-pointer">
                         <span>⚙️ ENCRYPTION SETTINGS</span>
                         <span id="toolArrow">▼</span>
                     </button>
@@ -129,7 +129,7 @@
                         <div class="flex flex-col md:flex-row gap-3">
                             <div class="flex-1">
                                 <label for="cipherMethod" class="text-[9px] text-[var(--primary)] font-bold block mb-1">PROTOCOL</label>
-                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[var(--bg-panel)] border border-[var(--border)] text-[10px] text-[var(--text-main)] p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase">
+                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[var(--bg-panel)] border border-[var(--border)] text-[10px] text-[var(--text-main)] p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase cursor-pointer">
                                     <option value="rsa" selected>1. RSA (MILITARY GRADE)</option>
                                     <option value="caesar">2. CAESAR (BASIC)</option>
                                     <option value="plain">3. PLAINTEXT (NONE)</option>
@@ -141,7 +141,7 @@
                             </div>
                             <div class="flex items-end">
                                 <label class="flex items-center gap-2 cursor-pointer border border-red-900/50 bg-red-900/10 px-3 py-2 rounded hover:bg-red-900/20 h-[34px]">
-                                    <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3">
+                                    <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3 cursor-pointer">
                                     <span class="text-[9px] text-red-500 font-bold orbitron">BURN</span>
                                 </label>
                             </div>
@@ -151,12 +151,12 @@
                     <form id="chatForm" class="flex gap-2 items-center">
                         <input type="file" id="stegoImgInput" accept="image/*" class="hidden" onchange="handleFileSelect(this)" title="Steganography Image Upload" aria-label="Upload Image for Steganography">
                         
-                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative" id="attachBtn" title="Attach Image" aria-label="Attach Image">
+                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative cursor-pointer" id="attachBtn" title="Attach Image" aria-label="Attach Image">
                             📎
                         </button>
 
                         <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type message (Select image to hide text inside it)..." autocomplete="off" class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm text-[var(--text-main)] focus:border-[var(--primary)] outline-none font-mono placeholder-[var(--text-muted)]">
-                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[var(--glow)] transition-all text-xs">SEND</button>
+                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[var(--glow)] transition-all text-xs cursor-pointer">SEND</button>
                     </form>
                 </div>
             </div>
@@ -164,24 +164,13 @@
     </div>
 
     <div id="passwordModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_var(--glow)] p-6 text-center transform scale-95 transition-transform duration-200">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_var(--glow)] p-6 text-center transform scale-95 transition-transform duration-200 pointer-events-auto">
             <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">DECRYPTION REQUIRED</h3>
             <p class="text-[10px] text-[var(--text-muted)] font-mono mb-4 uppercase">ENTER SHIFT KEY (NUMBER)</p>
             <input type="number" id="passwordModalInput" class="w-full bg-[var(--bg-body)] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all" placeholder="e.g. 3" autocomplete="off">
             <div class="flex gap-3">
-                <button id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono">CANCEL</button>
-                <button id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_var(--glow)] font-mono">UNLOCK</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirmModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
-        <div class="relative bg-[var(--bg-panel)] border border-red-500 w-96 rounded-xl shadow-[0_0_50px_rgba(239,68,68,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
-            <h3 class="text-xl font-bold text-red-500 orbitron mb-4 tracking-widest">SYSTEM ALERT</h3>
-            <p id="confirmModalText" class="text-xs text-[var(--text-main)] font-mono mb-6 uppercase">Are you sure?</p>
-            <div class="flex gap-3">
-                <button id="confirmModalCancel" class="flex-1 py-2 border border-[var(--border)] text-[var(--text-muted)] rounded font-bold hover:bg-[var(--bg-body)] text-xs tracking-widest font-mono transition-all">CANCEL</button>
-                <button id="confirmModalSubmit" class="flex-1 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-500 text-xs tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.5)] font-mono transition-all">CONFIRM</button>
+                <button type="button" id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono cursor-pointer">CANCEL</button>
+                <button type="button" id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_var(--glow)] font-mono cursor-pointer">UNLOCK</button>
             </div>
         </div>
     </div>
@@ -216,30 +205,6 @@
                 toast.classList.add('translate-x-[120%]');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
-        }
-
-        // --- CUSTOM CONFIRMATION PROMPT ---
-        function askConfirm(msg) {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('confirmModal');
-                const content = modal.firstElementChild; 
-                const text = document.getElementById('confirmModalText');
-                const submitBtn = document.getElementById('confirmModalSubmit');
-                const cancelBtn = document.getElementById('confirmModalCancel');
-
-                text.innerText = msg;
-                modal.classList.remove('hidden', 'pointer-events-none');
-                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
-
-                const cleanup = () => {
-                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
-                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
-                    submitBtn.onclick = null; cancelBtn.onclick = null;
-                };
-
-                submitBtn.onclick = () => { cleanup(); resolve(true); };
-                cancelBtn.onclick = () => { cleanup(); resolve(false); };
-            });
         }
 
         // --- THEME LOGIC ---
@@ -317,6 +282,38 @@
         let currentReceiver = null;
         let activeUsersMap = {}; 
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
+        
+        // --- PROMPT MODAL WRAPPER FOR CAESAR ---
+        function askShift() {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('passwordModal');
+                const content = modal.firstElementChild; 
+                const input = document.getElementById('passwordModalInput');
+                const submitBtn = document.getElementById('passwordModalSubmit');
+                const cancelBtn = document.getElementById('passwordModalCancel');
+
+                modal.classList.remove('hidden', 'pointer-events-none');
+                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+                input.value = ''; input.focus();
+
+                const cleanup = () => {
+                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
+                    submitBtn.onclick = null; cancelBtn.onclick = null; input.onkeydown = null;
+                };
+
+                const resolvePass = () => {
+                    const val = input.value;
+                    if(!val) { input.classList.add('border-red-500', 'animate-pulse'); setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500); return; }
+                    cleanup(); resolve(val);
+                };
+                const resolveCancel = () => { cleanup(); resolve(null); };
+
+                submitBtn.onclick = resolvePass;
+                cancelBtn.onclick = resolveCancel;
+                input.onkeydown = (e) => { if (e.key === 'Enter') resolvePass(); if (e.key === 'Escape') resolveCancel(); };
+            });
+        }
 
         let selectedImage = null;
         function handleFileSelect(input) {
@@ -550,6 +547,7 @@
             if(el) { SoundFX.burn(); el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
         });
 
+        // --- RENDER INCOMING CHAT MESSAGES ---
         function displayMessage(msg) {
             const area = document.getElementById('messagesArea');
             const senderString = String(msg.sender || msg.senderId);
@@ -572,7 +570,7 @@
 
             const div = document.createElement('div');
             div.id = `msg-${msgId}`; 
-            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter relative z-10`;
             if (isBurn) div.dataset.burn = "true";
 
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-[var(--border)] text-[var(--text-main)]';
@@ -583,9 +581,11 @@
             if (method === 'steganography') {
                 innerHTML = `
                     <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-[var(--border)]"></div>
-                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
-                        <span>🔍 SCAN FOR HIDDEN DATA</span>
-                    </button>
+                    <div class="w-full mt-2 relative z-10">
+                        <button type="button" onclick="scanImage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+                            <span>🔍 SCAN FOR HIDDEN DATA</span>
+                        </button>
+                    </div>
                     <div id="plain-${msgId}" class="hidden text-xs font-mono text-[var(--text-main)] break-all mt-2 border-t border-[var(--border)] pt-2"></div>
                 `;
             } 
@@ -599,9 +599,11 @@
                 if (isLocked) {
                     innerHTML = `
                         <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
-                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
-                            <span>🔓 UNLOCK DATA</span>
-                        </button>
+                        <div class="w-full mt-2 relative z-10">
+                            <button type="button" onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+                                <span>🔓 UNLOCK DATA</span>
+                            </button>
+                        </div>
                         <div id="plain-${msgId}" class="hidden text-xs font-mono text-[var(--text-main)] break-all mt-2 border-t border-[var(--border)] pt-2"></div>
                     `;
                 } else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
@@ -616,11 +618,13 @@
                 if (isLocked) {
                     innerHTML = `
                         <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content}</div>
-                        <div id="btn-${msgId}" class="w-full mt-2">
-                            <button onclick="unlockCaesar('${msgId}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
+                        
+                        <div id="btn-${msgId}" class="w-full mt-2 relative z-20">
+                            <button type="button" onclick="unlockCaesar('${msgId}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2 cursor-pointer pointer-events-auto shadow-md">
                                 <span>🔓 DECRYPT SHIFT</span>
                             </button>
                         </div>
+                        
                         <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-[var(--border)] pt-2"></div>
                     `;
                 } else {
@@ -630,13 +634,13 @@
             else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
 
             div.innerHTML = `
-                <div class="max-w-[75%] rounded-lg p-3 border shadow-lg relative" style="${bgStyle}; ${color.includes('border') ? '' : 'border-color: var(--border)'}">
-                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4 text-[var(--text-muted)]">
+                <div class="max-w-[75%] rounded-lg p-3 border shadow-lg relative z-0" style="${bgStyle}; ${color.includes('border') ? '' : 'border-color: var(--border)'}">
+                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4 text-[var(--text-muted)] pointer-events-none">
                         <span>${isMe ? 'YOU' : (currentReceiver ? currentReceiver.username : 'Partner')}</span>
                         <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
                     </div>
                     ${innerHTML}
-                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase">🔒 ${method}</div>` : ''}
+                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase pointer-events-none">🔒 ${method}</div>` : ''}
                 </div>
             `;
             
@@ -667,18 +671,16 @@
             const decrypted = decryptCaesar(cipherEl.innerText, shift);
             SoundFX.decrypt();
             
-            // Show result with context
             const plainEl = document.getElementById(`plain-${id}`);
             plainEl.innerHTML = `<span class="text-[var(--text-muted)] text-[9px] mr-2">SHIFT [${shift}]:</span><span class="text-green-400">${decrypted}</span>`;
             plainEl.classList.remove('hidden');
             
-            // Upgrade button to ACCEPT / RETRY
             const btn = document.getElementById(`btn-${id}`);
             if(btn) {
                 btn.outerHTML = `
-                <div id="btn-${id}" class="flex gap-2 w-full mt-2">
-                    <button onclick="acceptDecryption('${id}')" class="flex-1 bg-green-900/20 hover:bg-green-500 hover:text-black border border-green-500/50 text-green-500 text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1"><span>✅</span> <span>ACCEPT</span></button>
-                    <button onclick="unlockCaesar('${id}')" class="flex-1 bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1"><span>🔄</span> <span>RETRY</span></button>
+                <div id="btn-${id}" class="flex gap-2 w-full mt-2 relative z-20">
+                    <button type="button" onclick="acceptDecryption('${id}')" class="flex-1 bg-green-900/20 hover:bg-green-500 hover:text-black border border-green-500/50 text-green-500 text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><span>✅</span> <span>ACCEPT</span></button>
+                    <button type="button" onclick="unlockCaesar('${id}')" class="flex-1 bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><span>🔄</span> <span>RETRY</span></button>
                 </div>`;
             }
             
@@ -689,7 +691,6 @@
             }
         }
 
-        // --- NEW: LOCK IN CORRECT DECRYPTION ---
         function acceptDecryption(id) {
             const btn = document.getElementById(`btn-${id}`);
             if(btn) btn.remove();
