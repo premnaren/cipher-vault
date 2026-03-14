@@ -61,6 +61,15 @@
         :root[data-theme="light"] .modern-input { background: rgba(255,255,255,0.5); }
         :root[data-theme="light"] .modern-input:focus { background: rgba(255,255,255,0.9); }
         
+        /* Smooth Form Transition Animation */
+        @keyframes formFadeSlide {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-form-switch {
+            animation: formFadeSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
@@ -86,14 +95,14 @@
     <div id="authCard" class="w-full max-w-[420px] rounded-2xl relative overflow-hidden flex flex-col z-10">
         
         <div class="px-8 pt-8 pb-4">
-            <div class="flex p-1 bg-black/20 rounded-lg border border-[var(--border)]">
-                <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm">SIGN IN</button>
-                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all">CREATE ID</button>
+            <div class="flex p-1 bg-black/20 rounded-lg border border-[var(--border)] relative">
+                <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative">SIGN IN</button>
+                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative">CREATE ID</button>
             </div>
         </div>
 
         <div class="px-8 pb-8 pt-2">
-            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-6">
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-6 animate-form-switch">
                 
                 <div class="space-y-1">
                     <label class="text-[10px] text-[var(--text-muted)] tracking-widest uppercase ml-1">Identity Alias</label>
@@ -106,7 +115,7 @@
                 </div>
 
                 <div class="pt-4">
-                    <button type="submit" id="submitBtn" class="w-full py-4 bg-[var(--primary)] text-[var(--bg-body)] font-semibold text-xs tracking-[0.2em] rounded-lg hover:opacity-90 transition-all font-mono">
+                    <button type="submit" id="submitBtn" class="w-full py-4 bg-[var(--primary)] text-[var(--bg-body)] font-semibold text-xs tracking-[0.2em] rounded-lg hover:opacity-90 transition-all font-mono shadow-[var(--glow)]">
                         AUTHENTICATE
                     </button>
                 </div>
@@ -150,7 +159,7 @@
         }
 
         // --- THEME LOGIC ---
-        const themes = ['void', 'retro', 'zen', 'light'];
+        const themes = ['void', 'retro', 'zen', 'light']; 
         let currentThemeIndex = 0;
 
         function initTheme() {
@@ -168,22 +177,39 @@
         }
         initTheme();
 
-        // --- TAB SWITCHING (Minimalist) ---
+        // --- TAB SWITCHING & ANIMATION ---
         function switchTab(mode) {
+            if (currentMode === mode) return; // Don't do anything if clicking the active tab
+            
             currentMode = mode;
             const tabLogin = document.getElementById('tabLogin');
             const tabRegister = document.getElementById('tabRegister');
             const btn = document.getElementById('submitBtn');
+            const form = document.getElementById('authForm');
+            const userInput = document.getElementById('username');
+            const passInput = document.getElementById('password');
 
+            // 1. Clear previous inputs
+            userInput.value = '';
+            passInput.value = '';
+
+            // 2. Trigger CSS Reflow to restart animation
+            form.classList.remove('animate-form-switch');
+            void form.offsetWidth; // Magic browser trick to force a repaint
+            form.classList.add('animate-form-switch');
+
+            // 3. Update active pill UI & button text
             if (mode === 'login') {
-                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm";
-                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all";
+                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative";
+                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent";
                 btn.innerText = "AUTHENTICATE";
             } else {
-                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm";
-                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all";
+                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative";
+                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent";
                 btn.innerText = "ESTABLISH IDENTITY";
             }
+            
+            userInput.focus();
         }
 
         // --- AUTH API LOGIC ---
@@ -216,7 +242,6 @@
                     if (currentMode === 'register') {
                         showToast("Identity established. Redirecting...", "success");
                         setTimeout(() => switchTab('login'), 1200);
-                        document.getElementById('password').value = '';
                     } else {
                         showToast("Access Granted.", "success");
                         localStorage.setItem('auth-token', data.token);
@@ -228,9 +253,11 @@
             } catch (err) {
                 showToast("Network protocol failure.", "error");
             } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-wait');
+                if (currentMode !== 'login' || !res || !res.ok) {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-wait');
+                }
             }
         }
     </script>
