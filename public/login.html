@@ -1,267 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="retro">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptPact | Access Control</title>
+    <title>CryptPact | Gateway</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
+
     <style>
-        /* --- CORE THEME --- */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+
+        /* --- THEME SYSTEM --- */
+        :root[data-theme="retro"] { 
+            --bg-body: #1c1b1a; --bg-panel: #262422; --primary: #ffb347; --accent: #d48839; --border: #57534e; 
+            --text-main: #e7e5e4; --text-muted: #a8a29e; --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
+            --shadow-3d: 8px 8px 0px #443f3c; 
+        }
+        :root[data-theme="zen"] { 
+            --bg-body: #0f172a; --bg-panel: #1e293b; --primary: #38bdf8; --accent: #818cf8; --border: #475569; 
+            --text-main: #f1f5f9; --text-muted: #94a3b8; --glow: none; 
+            --shadow-3d: 8px 8px 0px #334155; 
+        }
+        :root[data-theme="light"] { 
+            --bg-body: #e5e5e5; --bg-panel: #ffffff; --primary: #2563eb; --accent: #db2777; --border: #a3a3a3; 
+            --text-main: #171717; --text-muted: #525252; --glow: 0 4px 6px rgba(0,0,0,0.1); 
+            --shadow-3d: 8px 8px 0px #737373; 
+        }
+        :root[data-theme="void"] { 
+            --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #334155; 
+            --text-main: #e2e8f0; --text-muted: #64748b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
+            --shadow-3d: 8px 8px 0px #1e293b; 
+        }
+        
         body { 
-            background-color: #050508; 
-            color: #e2e8f0; 
-            font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; 
-            cursor: none !important; /* STRICTLY HIDE SYSTEM CURSOR */
+            background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px;
+            transition: all 0.5s ease;
         }
 
-        /* Prevent default cursors on all elements */
-        input, button, a, .cyber-input, .clip-path-polygon, label {
-            cursor: none !important;
-        }
-
-        /* --- CUSTOM TACTICAL CURSOR --- */
-        #cursor {
-            position: fixed;
-            top: 0; left: 0;
-            pointer-events: none; /* Allows clicking through */
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            mix-blend-mode: difference;
-        }
-
-        /* The Center Dot */
-        .cursor-dot {
-            width: 4px; height: 4px;
-            background-color: #00f3ff;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #00f3ff;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            transition: all 0.2s ease;
-        }
-
-        /* The Outer Scanning Ring */
-        .cursor-reticle {
-            width: 30px; height: 30px;
-            border: 1px dashed rgba(0, 243, 255, 0.5);
-            border-radius: 50%;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            animation: scanSpin 4s linear infinite;
-            transition: all 0.3s ease;
-        }
-
-        /* --- HOVER STATE (TARGET LOCKED) --- */
-        /* When body has class 'hovering', transform cursor */
-        body.hovering .cursor-reticle {
-            width: 50px; height: 50px;
-            border-radius: 4px; /* Turn into square */
-            border: 2px solid #bc13fe; /* Purple */
-            border-left: 2px solid transparent; /* Gap effect */
-            border-right: 2px solid transparent;
-            background-color: rgba(188, 19, 254, 0.05);
-            box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
-            animation: lockSpin 1s infinite linear; /* Fast spin */
-        }
-
-        body.hovering .cursor-dot {
-            background-color: #bc13fe;
-            box-shadow: 0 0 15px #bc13fe;
-            transform: translate(-50%, -50%) scale(1.5);
-        }
-
-        /* Animation Definitions */
-        @keyframes scanSpin { 
-            0% { transform: translate(-50%, -50%) rotate(0deg); } 
-            100% { transform: translate(-50%, -50%) rotate(360deg); } 
-        }
+        .orbitron { font-family: 'Orbitron', sans-serif; } 
+        .mono { font-family: 'Space Mono', monospace; }
         
-        @keyframes lockSpin { 
-            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 
-            50% { transform: translate(-50%, -50%) rotate(180deg) scale(0.9); } 
-            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); } 
-        }
-
-        /* --- MATRIX CANVAS --- */
-        #matrixCanvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -1;
-            opacity: 0.2; 
-        }
-
-        /* --- UI ELEMENTS --- */
-        .glow { box-shadow: 0 0 30px rgba(0, 243, 255, 0.15); border: 1px solid rgba(0, 243, 255, 0.3); }
+        #authCard { border: 2px solid var(--border); box-shadow: var(--shadow-3d); transition: all 0.3s ease; }
         
-        .cyber-input { 
-            background: rgba(15, 16, 21, 0.8); 
-            border: 1px solid #1e293b; 
-            color: #00f3ff; 
-            font-family: monospace;
-            transition: all 0.3s ease;
-        }
-        
-        .cyber-input:focus { 
-            border-color: #00f3ff; 
-            outline: none; 
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); 
-            background: rgba(0, 0, 0, 0.9);
-        }
-
-        .clip-path-polygon {
-            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
-        }
+        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
     </style>
 </head>
-<body class="h-screen flex items-center justify-center">
+<body class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
 
-    <canvas id="matrixCanvas"></canvas>
-    
-    <div id="cursor">
-        <div class="cursor-reticle"></div>
-        <div class="cursor-dot"></div>
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div class="fixed top-6 right-6 z-50">
+        <button onclick="cycleTheme()" class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-[var(--border)] bg-[var(--bg-panel)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] hover:scale-110 transition-all shadow-[var(--glow)] text-xl" title="Switch Theme">🎨</button>
     </div>
 
-    <div class="w-96 p-8 bg-black/80 backdrop-blur-md rounded-xl glow text-center relative overflow-hidden z-10">
-        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff] shadow-[0_0_20px_#00f3ff]"></div>
+    <div class="mb-8 text-center">
+        <h1 class="text-5xl font-black tracking-widest orbitron mb-2">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
+        <p class="text-[var(--text-muted)] font-mono text-xs tracking-[0.3em]">SECURE ACCESS GATEWAY</p>
+    </div>
 
-        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-[0.2em] animate-pulse">CRYPT PACT</h1>
-        <p class="text-[10px] text-gray-500 mb-8 font-mono tracking-widest">SECURE ACCESS TERMINAL</p>
+    <div id="authCard" class="bg-[var(--bg-panel)] w-full max-w-md rounded-xl relative overflow-hidden flex flex-col">
         
-        <form id="authForm" class="space-y-5">
-            <div class="relative group">
-                <input type="text" id="username" placeholder="AGENT ID" required 
-                       class="w-full p-3 rounded cyber-input pl-4">
-                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">ID</div>
-            </div>
-            
-            <div class="relative group">
-                <input type="password" id="password" placeholder="PASSCODE" required 
-                       class="w-full p-3 rounded cyber-input pl-4">
-                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">KEY</div>
-            </div>
-            
-            <button type="submit" 
-                    class="w-full py-4 bg-[#00f3ff] text-black font-black hover:bg-white hover:shadow-[0_0_20px_#00f3ff] transition-all tracking-[0.2em] clip-path-polygon transform active:scale-95">
-                AUTHENTICATE
-            </button>
-            
-            <p id="message" class="text-xs text-red-500 font-mono min-h-[20px]"></p>
+        <div class="flex border-b border-[var(--border)]">
+            <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--bg-body)] transition-all">LOGIN</button>
+            <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--text-muted)] border-b-2 border-transparent hover:text-[var(--text-main)] transition-all">REGISTER</button>
+        </div>
 
-            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full transition-colors font-mono tracking-wider">
-                :: NEW AGENT? INITIALIZE REGISTRATION ::
-            </button>
-        </form>
+        <div class="p-8 space-y-6">
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-6">
+                <div>
+                    <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">AGENT ID (USERNAME)</label>
+                    <input type="text" id="username" required autocomplete="off" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none text-[var(--text-main)] transition-colors" placeholder="Enter username...">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">PASSPHRASE</label>
+                    <input type="password" id="password" required class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none text-[var(--text-main)] transition-colors" placeholder="••••••••">
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-4 bg-[var(--primary)] text-black font-black tracking-widest rounded hover:shadow-[0_0_20px_var(--primary)] transition-all orbitron mt-4">
+                    INITIALIZE UPLINK
+                </button>
+            </form>
+        </div>
     </div>
 
     <script>
-        // --- 1. MATRIX RAIN EFFECT ---
-        const canvas = document.getElementById('matrixCanvas');
-        const ctx = canvas.getContext('2d');
+        let currentMode = 'login';
 
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        // --- TOAST NOTIFICATION SYSTEM ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
+            let icon = 'ℹ️';
+            
+            if (type === 'error') {
+                colorClass = 'border-red-500 text-red-500 bg-red-900/10';
+                icon = '⚠️';
+            } else if (type === 'success') {
+                colorClass = 'border-green-500 text-green-500 bg-green-900/10';
+                icon = '✅';
+            } else {
+                colorClass = 'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
+            }
+
+            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
-        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const fontSize = 14;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
+        // --- THEME LOGIC ---
+        const themes = ['retro', 'light', 'zen', 'void'];
+        let currentThemeIndex = 0;
 
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(5, 5, 8, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00f3ff';
-            ctx.font = fontSize + 'px monospace';
+        function initTheme() {
+            const savedTheme = localStorage.getItem('app-theme') || 'retro'; 
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            currentThemeIndex = themes.indexOf(savedTheme);
+            if(currentThemeIndex === -1) currentThemeIndex = 0;
+        }
 
-            for (let i = 0; i < drops.length; i++) {
-                const text = chars.charAt(Math.floor(Math.random() * chars.length));
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
+        function cycleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('app-theme', newTheme);
+        }
+        initTheme();
+
+        // --- TAB SWITCHING ---
+        function switchTab(mode) {
+            currentMode = mode;
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const btn = document.getElementById('submitBtn');
+
+            if (mode === 'login') {
+                tabLogin.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--bg-body)] transition-all";
+                tabRegister.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--text-muted)] border-b-2 border-transparent hover:text-[var(--text-main)] transition-all";
+                btn.innerText = "INITIALIZE UPLINK";
+            } else {
+                tabRegister.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--primary)] border-b-2 border-[var(--primary)] bg-[var(--bg-body)] transition-all";
+                tabLogin.className = "flex-1 py-4 text-xs font-bold tracking-widest font-mono text-[var(--text-muted)] border-b-2 border-transparent hover:text-[var(--text-main)] transition-all";
+                btn.innerText = "REGISTER AGENT";
             }
         }
-        setInterval(drawMatrix, 50);
 
-        // --- 2. CUSTOM TACTICAL CURSOR LOGIC ---
-        const cursor = document.getElementById('cursor');
-        const body = document.body;
-
-        // Smoothly follow mouse
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        });
-
-        // Trigger "Target Locked" state on hover
-        const interactables = document.querySelectorAll('button, input, a, .clickable');
-        interactables.forEach(el => {
-            el.addEventListener('mouseenter', () => body.classList.add('hovering'));
-            el.addEventListener('mouseleave', () => body.classList.remove('hovering'));
-        });
-
-        // --- 3. AUTH LOGIC ---
-        let isLogin = true;
-        const form = document.getElementById('authForm');
-        const msg = document.getElementById('message');
-        
-        document.getElementById('toggleAuth').onclick = (e) => {
-            isLogin = !isLogin;
-            e.target.innerText = isLogin ? ":: NEW AGENT? INITIALIZE REGISTRATION ::" : ":: HAVE ID? LOGIN ::";
-            document.querySelector('button[type="submit"]').innerText = isLogin ? "AUTHENTICATE" : "REGISTER IDENTITY";
-            msg.innerText = "";
-        };
-
-        form.onsubmit = async (e) => {
+        // --- AUTH API LOGIC ---
+        async function handleAuth(e) {
             e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            
+            if(!user || !pass) {
+                return showToast("Credentials required.", "error");
+            }
 
-            const btn = document.querySelector('button[type="submit"]');
+            const endpoint = currentMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+            const btn = document.getElementById('submitBtn');
             const originalText = btn.innerText;
             btn.innerText = "PROCESSING...";
-            btn.style.opacity = "0.7";
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
 
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: u, password: p })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
                 });
 
                 const data = await res.json();
-                
-                if(!res.ok) {
-                    msg.innerText = "ERROR: " + (data.error || "Access Denied");
-                    msg.className = "text-xs text-red-500 font-mono mt-2";
-                } else {
-                    if(data.token) {
-                        localStorage.setItem('auth-token', data.token);
-                        window.location.href = '/index.html';
+
+                if (res.ok) {
+                    if (currentMode === 'register') {
+                        showToast("Agent Registered. Redirecting...", "success");
+                        setTimeout(() => switchTab('login'), 1000);
+                        document.getElementById('password').value = '';
                     } else {
-                        msg.innerText = "IDENTITY CREATED. PLEASE LOGIN.";
-                        msg.className = "text-xs text-[#00f3ff] font-mono mt-2";
-                        setTimeout(() => document.getElementById('toggleAuth').click(), 1500);
+                        showToast("Access Granted. Securing connection...", "success");
+                        localStorage.setItem('auth-token', data.token);
+                        setTimeout(() => { window.location.href = '/'; }, 800);
                     }
+                } else {
+                    showToast(data.message || "Authentication failed.", "error");
                 }
             } catch (err) {
-                msg.innerText = "SYSTEM FAILURE: SERVER UNREACHABLE";
+                showToast("Server connection lost.", "error");
             } finally {
                 btn.innerText = originalText;
-                btn.style.opacity = "1";
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
             }
-        };
+        }
     </script>
 </body>
 </html>
