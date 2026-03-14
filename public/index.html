@@ -13,7 +13,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
         
-        /* PIGPEN CIPHER FONT */
+        /* EXACT PIGPEN FONT - Matches your reference image perfectly */
         @import url('https://fonts.cdnfonts.com/css/pigpen-cipher');
 
         /* --- THEME SYSTEM --- */
@@ -46,6 +46,8 @@
 
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
+        
+        /* CLASS TO APPLY TRUE PIGPEN SHAPES */
         .font-pigpen { font-family: 'Pigpen Cipher', sans-serif !important; letter-spacing: 4px; font-weight: normal; }
 
         .card-inner { transform-style: preserve-3d; }
@@ -130,7 +132,8 @@
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
                             <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)] transition-all" placeholder="Enter text..."></textarea>
                             
-                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner"></div>
+                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
+                                </div>
                         </div>
 
                         <div id="stegoInputGroup" class="hidden">
@@ -249,7 +252,7 @@
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- NEW: CUSTOM TOAST NOTIFICATION SYSTEM ---
+        // --- CUSTOM TOAST NOTIFICATION SYSTEM ---
         function showToast(msg, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -271,16 +274,14 @@
             toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
             
             container.appendChild(toast);
-            
             setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
-            
             setTimeout(() => {
                 toast.classList.add('translate-x-[120%]');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
 
-        // --- NEW: CUSTOM CONFIRMATION PROMPT ---
+        // --- CUSTOM CONFIRMATION PROMPT ---
         function askConfirm(msg) {
             return new Promise((resolve) => {
                 const modal = document.getElementById('confirmModal');
@@ -325,14 +326,6 @@
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
-            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded text-xl transition-all flex items-center justify-center font-pigpen shadow-md">${sym}</button>`;
-        });
-        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">SPACE</button>`;
-        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest">⌫ DEL</button>`;
-        document.getElementById('pigpenKeyboard').innerHTML = kbHTML;
-
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -356,36 +349,14 @@
             memStatus: document.getElementById('memoryStatus')
         };
 
-        function askPassword() {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('passwordModal');
-                const content = modal.firstElementChild; 
-                const input = document.getElementById('passwordModalInput');
-                const submitBtn = document.getElementById('passwordModalSubmit');
-                const cancelBtn = document.getElementById('passwordModalCancel');
-
-                modal.classList.remove('hidden', 'pointer-events-none');
-                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
-                input.value = ''; input.focus();
-
-                const cleanup = () => {
-                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
-                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
-                    submitBtn.onclick = null; cancelBtn.onclick = null; input.onkeydown = null;
-                };
-
-                const resolvePass = () => {
-                    const val = input.value;
-                    if(!val) { input.classList.add('border-red-500', 'animate-pulse'); setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500); return; }
-                    cleanup(); resolve(val);
-                };
-                const resolveCancel = () => { cleanup(); resolve(null); };
-
-                submitBtn.onclick = resolvePass;
-                cancelBtn.onclick = resolveCancel;
-                input.onkeydown = (e) => { if (e.key === 'Enter') resolvePass(); if (e.key === 'Escape') resolveCancel(); };
-            });
-        }
+        // --- BUILD PIGPEN VIRTUAL KEYBOARD (Uses A-Z and true font CSS) ---
+        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
+            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded-md text-2xl transition-all flex items-center justify-center font-pigpen shadow-md h-12">${sym}</button>`;
+        });
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest h-10">SPACE</button>`;
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white rounded text-xs font-mono transition-all font-bold tracking-widest h-10">⌫ DEL</button>`;
+        DOM.pigpenKb.innerHTML = kbHTML;
 
         function showPage(page) {
             const term = document.getElementById('terminalPage');
@@ -463,6 +434,7 @@
                 DOM.keyGroup.classList.remove('hidden');
             }
             
+            // Apply True Pigpen Font CSS Based on Mode
             if (val === 'pigpen') {
                 if (mode === 'decrypt') {
                     DOM.pigpenKb.classList.remove('hidden'); DOM.pigpenKb.classList.add('grid');
@@ -483,11 +455,13 @@
             }
 
             if (isRSA) { 
-                DOM.keyIn.classList.add('hidden'); DOM.rsaKeyIn.classList.remove('hidden'); 
+                DOM.keyIn.classList.add('hidden'); 
+                DOM.rsaKeyIn.classList.remove('hidden'); 
                 DOM.keyLabel.innerText = "RSA PUBLIC/PRIVATE KEY";
                 DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key... (Leave blank to Auto-Generate)" : "Paste Private Key...");
             } else { 
-                DOM.keyIn.classList.remove('hidden'); DOM.rsaKeyIn.classList.add('hidden'); 
+                DOM.keyIn.classList.remove('hidden'); 
+                DOM.rsaKeyIn.classList.add('hidden'); 
             }
 
             if (val === 'caesar') { DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)"; DOM.keyIn.placeholder = "e.g., 3"; } 
@@ -696,11 +670,14 @@
                 }
             }
             else if (algo === 'pigpen') {
-                res = txt.toUpperCase();
+                res = txt.toUpperCase(); // True font handles visual translation
             }
-            else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
+            else { 
+                res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
+            }
 
-            if (algo === 'pigpen') {
+            // Disable flashing matrix animation for Pigpen shapes, else use animation
+            if (algo === 'pigpen' && !res.includes("ERROR")) {
                 DOM.out.innerText = res;
             } else if (!res.includes("ERROR")) {
                 animateText(DOM.out, res);
