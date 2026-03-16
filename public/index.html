@@ -83,6 +83,10 @@
             </a>
         </div>
         <div class="flex items-center gap-4">
+            <div class="hidden md:flex flex-col items-end mr-4">
+                <span id="terminal-prompt" class="text-[10px] font-mono font-bold text-[var(--primary)] tracking-widest uppercase">AGENT@CRYPTPACT:~ $</span>
+                <span class="text-[8px] font-mono text-[var(--text-muted)] uppercase opacity-70">Uplink: Active</span>
+            </div>
             <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] transition-all" title="Switch Theme">🎨</button>
             <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
             <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
@@ -132,7 +136,7 @@
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
                             <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)] transition-all" placeholder="Enter text..."></textarea>
                             
-                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
+                            <div id="pigpenKeyboard" class="hidden mt-3 grid grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
                                 </div>
                         </div>
 
@@ -248,63 +252,28 @@
     </div>
 
     <script>
+        // --- 1. AUTH & IDENTITY ENGINE ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- CUSTOM TOAST NOTIFICATION SYSTEM ---
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            
-            let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
-            let icon = 'ℹ️';
-            
-            if (type === 'error') {
-                colorClass = 'border-red-500 text-red-500 bg-red-900/10';
-                icon = '⚠️';
-            } else if (type === 'success') {
-                colorClass = 'border-green-500 text-green-500 bg-green-900/10';
-                icon = '✅';
-            } else {
-                colorClass = 'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
-            }
-
-            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
-            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
-            
-            container.appendChild(toast);
-            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
-            setTimeout(() => {
-                toast.classList.add('translate-x-[120%]');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+        function getAgentAlias() {
+            try {
+                // Decode JWT Payload
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const payload = JSON.parse(window.atob(base64));
+                return payload.username || "AGENT";
+            } catch (e) { return "GHOST"; }
         }
 
-        // --- CUSTOM CONFIRMATION PROMPT ---
-        function askConfirm(msg) {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('confirmModal');
-                const content = modal.firstElementChild; 
-                const text = document.getElementById('confirmModalText');
-                const submitBtn = document.getElementById('confirmModalSubmit');
-                const cancelBtn = document.getElementById('confirmModalCancel');
-
-                text.innerText = msg;
-                modal.classList.remove('hidden', 'pointer-events-none');
-                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
-
-                const cleanup = () => {
-                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
-                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
-                    submitBtn.onclick = null; cancelBtn.onclick = null;
-                };
-
-                submitBtn.onclick = () => { cleanup(); resolve(true); };
-                cancelBtn.onclick = () => { cleanup(); resolve(false); };
-            });
+        function updatePrompt() {
+            const alias = getAgentAlias();
+            const promptEl = document.getElementById('terminal-prompt');
+            if (promptEl) promptEl.innerText = `${alias.toUpperCase()}@CRYPTPACT:~ $`;
         }
 
+        // --- 2. THEME ENGINE ---
         const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
@@ -323,9 +292,35 @@
         }
         initTheme();
 
+        // --- 3. TOAST SYSTEM ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let colorClass = type === 'error' ? 'border-red-500 text-red-500 bg-red-900/10' : 
+                             type === 'success' ? 'border-green-500 text-green-500 bg-green-900/10' : 
+                             'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
+            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+            setTimeout(() => { toast.classList.add('translate-x-[120%]'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        // --- 4. PIGPEN KEYBOARD (Virtual Symbol Pad) ---
+        function initPigpenKeyboard() {
+            const kb = document.getElementById('pigpenKeyboard');
+            let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 border-b border-[var(--border)] pb-2 uppercase tracking-widest">Symbol Input Pad</div>`;
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
+                kbHTML += `<button type="button" onclick="DOM.mainIn.value += '${sym}'; DOM.mainIn.dispatchEvent(new Event('input'))" class="p-2 bg-black/40 border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-2xl transition-all flex items-center justify-center font-pigpen h-12 uppercase active:scale-95 shadow-lg">${sym}</button>`;
+            });
+            kbHTML += `<button type="button" onclick="DOM.mainIn.value += ' '" class="col-span-4 p-2 mt-1 bg-black/40 border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono h-10 uppercase font-bold tracking-widest">[ SPACE ]</button>`;
+            kbHTML += `<button type="button" onclick="DOM.mainIn.value = DOM.mainIn.value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-black/40 border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white rounded text-xs font-mono h-10 uppercase font-bold tracking-widest">⌫ DEL</button>`;
+            kb.innerHTML = kbHTML;
+        }
+
+        // --- 5. UI & CIPHER ENGINE ---
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
-
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -341,434 +336,110 @@
             stdGroup: document.getElementById('stdInputGroup'),
             stegoGroup: document.getElementById('stegoInputGroup'),
             keyGroup: document.getElementById('keyGroup'),
-            keyLabel: document.getElementById('keyLabel'),
-            pigpenKb: document.getElementById('pigpenKeyboard'),
-            stegoFile: document.getElementById('stegoFile'),
-            stegoPayload: document.getElementById('stegoPayload'),
-            stegoTextCont: document.getElementById('stegoTextContainer'),
+            pigKb: document.getElementById('pigpenKeyboard'),
             memStatus: document.getElementById('memoryStatus')
         };
 
-        // --- BUILD PIGPEN VIRTUAL KEYBOARD (Uses A-Z and true font CSS) ---
-        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
-            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded-md text-2xl transition-all flex items-center justify-center font-pigpen shadow-md h-12">${sym}</button>`;
-        });
-        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest h-10">SPACE</button>`;
-        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white rounded text-xs font-mono transition-all font-bold tracking-widest h-10">⌫ DEL</button>`;
-        DOM.pigpenKb.innerHTML = kbHTML;
-
         function showPage(page) {
-            const term = document.getElementById('terminalPage');
-            const lib = document.getElementById('libraryPage');
-            const termBtn = document.getElementById('termBtn');
-            const libBtn = document.getElementById('libBtn');
-
-            if(page === 'terminal') {
-                term.classList.remove('hidden'); term.classList.add('flex');
-                lib.classList.add('hidden');
-                termBtn.className = "flex items-center gap-2 text-[var(--primary)] font-bold border border-[var(--primary)] bg-[var(--overlay)] px-5 py-2 rounded-full shadow-[var(--glow)] transition-all";
-                libBtn.className = "flex items-center gap-3 text-[var(--text-muted)] font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-[var(--text-main)] transition-all";
-            } else {
-                term.classList.add('hidden'); term.classList.remove('flex');
-                lib.classList.remove('hidden');
-                libBtn.className = "flex items-center gap-3 text-[var(--primary)] font-bold border border-[var(--border)] bg-[var(--overlay)] px-5 py-2 rounded-full transition-all";
-                termBtn.className = "flex items-center gap-2 text-[var(--text-muted)] font-bold border border-transparent bg-transparent px-5 py-2 rounded-full hover:text-[var(--text-main)] transition-all";
-            }
-        }
-
-        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-        function animateText(element, finalState) {
-            let iterations = 0;
-            const interval = setInterval(() => {
-                element.innerText = finalState.split("").map((letter, index) => {
-                    if(index < iterations) return finalState[index];
-                    return letters[Math.floor(Math.random() * 26)];
-                }).join("");
-                if(iterations >= finalState.length) { clearInterval(interval); element.innerText = finalState; }
-                iterations += 1;
-            }, 5);
-        }
-
-        function updateMemoryStatus() {
-            if (keyCache.rsa || keyCache.aes) {
-                DOM.memStatus.innerText = "ACTIVE"; DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
-            } else { DOM.memStatus.innerText = "OFFLINE"; DOM.memStatus.className = "text-red-500 font-bold"; }
+            const term = document.getElementById('terminalPage'), lib = document.getElementById('libraryPage');
+            if(page === 'terminal') { term.classList.remove('hidden'); term.classList.add('flex'); lib.classList.add('hidden'); } 
+            else { term.classList.add('hidden'); term.classList.remove('flex'); lib.classList.remove('hidden'); }
         }
 
         DOM.swapBtn.onclick = () => {
             gsap.to(DOM.card, { rotationY: 90, duration: 0.2, onComplete: () => {
                 mode = mode === 'encrypt' ? 'decrypt' : 'encrypt';
-                DOM.modeTitle.innerText = mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE";
-                DOM.modeTitle.style.color = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
-                DOM.btnText.innerText = mode === 'encrypt' ? "ENCRYPT" : "DECRYPT";
-                DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
-                DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
+                DOM.modeTitle.innerText = `${mode.toUpperCase()} MODE`;
+                DOM.btnText.innerText = mode.toUpperCase();
+                DOM.processBtn.innerText = `EXECUTE ${mode.toUpperCase()} PROCESS`;
                 DOM.out.innerText = "// WAITING FOR INPUT...";
-                
-                DOM.mainIn.value = "";
-                DOM.keyIn.value = "";
-                DOM.rsaKeyIn.value = "";
-                DOM.stegoPayload.value = "";
-                DOM.stegoFile.value = "";
-
                 DOM.algo.dispatchEvent(new Event('change'));
-
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
             }});
         };
 
         DOM.algo.addEventListener('change', () => {
-            const val = DOM.algo.value;
-            const isStego = val === 'steganography';
-            const isRSA = val === 'rsa';
-            
-            const noKeyCiphers = ['atbash', 'pigpen', 'ecc', 'steganography', 'rsa'];
-            
-            DOM.stdGroup.classList.toggle('hidden', isStego);
-            DOM.stegoGroup.classList.toggle('hidden', !isStego);
-            
-            if (noKeyCiphers.includes(val) && !isRSA) {
-                DOM.keyGroup.classList.add('hidden');
-            } else {
-                DOM.keyGroup.classList.remove('hidden');
-            }
-            
-            // Apply True Pigpen Font CSS Based on Mode
-            if (val === 'pigpen') {
+            const val = DOM.algo.value, isPig = val === 'pigpen';
+            DOM.stdGroup.classList.toggle('hidden', val === 'steganography');
+            DOM.stegoGroup.classList.toggle('hidden', val !== 'steganography');
+            DOM.keyGroup.classList.toggle('hidden', ['atbash', 'pigpen', 'steganography'].includes(val));
+
+            if (isPig) {
                 if (mode === 'decrypt') {
-                    DOM.pigpenKb.classList.remove('hidden'); DOM.pigpenKb.classList.add('grid');
+                    DOM.pigKb.classList.remove('hidden'); DOM.pigKb.classList.add('grid');
                     DOM.mainIn.classList.add('font-pigpen', 'text-2xl');
-                    DOM.mainIn.placeholder = ""; 
                     DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
                 } else {
-                    DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                    DOM.pigKb.classList.add('hidden');
                     DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
-                    DOM.mainIn.placeholder = "Enter text to convert to symbols...";
                     DOM.outWrap.classList.add('font-pigpen', 'text-3xl');
                 }
             } else {
-                DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                DOM.pigKb.classList.add('hidden');
                 DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
-                DOM.mainIn.placeholder = "Enter text...";
                 DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
             }
-
-            if (isRSA) { 
-                DOM.keyIn.classList.add('hidden'); 
-                DOM.rsaKeyIn.classList.remove('hidden'); 
-                DOM.keyLabel.innerText = "RSA PUBLIC/PRIVATE KEY";
-                DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key... (Leave blank to Auto-Generate)" : "Paste Private Key...");
-            } else { 
-                DOM.keyIn.classList.remove('hidden'); 
-                DOM.rsaKeyIn.classList.add('hidden'); 
-            }
-
-            if (val === 'caesar') { DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)"; DOM.keyIn.placeholder = "e.g., 3"; } 
-            else if (val === 'vigenere' || val === 'playfair') { DOM.keyLabel.innerText = "KEYWORD (LETTERS ONLY)"; DOM.keyIn.placeholder = "e.g., SECRET"; } 
-            else if (val === 'rail_fence') { DOM.keyLabel.innerText = "NUMBER OF RAILS (NUMBER > 1)"; DOM.keyIn.placeholder = "e.g., 3"; } 
-            else if (val === 'aes') { DOM.keyLabel.innerText = "ENCRYPTION PASSWORD / KEY"; DOM.keyIn.placeholder = (mode === 'decrypt' && keyCache.aes) ? "[ACCESSING CACHED KEY...]" : "Enter secure password..."; }
-
-            DOM.out.innerText = "// WAITING...";
-            if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
-            else if (isStego) DOM.processBtn.innerText = mode === 'encrypt' ? "ENCODE & DOWNLOAD" : "DECODE IMAGE";
-            else DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
-            
-            DOM.modeTitle.innerText = isStego ? "STEGANOGRAPHY LAB" : (mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE");
-            DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
         });
 
-        DOM.algo.dispatchEvent(new Event('change'));
-
-        DOM.processBtn.onclick = () => {
-            const algo = DOM.algo.value;
-            const txt = DOM.mainIn.value;
-            let key = DOM.keyIn.value;
-            let res = "";
-
-            if (!txt && algo !== 'steganography') {
-                showToast("Input text is required.", "error");
-                return;
-            }
-
-            if (algo === 'steganography') {
-                const cvs = document.getElementById('stegoCanvas');
-                const ctx = cvs.getContext('2d');
-                if (mode === 'encrypt') {
-                    if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return showToast("Image and Text required!", "error");
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            cvs.width = img.width; cvs.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                            const imgData = ctx.getImageData(0,0,img.width,img.height);
-                            const msg = DOM.stegoPayload.value;
-                            let bin = ""; for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
-                            bin += "00000000";
-                            if(bin.length > imgData.data.length/4) return showToast("Message too long", "error");
-                            let dIdx = 0;
-                            for(let i=0; i<bin.length; i++) { if(dIdx%4===3) dIdx++; imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]); dIdx++; }
-                            ctx.putImageData(imgData, 0, 0);
-                            const link = document.createElement('a'); link.download = 'secret_stego.png'; link.href = cvs.toDataURL(); link.click();
-                            DOM.out.innerText = "SUCCESS: Encoded Image Downloaded.";
-                            showToast("Encoded Image Downloaded.", "success");
-                        }; img.src = e.target.result;
-                    }; reader.readAsDataURL(DOM.stegoFile.files[0]);
-                } else {
-                    if(!DOM.stegoFile.files[0]) return showToast("Select Image", "error");
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            cvs.width = img.width; cvs.height = img.height;
-                            ctx.drawImage(img, 0, 0);
-                            const data = ctx.getImageData(0,0,img.width,img.height).data;
-                            let bin = "", resText = "";
-                            for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; resText += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
-                            animateText(DOM.out, "DECODED SECRET:\n" + resText);
-                            showToast("Image Decoded.", "success");
-                        }; img.src = e.target.result;
-                    }; reader.readAsDataURL(DOM.stegoFile.files[0]);
-                }
-                return;
-            }
-
-            if (algo === 'rsa') {
-                const encryptor = new JSEncrypt({default_key_size: 512});
-                const rsaKeyVal = DOM.rsaKeyIn.value.trim();
-                if (mode === 'encrypt') {
-                    let pubKey = rsaKeyVal;
-                    let extra = "";
-                    if (!pubKey) { pubKey = encryptor.getPublicKey(); keyCache.rsa = encryptor.getPrivateKey(); updateMemoryStatus(); extra = "\n\n[PRIVATE KEY CACHED]"; encryptor.setPublicKey(pubKey); } 
-                    else { encryptor.setPublicKey(pubKey); }
-                    const enc = encryptor.encrypt(txt);
-                    res = enc ? "CIPHERTEXT:\n" + enc + extra : "FAILED";
-                    if(enc) showToast("Encryption Successful", "success"); else showToast("Encryption Failed", "error");
-                } else {
-                    let privKey = rsaKeyVal || keyCache.rsa;
-                    if(!privKey) return showToast("Private Key Required", "error");
-                    encryptor.setPrivateKey(privKey);
-                    const dec = encryptor.decrypt(txt);
-                    res = dec ? "DECRYPTED:\n" + dec : "FAILED";
-                    if(dec) showToast("Decryption Successful", "success"); else showToast("Decryption Failed", "error");
-                }
-            } 
-            else if (algo === 'aes') {
-                if (mode === 'encrypt') {
-                    if(!key) return showToast("Password/Key Required", "error");
-                    keyCache.aes = key; updateMemoryStatus();
-                    res = CryptoJS.AES.encrypt(txt, key).toString();
-                    showToast("Encryption Successful", "success");
-                } else {
-                    let useKey = key || keyCache.aes;
-                    if(!useKey) return showToast("Password/Key Required", "error");
-                    try { 
-                        const bytes = CryptoJS.AES.decrypt(txt, useKey); 
-                        res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)";
-                        if(res !== "FAILED (Wrong Key)") showToast("Decryption Successful", "success"); else showToast("Wrong Key", "error");
-                    } catch(e) { 
-                        res = "INVALID"; 
-                        showToast("Decryption Failed", "error");
-                    }
-                }
-            }
-            else if (algo === 'caesar') {
-                const shift = parseInt(key) || 3;
-                const s = mode === 'encrypt' ? shift : -shift;
-                res = txt.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26 + 26) % 26 + b); });
-            }
-            else if (algo === 'atbash') {
-                res = txt.replace(/[a-zA-Z]/g, c => {
-                    const base = c >= 'a' ? 97 : 65;
-                    return String.fromCharCode(base + 25 - (c.charCodeAt(0) - base));
+        // --- MATH CIPHER ARSENAL ---
+        const Ciphers = {
+            atbash: (str) => str.replace(/[a-z]/gi, c => { const b = c <= 'Z' ? 65 : 97; return String.fromCharCode(b + 25 - (c.charCodeAt(0) - b)); }),
+            caesar: (str, shift, dec = false) => {
+                let s = parseInt(shift) || 3; if (dec) s = (26 - (s % 26)) % 26;
+                return str.replace(/[a-z]/gi, c => { const b = c <= 'Z' ? 65 : 97; return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b); });
+            },
+            vigenere: (str, key, dec = false) => {
+                if (!key) return "ERROR: KEY_REQUIRED";
+                key = key.toLowerCase().replace(/[^a-z]/g, ""); let i = 0;
+                return str.replace(/[a-z]/gi, c => {
+                    const b = c <= 'Z' ? 65 : 97; let s = key.charCodeAt(i % key.length) - 97;
+                    if (dec) s = (26 - s) % 26; i++;
+                    return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b);
                 });
-            }
-            else if (algo === 'vigenere') {
-                if (!key) { res = "ERROR: KEY REQUIRED FOR VIGENERE"; showToast("Keyword Required", "error"); }
-                else {
-                    let k = key.toUpperCase().replace(/[^A-Z]/g, '');
-                    if (!k) { res = "ERROR: INVALID KEY"; showToast("Letters Only", "error"); } else {
-                        let kIdx = 0;
-                        res = txt.replace(/[a-zA-Z]/g, c => {
-                            const base = c >= 'a' ? 97 : 65;
-                            const shift = k.charCodeAt(kIdx % k.length) - 65;
-                            const s = mode === 'encrypt' ? shift : -shift;
-                            kIdx++;
-                            return String.fromCharCode(((c.charCodeAt(0) - base + s) % 26 + 26) % 26 + base);
-                        });
-                    }
-                }
-            }
-            else if (algo === 'rail_fence') {
-                let rails = parseInt(key);
-                if (isNaN(rails) || rails < 2) { res = "ERROR: KEY MUST BE A NUMBER > 1 FOR RAIL FENCE"; showToast("Number > 1 Required", "error"); }
-                else {
-                    if (mode === 'encrypt') {
-                        let fence = Array.from({length: rails}, () => []);
-                        let r = 0, dir = 1;
-                        for (let char of txt) { fence[r].push(char); r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
-                        res = fence.map(row => row.join('')).join('');
-                    } else {
-                        let fence = Array.from({length: rails}, () => Array(txt.length).fill(null));
-                        let r = 0, dir = 1;
-                        for (let i = 0; i < txt.length; i++) { fence[r][i] = '*'; r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
-                        let idx = 0;
-                        for (let row = 0; row < rails; row++) {
-                            for (let c = 0; c < txt.length; c++) {
-                                if (fence[row][c] === '*' && idx < txt.length) { fence[row][c] = txt[idx++]; }
-                            }
-                        }
-                        let resText = ''; r = 0; dir = 1;
-                        for (let c = 0; c < txt.length; c++) { resText += fence[r][c]; r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
-                        res = resText;
-                    }
-                }
-            }
-            else if (algo === 'playfair') {
-                if (!key) { res = "ERROR: KEY REQUIRED FOR PLAYFAIR"; showToast("Keyword Required", "error"); }
-                else {
-                    let k = key.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
-                    let alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
-                    let gridStr = Array.from(new Set((k + alphabet).split(''))).join('');
-                    let grid = [];
-                    for (let i=0; i<5; i++) grid.push(gridStr.slice(i*5, i*5+5).split(''));
-                    let findPos = (char) => { for (let r=0; r<5; r++) for (let c=0; c<5; c++) if (grid[r][c]===char) return [r,c]; return [0,0]; };
-
-                    let pt = txt.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
-                    if (mode === 'encrypt') {
-                        let pairs = [];
-                        for(let i=0; i<pt.length; i++) {
-                            let a = pt[i], b = pt[i+1];
-                            if(b && a===b) { pairs.push([a, 'X']); }
-                            else if (b) { pairs.push([a, b]); i++; }
-                            else { pairs.push([a, 'X']); }
-                        }
-                        pt = pairs;
-                    } else {
-                        let pairs = [];
-                        for(let i=0; i<pt.length; i+=2) pairs.push([pt[i], pt[i+1] || 'X']);
-                        pt = pairs;
-                    }
-                    res = "";
-                    let shift = mode === 'encrypt' ? 1 : -1;
-                    for (let [a,b] of pt) {
-                        let [r1,c1] = findPos(a); let [r2,c2] = findPos(b);
-                        if (r1===r2) { res += grid[r1][(c1+shift+5)%5] + grid[r2][(c2+shift+5)%5]; }
-                        else if (c1===c2) { res += grid[(r1+shift+5)%5][c1] + grid[(r2+shift+5)%5][c2]; }
-                        else { res += grid[r1][c2] + grid[r2][c1]; }
-                    }
-                    if (mode === 'decrypt') {
-                        let cleanedRes = "";
-                        for (let i = 0; i < res.length; i++) {
-                            if (res[i] === 'X' && i > 0 && i < res.length - 1 && res[i-1] === res[i+1]) continue; 
-                            if (res[i] === 'X' && i === res.length - 1) continue;
-                            cleanedRes += res[i];
-                        }
-                        res = cleanedRes;
-                    }
-                }
-            }
-            else if (algo === 'pigpen') {
-                res = txt.toUpperCase(); // True font handles visual translation
-            }
-            else { 
-                res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
-            }
-
-            // Disable flashing matrix animation for Pigpen shapes, else use animation
-            if (algo === 'pigpen' && !res.includes("ERROR")) {
-                DOM.out.innerText = res;
-            } else if (!res.includes("ERROR")) {
-                animateText(DOM.out, res);
-            } else {
-                DOM.out.innerText = res;
             }
         };
 
-        const vaultModal = document.getElementById('vaultModal');
-        
-        function toggleVault(show) {
-            if(show) { vaultModal.classList.remove('hidden','pointer-events-none'); setTimeout(()=>vaultModal.classList.remove('opacity-0'), 10); loadFiles(); } 
-            else { vaultModal.classList.add('opacity-0','pointer-events-none'); setTimeout(()=>vaultModal.classList.add('hidden'), 300); }
-        }
+        DOM.processBtn.onclick = () => {
+            const algo = DOM.algo.value, input = DOM.mainIn.value, key = DOM.keyIn.value;
+            let result = "";
+            if (!input && algo !== 'steganography') return showToast("No input detected", "error");
 
-        async function uploadEncryptedFile() {
-            const fi = document.getElementById('vaultInput'); 
-            const pw = document.getElementById('vaultPass').value;
-            if(!fi.files[0] || !pw) return showToast("File and Password required!", "error");
-            
-            showToast("Encrypting file...", "info");
-            
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const enc = CryptoJS.AES.encrypt(e.target.result, pw).toString();
-                const blob = new Blob([enc],{type:'text/plain'});
-                const f = new File([blob], fi.files[0].name+".enc", {type:"text/plain"});
-                const fd = new FormData(); fd.append('vaultFile', f);
-                try {
-                    await fetch('/api/vault/upload', { method:'POST', headers:{'auth-token':token}, body:fd });
-                    loadFiles();
-                    showToast("File Encrypted & Uploaded to Vault.", "success");
-                    fi.value = "";
-                    document.getElementById('vaultPass').value = "";
-                } catch(err) { showToast("Upload Failed", "error"); }
-            }; 
-            reader.readAsDataURL(fi.files[0]);
+            if (algo === 'atbash') result = Ciphers.atbash(input);
+            else if (algo === 'caesar') result = Ciphers.caesar(input, key, mode === 'decrypt');
+            else if (algo === 'vigenere') result = Ciphers.vigenere(input, key, mode === 'decrypt');
+            else if (algo === 'pigpen') result = input.toUpperCase();
+            else if (algo === 'aes') {
+                if (mode === 'encrypt') result = CryptoJS.AES.encrypt(input, key).toString();
+                else {
+                    try { result = CryptoJS.AES.decrypt(input, key).toString(CryptoJS.enc.Utf8) || "INVALID_KEY"; } 
+                    catch(e) { result = "DECRYPTION_ERROR"; }
+                }
+            }
+            DOM.out.innerText = result;
+        };
+
+        // --- 6. VAULT ENGINE ---
+        function toggleVault(show) {
+            const v = document.getElementById('vaultModal');
+            if(show) { v.classList.remove('hidden','pointer-events-none'); setTimeout(()=>v.classList.remove('opacity-0'),10); loadFiles(); } 
+            else { v.classList.add('opacity-0','pointer-events-none'); setTimeout(()=>v.classList.add('hidden'), 300); }
         }
 
         async function loadFiles() {
-            try { 
-                const res = await fetch('/api/vault/myfiles', {headers:{'auth-token':token}}); 
-                const files = await res.json();
-                const list = document.getElementById('vaultList'); 
-                list.innerHTML = '';
-                
-                if(files.length === 0) list.innerHTML = '<div class="text-xs text-[var(--text-muted)] p-2 font-mono">VAULT EMPTY</div>';
-
-                files.forEach(f => { 
-                    list.innerHTML += `
-                    <div class="flex justify-between items-center p-3 bg-black/40 border border-white/5 mb-2 rounded hover:border-[var(--primary)] transition-colors group">
-                        <span class="text-xs text-[var(--text-muted)] truncate w-40 font-mono group-hover:text-[var(--text-main)] transition-colors">${f.originalName}</span>
-                        <div class="flex gap-2">
-                            <button onclick="downloadAndDecrypt('${f.filename}','${f.originalName}')" class="text-[var(--primary)] text-[9px] border border-[var(--primary)] px-3 py-1 rounded hover:bg-[var(--primary)] hover:text-black font-bold transition-all active:scale-95">DECRYPT</button>
-                            <button onclick="deleteFile('${f._id}')" class="text-red-500 text-[9px] border border-red-500 px-3 py-1 rounded hover:bg-red-500 hover:text-black font-bold transition-all active:scale-95">DELETE</button>
-                        </div>
-                    </div>`; 
-                });
-            } catch(e){ showToast("Vault Load Error", "error"); }
+            const res = await fetch('/api/vault/myfiles', {headers:{'auth-token':token}});
+            const files = await res.json();
+            const list = document.getElementById('vaultList'); list.innerHTML = '';
+            files.forEach(f => {
+                list.innerHTML += `<div class="flex justify-between p-3 bg-black/40 border border-white/5 rounded"><span class="truncate w-40 uppercase font-mono text-[10px]">${f.originalName}</span><button onclick="deleteFile('${f._id}')" class="text-red-500 border border-red-500 px-2 rounded text-[9px] uppercase">Delete</button></div>`;
+            });
         }
 
-        async function downloadAndDecrypt(fname, og) {
-            const pw = await askPassword(); 
-            if(!pw) return;
-            
-            try {
-                const res = await fetch(`/api/vault/file/${fname}?token=${token}`);
-                if(!res.ok) throw new Error("Download failed");
-                const txt = await res.text();
-                const dec = CryptoJS.AES.decrypt(txt, pw).toString(CryptoJS.enc.Utf8);
-                if(!dec.startsWith('data:')) throw new Error("Decryption failed");
-                const a = document.createElement('a'); a.href = dec; a.download = og.replace('.enc',''); a.click();
-                showToast("File Decrypted & Downloaded.", "success");
-            } catch(e) { showToast("ACCESS DENIED: INCORRECT PASSWORD", "error"); }
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePrompt();
+            initPigpenKeyboard();
+            DOM.algo.dispatchEvent(new Event('change'));
+        });
 
-        async function deleteFile(id) {
-            const proceed = await askConfirm("WARNING: PERMANENTLY DELETE THIS FILE?");
-            if(!proceed) return;
-            
-            try {
-                const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: {'auth-token': token} });
-                if(res.ok) { 
-                    loadFiles(); 
-                    showToast("File Deleted.", "success"); 
-                } else { 
-                    showToast("Delete Failed", "error"); 
-                }
-            } catch(e) { showToast("System Error", "error"); }
-        }
-        
         document.getElementById('copyBtn').onclick = () => {
             navigator.clipboard.writeText(DOM.out.innerText);
             showToast("Copied to clipboard!", "success");

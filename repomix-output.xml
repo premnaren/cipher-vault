@@ -41,32 +41,35 @@ The content is organized as follows:
 
 <directory_structure>
 .gitignore
+.hintrc
 models/Conversation.js
 models/File.js
 models/Message.js
 models/User.js
 package.json
+public/alias-setup.html
 public/chat.html
-public/css/chat.css
 public/index.html
-public/js/chat-client.js
 public/login.html
 README.md
 routes/auth.js
 routes/chatRoutes.js
 routes/vault.js
 server.js
-uploads/vaultFile-1765908778908.png
-uploads/vaultFile-1765908797269.docx
-uploads/vaultFile-1765909055445.pdf
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
-<file path=".gitignore">
-node_modules
-.env
+<file path=".hintrc">
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "no-inline-styles": "off"
+  }
+}
 </file>
 
 <file path="models/Conversation.js">
@@ -105,84 +108,6 @@ const FileSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('File', FileSchema);
-</file>
-
-<file path="public/css/chat.css">
-body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background: #1a1a1a; color: white; }
-
-.chat-container { display: flex; height: 100vh; }
-
-.sidebar { width: 250px; background: #2d2d2d; border-right: 1px solid #444; padding: 20px; }
-.user-item { padding: 10px; background: #3d3d3d; margin-bottom: 5px; cursor: pointer; border-radius: 5px; }
-.user-item:hover { background: #505050; }
-
-.chat-main { flex: 1; display: flex; flex-direction: column; }
-
-.chat-header { padding: 15px; background: #007bff; color: white; display: flex; justify-content: space-between; align-items: center; }
-
-.messages-area { flex: 1; padding: 20px; overflow-y: auto; background: #121212; display: flex; flex-direction: column; gap: 10px; }
-
-.message { padding: 10px 15px; border-radius: 20px; max-width: 60%; word-wrap: break-word; }
-.message.sent { align-self: flex-end; background: #007bff; }
-.message.received { align-self: flex-start; background: #333; }
-
-.chat-input { padding: 20px; background: #2d2d2d; display: flex; gap: 10px; }
-input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
-button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
-select { padding: 10px; border-radius: 5px; background: #444; color: white; border: none; }
-</file>
-
-<file path="public/js/chat-client.js">
-const socket = io();
-const currentRoom = "Global"; // Default room
-const username = localStorage.getItem("username") || "Anonymous"; // Grab from login if available
-
-// Join the default room on load
-socket.emit("join_room", currentRoom);
-
-// Listen for incoming messages
-socket.on("receive_message", (data) => {
-    displayMessage(data, "received");
-});
-
-function sendMessage() {
-    const input = document.getElementById("message-input");
-    const cipher = document.getElementById("cipher-select").value;
-    const msgText = input.value;
-
-    if (msgText === "") return;
-
-    const messageData = {
-        room: currentRoom,
-        sender: username,
-        text: msgText,
-        cipherType: cipher,
-        time: new Date().toLocaleTimeString()
-    };
-
-    // 1. Send to Server (Socket)
-    socket.emit("send_message", messageData);
-
-    // 2. Display on my screen
-    displayMessage(messageData, "sent");
-
-    input.value = "";
-}
-
-function displayMessage(data, type) {
-    const chatArea = document.getElementById("messages-area");
-    const msgDiv = document.createElement("div");
-    
-    msgDiv.classList.add("message", type);
-    msgDiv.innerHTML = `
-        <small style="color: #ccc; font-size: 0.7em;">${data.sender} • ${data.cipherType}</small><br>
-        ${data.text}
-        <br><small style="font-size: 0.6em; opacity: 0.7;">${data.time || ""}</small>
-    `;
-    
-    chatArea.appendChild(msgDiv);
-    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
-}
 </file>
 
 <file path="README.md">
@@ -325,60 +250,6 @@ Current Priority: Fixing the educational sidebar modules and improving mobile CS
 System Status: ONLINE 🟢
 </file>
 
-<file path="routes/auth.js">
-const router = require('express').Router();
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-
-// REGISTER LOGIC
-router.post('/register', async (req, res) => {
-    try {
-        // 1. Check if user exists
-        const emailExist = await User.findOne({ username: req.body.username });
-        if(emailExist) return res.status(400).json({ error: "Username already exists" });
-
-        // 2. Hash the password (scramble it)
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(req.body.password, salt);
-
-        // 3. Create user
-        const user = new User({
-            username: req.body.username,
-            password: hashedPassword
-        });
-        
-        await user.save();
-        res.json({ message: "Registration Successful" });
-
-    } catch (err) {
-        res.status(500).json({ error: "Server Error during registration" });
-    }
-});
-
-// LOGIN LOGIC
-router.post('/login', async (req, res) => {
-    try {
-        // 1. Check if user exists
-        const user = await User.findOne({ username: req.body.username });
-        if(!user) return res.status(400).json({ error: "User not found" });
-
-        // 2. Check password
-        const validPass = await bcrypt.compare(req.body.password, user.password);
-        if(!validPass) return res.status(400).json({ error: "Invalid password" });
-
-        // 3. Create and assign a Token (The "Digital ID Card")
-        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
-        res.header('auth-token', token).json({ token: token });
-
-    } catch (err) {
-        res.status(500).json({ error: "Server Error during login" });
-    }
-});
-
-module.exports = router;
-</file>
-
 <file path="routes/chatRoutes.js">
 const router = require("express").Router();
 const Conversation = require("../models/Conversation");
@@ -424,48 +295,10 @@ router.post("/conversation", async (req, res) => {
 module.exports = router;
 </file>
 
-<file path="models/User.js">
-const mongoose = require('mongoose');
-
-const UserSchema = new mongoose.Schema({
-    username: { type: String, required: true, unique: true, minlength: 3 },
-    password: { type: String, required: true, minlength: 6 },
-    // --- THIS LINE IS MISSING OR INCORRECT ---
-    publicKey: { type: String, default: "" }, 
-    createdAt: { type: Date, default: Date.now }
-});
-
-module.exports = mongoose.model('User', UserSchema);
-</file>
-
-<file path="package.json">
-{
-  "name": "cipher-vault-project",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "bcryptjs": "^3.0.3",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.0.1",
-    "multer": "^2.0.2",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.11"
-  }
-}
+<file path=".gitignore">
+node_modules
+.env
+uploads/
 </file>
 
 <file path="models/Message.js">
@@ -484,6 +317,175 @@ const MessageSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("Message", MessageSchema);
+</file>
+
+<file path="models/User.js">
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+    username: { 
+        type: String, 
+        required: true, 
+        unique: true, 
+        minlength: 3 
+    },
+    password: { 
+        type: String, 
+        required: true, 
+        minlength: 6 
+    },
+    // Used for the chat's cryptographic features later
+    publicKey: { 
+        type: String, 
+        default: "" 
+    },
+    // NEW: Helps us track if they need to be sent to the "Alias Setup" screen
+    setupComplete: { 
+        type: Boolean, 
+        default: false 
+    },
+    // NEW: Good practice to store the email for OAuth users
+    email: { 
+        type: String, 
+        unique: true, 
+        sparse: true // Allows multiple users to have NO email, but if they DO, it must be unique
+    },
+    createdAt: { 
+        type: Date, 
+        default: Date.now 
+    }
+});
+
+module.exports = mongoose.model('User', UserSchema);
+</file>
+
+<file path="routes/auth.js">
+const router = require('express').Router();
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// --- REGISTER LOGIC ---
+router.post('/register', async (req, res) => {
+    try {
+        const userExist = await User.findOne({ username: req.body.username });
+        if(userExist) return res.status(400).json({ message: "Username already exists" });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+        const user = new User({
+            username: req.body.username,
+            password: hashedPassword,
+            setupComplete: true // Standard registration completes setup immediately
+        });
+        
+        await user.save();
+        res.json({ message: "Registration Successful" });
+    } catch (err) {
+        res.status(500).json({ message: "Server Error during registration" });
+    }
+});
+
+// --- LOGIN LOGIC ---
+router.post('/login', async (req, res) => {
+    try {
+        const user = await User.findOne({ username: req.body.username });
+        if(!user) return res.status(400).json({ message: "User not found" });
+
+        const validPass = await bcrypt.compare(req.body.password, user.password);
+        if(!validPass) return res.status(400).json({ message: "Invalid password" });
+
+        const token = jwt.sign({ _id: user._id, username: user.username }, process.env.JWT_SECRET);
+        res.json({ token: token, setupComplete: user.setupComplete });
+    } catch (err) {
+        res.status(500).json({ message: "Server Error during login" });
+    }
+});
+
+// --- GOOGLE OAUTH ROUTE ---
+router.post('/google', async (req, res) => {
+    try {
+        const { credential } = req.body;
+        
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        
+        let user = await User.findOne({ email: payload.email });
+        
+        if (!user) {
+            const tempUsername = payload.email.split('@')[0];
+            const randomPassword = crypto.randomBytes(16).toString('hex'); 
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(randomPassword, salt);
+            
+            user = new User({
+                username: tempUsername,
+                email: payload.email,
+                password: hashedPassword,
+                setupComplete: false 
+            });
+            await user.save();
+        }
+
+        const token = jwt.sign(
+            { _id: user._id, username: user.username }, 
+            process.env.JWT_SECRET
+        );
+        
+        res.status(200).json({ 
+            token, 
+            setupComplete: user.setupComplete, 
+            message: "Google Auth successful" 
+        });
+    } catch (error) {
+        console.error("Google Auth Error:", error);
+        res.status(400).json({ message: "Invalid Google Security Token" });
+    }
+});
+
+// --- NEW: ALIAS UPDATE ROUTE ---
+// This handles users picking their custom codename after Google Login
+router.post('/update-alias', async (req, res) => {
+    try {
+        const token = req.header('auth-token');
+        if (!token) return res.status(401).json({ message: "Unauthorized Entry" });
+
+        // Verify the user session
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        const { newUsername } = req.body;
+
+        // Check if the chosen codename is already taken
+        const nameTaken = await User.findOne({ username: newUsername });
+        if (nameTaken) return res.status(400).json({ message: "Alias already claimed by another agent." });
+
+        // Update user and finalize setup
+        const updatedUser = await User.findByIdAndUpdate(
+            verified._id, 
+            { username: newUsername, setupComplete: true },
+            { new: true }
+        );
+
+        // We issue a NEW token with the updated username so the frontend is current
+        const newToken = jwt.sign(
+            { _id: updatedUser._id, username: updatedUser.username }, 
+            process.env.JWT_SECRET
+        );
+
+        res.json({ token: newToken, message: "Identity Finalized." });
+    } catch (err) {
+        res.status(400).json({ message: "Session Expired or Invalid." });
+    }
+});
+
+module.exports = router;
 </file>
 
 <file path="routes/vault.js">
@@ -590,277 +592,492 @@ router.delete('/delete/:id', verifyToken, async (req, res) => {
 module.exports = router;
 </file>
 
-<file path="public/login.html">
+<file path="package.json">
+{
+  "name": "cipher-vault-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.6.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.1",
+    "multer": "^2.0.2",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
+</file>
+
+<file path="public/alias-setup.html">
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="void">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptPact | Access Control</title>
+    <title>CryptPact | Initialize Identity</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&display=swap" rel="stylesheet">
     <style>
-        /* --- CORE THEME --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap');
+
+        /* --- IDENTICAL THEME ENGINE FROM LOGIN --- */
+        :root[data-theme="void"] { 
+            --bg-body: #030305; --bg-panel: rgba(10, 10, 14, 0.8); --primary: #ffffff; --border: rgba(255, 255, 255, 0.1); 
+            --text-main: #ffffff; --text-muted: #666666; --glow: rgba(255,255,255,0.03); 
+        }
+        :root[data-theme="retro"] { 
+            --bg-body: #131211; --bg-panel: rgba(38, 36, 34, 0.8); --primary: #ffb347; --border: rgba(255, 179, 71, 0.2); 
+            --text-main: #e7e5e4; --text-muted: #8a8581; --glow: rgba(255, 179, 71, 0.1); 
+        }
+        :root[data-theme="zen"] { 
+            --bg-body: #0a0f1c; --bg-panel: rgba(15, 23, 42, 0.8); --primary: #38bdf8; --border: rgba(56, 189, 248, 0.2); 
+            --text-main: #f1f5f9; --text-muted: #64748b; --glow: rgba(56, 189, 248, 0.1); 
+        }
+        :root[data-theme="light"] { 
+            --bg-body: #f3f4f6; --bg-panel: rgba(255, 255, 255, 0.9); --primary: #2563eb; --border: rgba(0, 0, 0, 0.1); 
+            --text-main: #111827; --text-muted: #6b7280; --glow: rgba(0, 0, 0, 0.05); 
+        }
+
         body { 
-            background-color: #050508; 
-            color: #e2e8f0; 
-            font-family: 'Orbitron', sans-serif; 
-            overflow: hidden; 
-            cursor: none !important; /* STRICTLY HIDE SYSTEM CURSOR */
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); 
+            background-size: 40px 40px;
+            transition: background-color 0.8s ease, color 0.8s ease;
         }
 
-        /* Prevent default cursors on all elements */
-        input, button, a, .cyber-input, .clip-path-polygon, label {
-            cursor: none !important;
+        .font-brand { font-family: 'Rajdhani', sans-serif; } 
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        #setupCard { 
+            background: var(--bg-panel);
+            -webkit-backdrop-filter: blur(20px); 
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border); 
+            box-shadow: 0 10px 40px var(--glow);
+            animation: cardEntrance 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* --- CUSTOM TACTICAL CURSOR --- */
-        #cursor {
-            position: fixed;
-            top: 0; left: 0;
-            pointer-events: none; /* Allows clicking through */
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-            mix-blend-mode: difference;
+        @keyframes cardEntrance {
+            0% { opacity: 0; transform: scale(0.95) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* The Center Dot */
-        .cursor-dot {
-            width: 4px; height: 4px;
-            background-color: #00f3ff;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #00f3ff;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            transition: all 0.2s ease;
-        }
-
-        /* The Outer Scanning Ring */
-        .cursor-reticle {
-            width: 30px; height: 30px;
-            border: 1px dashed rgba(0, 243, 255, 0.5);
-            border-radius: 50%;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            animation: scanSpin 4s linear infinite;
+        .modern-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: var(--text-main);
             transition: all 0.3s ease;
         }
+        :root[data-theme="light"] .modern-input { background: rgba(255, 255, 255, 0.5); }
 
-        /* --- HOVER STATE (TARGET LOCKED) --- */
-        /* When body has class 'hovering', transform cursor */
-        body.hovering .cursor-reticle {
-            width: 50px; height: 50px;
-            border-radius: 4px; /* Turn into square */
-            border: 2px solid #bc13fe; /* Purple */
-            border-left: 2px solid transparent; /* Gap effect */
-            border-right: 2px solid transparent;
-            background-color: rgba(188, 19, 254, 0.05);
-            box-shadow: 0 0 20px rgba(188, 19, 254, 0.4);
-            animation: lockSpin 1s infinite linear; /* Fast spin */
+        .modern-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            background: rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 10px var(--glow);
         }
 
-        body.hovering .cursor-dot {
-            background-color: #bc13fe;
-            box-shadow: 0 0 15px #bc13fe;
-            transform: translate(-50%, -50%) scale(1.5);
-        }
-
-        /* Animation Definitions */
-        @keyframes scanSpin { 
-            0% { transform: translate(-50%, -50%) rotate(0deg); } 
-            100% { transform: translate(-50%, -50%) rotate(360deg); } 
-        }
-        
-        @keyframes lockSpin { 
-            0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); } 
-            50% { transform: translate(-50%, -50%) rotate(180deg) scale(0.9); } 
-            100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); } 
-        }
-
-        /* --- MATRIX CANVAS --- */
-        #matrixCanvas {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: -1;
-            opacity: 0.2; 
-        }
-
-        /* --- UI ELEMENTS --- */
-        .glow { box-shadow: 0 0 30px rgba(0, 243, 255, 0.15); border: 1px solid rgba(0, 243, 255, 0.3); }
-        
-        .cyber-input { 
-            background: rgba(15, 16, 21, 0.8); 
-            border: 1px solid #1e293b; 
-            color: #00f3ff; 
-            font-family: monospace;
+        .primary-btn {
+            background-color: var(--primary);
+            color: var(--bg-body);
             transition: all 0.3s ease;
         }
-        
-        .cyber-input:focus { 
-            border-color: #00f3ff; 
-            outline: none; 
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); 
-            background: rgba(0, 0, 0, 0.9);
+        .primary-btn:hover { 
+            opacity: 0.9; 
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px var(--glow);
         }
 
-        .clip-path-polygon {
-            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        /* Ambient scanline effect */
+        .scanline {
+            width: 100%; height: 2px; background: var(--primary); opacity: 0.05;
+            position: absolute; top: 0; left: 0;
+            animation: scan 8s linear infinite;
         }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
-<body class="h-screen flex items-center justify-center">
+<body class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
 
-    <canvas id="matrixCanvas"></canvas>
-    
-    <div id="cursor">
-        <div class="cursor-reticle"></div>
-        <div class="cursor-dot"></div>
-    </div>
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--primary)] rounded-full mix-blend-overlay filter blur-[128px] opacity-5 pointer-events-none"></div>
 
-    <div class="w-96 p-8 bg-black/80 backdrop-blur-md rounded-xl glow text-center relative overflow-hidden z-10">
-        <div class="absolute top-0 left-0 w-full h-1 bg-[#00f3ff] shadow-[0_0_20px_#00f3ff]"></div>
-
-        <h1 class="text-3xl text-[#00f3ff] font-black mb-2 tracking-[0.2em] animate-pulse">CRYPT PACT</h1>
-        <p class="text-[10px] text-gray-500 mb-8 font-mono tracking-widest">SECURE ACCESS TERMINAL</p>
+    <div id="setupCard" class="w-full max-w-[420px] rounded-2xl p-10 z-10 relative overflow-hidden">
+        <div class="scanline"></div>
         
-        <form id="authForm" class="space-y-5">
-            <div class="relative group">
-                <input type="text" id="username" placeholder="AGENT ID" required 
-                       class="w-full p-3 rounded cyber-input pl-4">
-                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">ID</div>
+        <div class="text-center mb-10">
+            <h2 class="font-brand text-3xl tracking-[0.2em] uppercase mb-3">Initialize <span style="color: var(--primary)">Identity</span></h2>
+            <div class="flex items-center justify-center gap-3 opacity-40">
+                <div class="h-px w-6 bg-[var(--primary)]"></div>
+                <p class="font-mono text-[9px] uppercase tracking-[0.3em]">Protocol: Alias_Selection</p>
+                <div class="h-px w-6 bg-[var(--primary)]"></div>
             </div>
-            
-            <div class="relative group">
-                <input type="password" id="password" placeholder="PASSCODE" required 
-                       class="w-full p-3 rounded cyber-input pl-4">
-                <div class="absolute right-3 top-3 text-[#00f3ff] opacity-50 text-xs pointer-events-none">KEY</div>
-            </div>
-            
-            <button type="submit" 
-                    class="w-full py-4 bg-[#00f3ff] text-black font-black hover:bg-white hover:shadow-[0_0_20px_#00f3ff] transition-all tracking-[0.2em] clip-path-polygon transform active:scale-95">
-                AUTHENTICATE
-            </button>
-            
-            <p id="message" class="text-xs text-red-500 font-mono min-h-[20px]"></p>
+        </div>
 
-            <button type="button" id="toggleAuth" class="text-[10px] text-gray-500 hover:text-[#00f3ff] mt-4 border-t border-gray-800 pt-4 w-full transition-colors font-mono tracking-wider">
-                :: NEW AGENT? INITIALIZE REGISTRATION ::
+        <form onsubmit="finalizeAlias(event)" class="space-y-8">
+            <div class="space-y-2">
+                <label class="text-[10px] text-[var(--text-muted)] tracking-[0.2em] uppercase ml-1 font-semibold">New Agent Alias</label>
+                <input type="text" id="newAlias" required minlength="3" 
+                    class="w-full modern-input p-4 rounded-xl font-mono text-sm focus:outline-none" 
+                    placeholder="e.g. ShadowCipher" autocomplete="off">
+                <p class="text-[9px] text-[var(--text-muted)] font-mono italic ml-1 mt-2">* This will be your permanent public key identifier.</p>
+            </div>
+
+            <button type="submit" id="confirmBtn" class="w-full py-4 primary-btn font-bold text-[10px] tracking-[0.3em] rounded-xl font-mono hover:opacity-90 transition-all uppercase shadow-lg">
+                Confirm Codename
             </button>
         </form>
     </div>
 
     <script>
-        // --- 1. MATRIX RAIN EFFECT ---
-        const canvas = document.getElementById('matrixCanvas');
-        const ctx = canvas.getContext('2d');
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        // IMMEDIATELY apply theme from localStorage
+        function applyTheme() {
+            const savedTheme = localStorage.getItem('app-theme') || 'void';
+            document.documentElement.setAttribute('data-theme', savedTheme);
         }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        applyTheme();
 
-        const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const fontSize = 14;
-        const columns = canvas.width / fontSize;
-        const drops = Array(Math.floor(columns)).fill(1);
-
-        function drawMatrix() {
-            ctx.fillStyle = 'rgba(5, 5, 8, 0.05)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00f3ff';
-            ctx.font = fontSize + 'px monospace';
-
-            for (let i = 0; i < drops.length; i++) {
-                const text = chars.charAt(Math.floor(Math.random() * chars.length));
-                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                }
-                drops[i]++;
-            }
-        }
-        setInterval(drawMatrix, 50);
-
-        // --- 2. CUSTOM TACTICAL CURSOR LOGIC ---
-        const cursor = document.getElementById('cursor');
-        const body = document.body;
-
-        // Smoothly follow mouse
-        document.addEventListener('mousemove', (e) => {
-            cursor.style.left = e.clientX + 'px';
-            cursor.style.top = e.clientY + 'px';
-        });
-
-        // Trigger "Target Locked" state on hover
-        const interactables = document.querySelectorAll('button, input, a, .clickable');
-        interactables.forEach(el => {
-            el.addEventListener('mouseenter', () => body.classList.add('hovering'));
-            el.addEventListener('mouseleave', () => body.classList.remove('hovering'));
-        });
-
-        // --- 3. AUTH LOGIC ---
-        let isLogin = true;
-        const form = document.getElementById('authForm');
-        const msg = document.getElementById('message');
-        
-        document.getElementById('toggleAuth').onclick = (e) => {
-            isLogin = !isLogin;
-            e.target.innerText = isLogin ? ":: NEW AGENT? INITIALIZE REGISTRATION ::" : ":: HAVE ID? LOGIN ::";
-            document.querySelector('button[type="submit"]').innerText = isLogin ? "AUTHENTICATE" : "REGISTER IDENTITY";
-            msg.innerText = "";
-        };
-
-        form.onsubmit = async (e) => {
+        async function finalizeAlias(e) {
             e.preventDefault();
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+            const alias = document.getElementById('newAlias').value.trim();
+            const token = localStorage.getItem('auth-token');
+            const btn = document.getElementById('confirmBtn');
 
-            const btn = document.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.innerText = "PROCESSING...";
-            btn.style.opacity = "0.7";
+            if (!alias) return;
+
+            btn.innerText = "UPDATING MATRIX...";
+            btn.disabled = true;
 
             try {
-                const res = await fetch(endpoint, {
+                const res = await fetch('/api/auth/update-alias', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ username: u, password: p })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'auth-token': token 
+                    },
+                    body: JSON.stringify({ newUsername: alias })
                 });
 
                 const data = await res.json();
-                
-                if(!res.ok) {
-                    msg.innerText = "ERROR: " + (data.error || "Access Denied");
-                    msg.className = "text-xs text-red-500 font-mono mt-2";
+                if (res.ok) {
+                    // Update token in case the backend issued a new one with the new name
+                    if (data.token) localStorage.setItem('auth-token', data.token);
+                    window.location.href = '/'; 
                 } else {
-                    if(data.token) {
-                        localStorage.setItem('auth-token', data.token);
-                        window.location.href = '/index.html';
-                    } else {
-                        msg.innerText = "IDENTITY CREATED. PLEASE LOGIN.";
-                        msg.className = "text-xs text-[#00f3ff] font-mono mt-2";
-                        setTimeout(() => document.getElementById('toggleAuth').click(), 1500);
-                    }
+                    alert(data.message || "Alias already taken by another agent.");
+                    btn.innerText = "CONFIRM CODENAME";
+                    btn.disabled = false;
                 }
             } catch (err) {
-                msg.innerText = "SYSTEM FAILURE: SERVER UNREACHABLE";
-            } finally {
-                btn.innerText = originalText;
-                btn.style.opacity = "1";
+                console.error("Setup error:", err);
+                btn.innerText = "CONFIRM CODENAME";
+                btn.disabled = false;
             }
-        };
+        }
+    </script>
+</body>
+</html>
+</file>
+
+<file path="public/login.html">
+<!DOCTYPE html>
+<html lang="en" data-theme="void">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptPact | Gateway</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap');
+
+        /* --- MODERN THEME SYSTEM --- */
+        :root[data-theme="retro"] { 
+            --bg-body: #131211; --bg-panel: rgba(38, 36, 34, 0.7); --primary: #ffb347; --accent: #d48839; --border: rgba(255, 179, 71, 0.2); 
+            --text-main: #e7e5e4; --text-muted: #8a8581; --glow: 0 0 20px rgba(255, 179, 71, 0.1); 
+        }
+        :root[data-theme="zen"] { 
+            --bg-body: #0a0f1c; --bg-panel: rgba(15, 23, 42, 0.7); --primary: #38bdf8; --accent: #818cf8; --border: rgba(56, 189, 248, 0.2); 
+            --text-main: #f1f5f9; --text-muted: #64748b; --glow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+        :root[data-theme="light"] { 
+            --bg-body: #f3f4f6; --bg-panel: rgba(255, 255, 255, 0.8); --primary: #2563eb; --accent: #db2777; --border: rgba(0, 0, 0, 0.1); 
+            --text-main: #111827; --text-muted: #6b7280; --glow: 0 10px 40px rgba(0,0,0,0.08); 
+        }
+        :root[data-theme="void"] { 
+            --bg-body: #030305; --bg-panel: rgba(10, 10, 14, 0.6); --primary: #ffffff; --accent: #888888; --border: rgba(255, 255, 255, 0.1); 
+            --text-main: #ffffff; --text-muted: #666666; --glow: 0 0 40px rgba(255,255,255,0.03); 
+        }
+        
+        body { 
+            background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 40px 40px;
+            transition: background-color 0.8s ease, color 0.8s ease;
+        }
+
+        .font-brand { font-family: 'Rajdhani', sans-serif; } 
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        #authCard { 
+            background: var(--bg-panel);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border); 
+            box-shadow: var(--glow); 
+            transition: all 0.5s ease; 
+        }
+
+        .modern-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid transparent;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        .modern-input:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid var(--primary);
+        }
+        :root[data-theme="light"] .modern-input { background: rgba(255,255,255,0.5); }
+        :root[data-theme="light"] .modern-input:focus { background: rgba(255,255,255,0.9); }
+        
+        @keyframes formFadeSlide {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-form-switch {
+            animation: formFadeSlide 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+    <div class="fixed top-8 right-8 z-50">
+        <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--bg-panel)] text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all backdrop-blur text-sm" title="Switch Theme">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+    </div>
+
+    <div class="mb-10 text-center transform translate-y-4">
+        <h1 class="text-4xl font-brand font-semibold tracking-[0.2em] mb-3">CRYPT<span class="text-[var(--primary)]">PACT</span></h1>
+        <div class="flex items-center justify-center gap-4 opacity-60">
+            <div class="h-px w-8 bg-[var(--text-muted)]"></div>
+            <p class="font-mono text-[10px] tracking-[0.4em] uppercase text-[var(--text-muted)]">Authentication</p>
+            <div class="h-px w-8 bg-[var(--text-muted)]"></div>
+        </div>
+    </div>
+
+    <div id="authCard" class="w-full max-w-[420px] rounded-2xl relative overflow-hidden flex flex-col z-10">
+        
+        <div class="px-8 pt-8 pb-4">
+            <div class="flex p-1 bg-black/20 rounded-lg border border-[var(--border)] relative">
+                <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative">SIGN IN</button>
+                <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent">CREATE ID</button>
+            </div>
+        </div>
+
+        <div class="px-8 pb-8 pt-2">
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-6 animate-form-switch">
+                
+                <div class="space-y-1">
+                    <label class="text-[10px] text-[var(--text-muted)] tracking-widest uppercase ml-1">Identity Alias</label>
+                    <input type="text" id="username" required autocomplete="off" class="w-full modern-input p-3 rounded-lg font-mono text-sm text-[var(--text-main)] focus:outline-none" placeholder="Enter your alias">
+                </div>
+                
+                <div class="space-y-1">
+                    <label class="text-[10px] text-[var(--text-muted)] tracking-widest uppercase ml-1">Security Key</label>
+                    <input type="password" id="password" required class="w-full modern-input p-3 rounded-lg font-mono text-sm text-[var(--text-main)] focus:outline-none tracking-widest" placeholder="••••••••">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn" class="w-full py-4 bg-[var(--primary)] text-[var(--bg-body)] font-semibold text-xs tracking-[0.2em] rounded-lg hover:opacity-90 transition-all font-mono shadow-[var(--glow)]">
+                        AUTHENTICATE
+                    </button>
+                </div>
+
+                <div class="relative flex items-center justify-center mt-6 mb-6">
+                    <div class="absolute w-full border-t border-[var(--border)]"></div>
+                    <span class="relative bg-transparent px-3 text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase" style="background-color: var(--bg-panel);">OR</span>
+                </div>
+
+                <div class="flex justify-center w-full mt-4">
+                    <div id="g_id_onload"
+                        data-client_id="298361900430-hocues839g7fp7nogs3db9vei548mi3l.apps.googleusercontent.com"
+                        data-context="signin"
+                        data-ux_mode="popup"
+                        data-callback="handleGoogleAuth"
+                        data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                        data-type="standard"
+                        data-shape="rectangular"
+                        data-theme="filled_black"
+                        data-text="continue_with"
+                        data-size="large"
+                        data-logo_alignment="left"
+                        data-width="356">
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--primary)] rounded-full mix-blend-multiply filter blur-[128px] opacity-10 pointer-events-none"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--accent)] rounded-full mix-blend-multiply filter blur-[128px] opacity-10 pointer-events-none"></div>
+
+    <script>
+        let currentMode = 'login';
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let colorClass = type === 'error' ? 'border-red-500/50 text-red-500 bg-red-900/10' : 
+                             type === 'success' ? 'border-green-500/50 text-green-500 bg-green-900/10' : 
+                             'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-panel)]';
+            
+            toast.className = `backdrop-blur-md border ${colorClass} px-4 py-3 rounded-lg shadow-2xl font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto`;
+            toast.innerHTML = `<span class="tracking-wide">${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        const themes = ['void', 'retro', 'zen', 'light']; 
+        function initTheme() {
+            const savedTheme = localStorage.getItem('app-theme') || 'void'; 
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        function cycleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = themes[(themes.indexOf(current) + 1) % themes.length];
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('app-theme', next);
+        }
+        initTheme();
+
+        function switchTab(mode) {
+            if (currentMode === mode) return; 
+            currentMode = mode;
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const btn = document.getElementById('submitBtn');
+            const form = document.getElementById('authForm');
+
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+
+            form.classList.remove('animate-form-switch');
+            void form.offsetWidth; 
+            form.classList.add('animate-form-switch');
+
+            if (mode === 'login') {
+                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative";
+                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent";
+                btn.innerText = "AUTHENTICATE";
+            } else {
+                tabRegister.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--bg-body)] bg-[var(--primary)] rounded-md transition-all shadow-sm z-10 relative";
+                tabLogin.className = "flex-1 py-2 text-[11px] font-medium tracking-widest font-mono text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-md transition-all z-10 relative bg-transparent";
+                btn.innerText = "ESTABLISH IDENTITY";
+            }
+        }
+
+        async function handleGoogleAuth(response) {
+            showToast("Verifying Google Auth Matrix...", "info");
+            try {
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential: response.credential })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('auth-token', data.token);
+                    // NEW: Check if agent needs to choose a codename
+                    if (data.setupComplete === false) {
+                        showToast("New Agent Detected. Redirecting to Alias Setup...", "success");
+                        setTimeout(() => { window.location.href = '/alias-setup.html'; }, 1000);
+                    } else {
+                        showToast("Access Granted.", "success");
+                        setTimeout(() => { window.location.href = '/'; }, 800);
+                    }
+                } else {
+                    showToast(data.message || "Google Auth rejected.", "error");
+                }
+            } catch (err) {
+                showToast("Network protocol failure.", "error");
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const endpoint = currentMode === 'login' ? '/api/auth/login' : '/api/auth/register';
+            const btn = document.getElementById('submitBtn');
+
+            btn.disabled = true;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    if (currentMode === 'register') {
+                        showToast("Identity established. Sign in now.", "success");
+                        setTimeout(() => switchTab('login'), 1200);
+                    } else {
+                        showToast("Access Granted.", "success");
+                        localStorage.setItem('auth-token', data.token);
+                        // Standard login users have setupComplete: true by default
+                        setTimeout(() => { window.location.href = '/'; }, 800);
+                    }
+                } else {
+                    showToast(data.message || data.error || "Auth failed.", "error");
+                }
+            } catch (err) {
+                showToast("Server unreachable.", "error");
+            } finally {
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
 </file>
 
 <file path="server.js">
+const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -1017,60 +1234,24 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600&display=swap');
         
         /* --- THEME SYSTEM --- */
-        
-        /* 1. RETRO (Warm/Eye-Friendly) */
         :root[data-theme="retro"] { 
-            --bg-body: #1c1b1a;       
-            --bg-panel: #262422;      
-            --primary: #ffb347;       
-            --accent: #d48839;        
-            --border: #443f3c;        
-            --text-main: #e7e5e4;     
-            --text-muted: #a8a29e;
-            --msg-sent: rgba(255, 179, 71, 0.1);
-            --msg-recv: rgba(255, 255, 255, 0.05);
+            --bg-body: #1c1b1a; --bg-panel: #262422; --primary: #ffb347; --accent: #d48839; --border: #443f3c; 
+            --text-main: #e7e5e4; --text-muted: #a8a29e; --msg-sent: rgba(255, 179, 71, 0.1); --msg-recv: rgba(255, 255, 255, 0.05);
             --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
         }
-
-        /* 2. ZEN (Cool/Low Contrast) */
         :root[data-theme="zen"] { 
-            --bg-body: #0f172a;       
-            --bg-panel: #1e293b;      
-            --primary: #38bdf8;       
-            --accent: #818cf8;        
-            --border: #334155; 
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --msg-sent: rgba(56, 189, 248, 0.1);
-            --msg-recv: rgba(255, 255, 255, 0.05);
+            --bg-body: #0f172a; --bg-panel: #1e293b; --primary: #38bdf8; --accent: #818cf8; --border: #334155; 
+            --text-main: #f1f5f9; --text-muted: #94a3b8; --msg-sent: rgba(56, 189, 248, 0.1); --msg-recv: rgba(255, 255, 255, 0.05);
             --glow: none;
         }
-
-        /* 3. LIGHT (High Visibility - NEW) */
         :root[data-theme="light"] { 
-            --bg-body: #e5e5e5;       
-            --bg-panel: #ffffff;      
-            --primary: #2563eb;       
-            --accent: #db2777;        
-            --border: #a3a3a3;        
-            --text-main: #171717;     
-            --text-muted: #525252;
-            --msg-sent: rgba(37, 99, 235, 0.1);
-            --msg-recv: rgba(0, 0, 0, 0.05);
+            --bg-body: #e5e5e5; --bg-panel: #ffffff; --primary: #2563eb; --accent: #db2777; --border: #a3a3a3; 
+            --text-main: #171717; --text-muted: #525252; --msg-sent: rgba(37, 99, 235, 0.1); --msg-recv: rgba(0, 0, 0, 0.05);
             --glow: 0 4px 6px rgba(0,0,0,0.1); 
         }
-
-        /* 4. VOID (Original Neon) */
         :root[data-theme="void"] { 
-            --bg-body: #050508; 
-            --bg-panel: #0f1015; 
-            --primary: #00f3ff; 
-            --accent: #bc13fe; 
-            --border: #1e293b; 
-            --text-main: #e2e8f0;
-            --text-muted: #64748b;
-            --msg-sent: rgba(0, 243, 255, 0.1);
-            --msg-recv: rgba(0, 0, 0, 0.4);
+            --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #1e293b; 
+            --text-main: #e2e8f0; --text-muted: #64748b; --msg-sent: rgba(0, 243, 255, 0.1); --msg-recv: rgba(0, 0, 0, 0.4);
             --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
         }
         
@@ -1100,31 +1281,33 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         #spyTools { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
         #spyTools.open { max-height: 200px; opacity: 1; margin-bottom: 10px; }
         
-        /* Transition for theme switching */
+        .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+        
         * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease; }
     </style>
 </head>
 <body>
 
-    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20 shadow-[var(--glow)]">
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+    <nav class="h-16 flex-none border-b border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-between px-6 z-20 shadow-[var(--glow)] relative">
         <div class="flex items-center gap-4">
             <a href="/" class="text-[var(--primary)] border border-[var(--primary)] px-4 py-1 rounded text-xs font-bold hover:bg-[var(--primary)] hover:text-[var(--bg-panel)] transition shadow-[var(--glow)]">← TERMINAL</a>
             <h1 class="orbitron text-lg font-bold tracking-widest text-[var(--text-main)] hidden md:block">SECURE <span class="text-[var(--primary)]">UPLINK</span></h1>
         </div>
         <div class="flex items-center gap-4">
             <div id="statusIndicator" class="flex items-center gap-2 text-[10px] font-mono text-[var(--text-muted)] uppercase">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></span>
-                <span id="statusText">OFFLINE</span>
+                <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e] animate-pulse" id="statusDot"></span>
+                <span id="statusText" class="text-green-500 font-bold">ONLINE</span>
             </div>
             
-            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-panel)] transition-all" title="Change Theme">🎨</button>
-            
-            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs border border-[var(--border)] px-3 py-1 rounded">🔊 ON</button>
-            <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded">LOGOUT</button>
+            <button onclick="cycleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-black transition-all cursor-pointer" title="Change Theme">🎨</button>
+            <button onclick="SoundFX.toggle()" id="muteBtn" class="text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs border border-[var(--border)] px-3 py-1 rounded cursor-pointer">🔊 ON</button>
+            <button onclick="logout()" class="text-red-500 hover:text-white text-xs border border-red-900 px-3 py-1 rounded cursor-pointer">LOGOUT</button>
         </div>
     </nav>
 
-    <div class="flex flex-1 overflow-hidden">
+    <div class="flex flex-1 overflow-hidden relative">
         <aside class="w-64 border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col z-10 hidden md:flex">
             <div class="p-4 border-b border-[var(--border)]">
                 <label for="userSearch" class="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2 block">ACTIVE AGENTS</label>
@@ -1146,18 +1329,18 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 </div>
             </div>
 
-            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)]">
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-[var(--text-muted)] bg-[var(--bg-body)] z-0">
                 <div class="text-4xl mb-2 opacity-20">📡</div>
                 <p class="mono text-xs tracking-widest">SELECT AN AGENT TO BEGIN</p>
                 <p class="mono text-[10px] text-[var(--primary)] mt-2" id="keyGenStatus">INITIALIZING ENGINES...</p>
             </div>
 
-            <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4 hidden pb-20"></div>
+            <div id="messagesArea" class="flex-1 overflow-y-auto p-4 space-y-4 hidden pb-20 relative z-10"></div>
 
-            <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden">
+            <div id="inputArea" class="p-4 border-t border-[var(--border)] bg-[var(--bg-panel)] hidden relative z-20">
                 <div class="max-w-4xl mx-auto relative">
                     
-                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-[var(--text-main)] transition-colors flex items-center gap-2">
+                    <button onclick="toggleSpyTools()" class="absolute -top-10 right-0 bg-[var(--bg-panel)] border border-[var(--border)] border-b-0 text-[var(--primary)] px-3 py-1 rounded-t-lg text-[10px] font-bold tracking-widest hover:text-[var(--text-main)] transition-colors flex items-center gap-2 cursor-pointer">
                         <span>⚙️ ENCRYPTION SETTINGS</span>
                         <span id="toolArrow">▼</span>
                     </button>
@@ -1166,7 +1349,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                         <div class="flex flex-col md:flex-row gap-3">
                             <div class="flex-1">
                                 <label for="cipherMethod" class="text-[9px] text-[var(--primary)] font-bold block mb-1">PROTOCOL</label>
-                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[var(--bg-panel)] border border-[var(--border)] text-[10px] text-[var(--text-main)] p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase">
+                                <select id="cipherMethod" title="Select Encryption Protocol" aria-label="Encryption Protocol" class="w-full bg-[var(--bg-panel)] border border-[var(--border)] text-[10px] text-[var(--text-main)] p-2 rounded focus:border-[var(--primary)] outline-none font-mono uppercase cursor-pointer">
                                     <option value="rsa" selected>1. RSA (MILITARY GRADE)</option>
                                     <option value="caesar">2. CAESAR (BASIC)</option>
                                     <option value="plain">3. PLAINTEXT (NONE)</option>
@@ -1178,7 +1361,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                             </div>
                             <div class="flex items-end">
                                 <label class="flex items-center gap-2 cursor-pointer border border-red-900/50 bg-red-900/10 px-3 py-2 rounded hover:bg-red-900/20 h-[34px]">
-                                    <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3">
+                                    <input type="checkbox" id="burnCheck" title="Toggle Burn on Read" aria-label="Burn on Read" class="accent-red-500 w-3 h-3 cursor-pointer">
                                     <span class="text-[9px] text-red-500 font-bold orbitron">BURN</span>
                                 </label>
                             </div>
@@ -1188,22 +1371,63 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     <form id="chatForm" class="flex gap-2 items-center">
                         <input type="file" id="stegoImgInput" accept="image/*" class="hidden" onchange="handleFileSelect(this)" title="Steganography Image Upload" aria-label="Upload Image for Steganography">
                         
-                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative" id="attachBtn" title="Attach Image" aria-label="Attach Image">
+                        <button type="button" onclick="document.getElementById('stegoImgInput').click()" class="w-10 h-10 rounded-full border border-[var(--border)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--primary)] hover:border-[var(--primary)] transition-all relative cursor-pointer" id="attachBtn" title="Attach Image" aria-label="Attach Image">
                             📎
                         </button>
 
                         <input id="msgInput" title="Message Input" aria-label="Type your message" placeholder="Type message (Select image to hide text inside it)..." autocomplete="off" class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm text-[var(--text-main)] focus:border-[var(--primary)] outline-none font-mono placeholder-[var(--text-muted)]">
-                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[var(--glow)] transition-all text-xs">SEND</button>
+                        <button type="submit" class="bg-[var(--primary)] text-black px-6 py-3 rounded font-bold orbitron hover:shadow-[var(--glow)] transition-all text-xs cursor-pointer">SEND</button>
                     </form>
                 </div>
             </div>
         </main>
     </div>
 
+    <div id="passwordModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-[var(--primary)] w-96 rounded-xl shadow-[0_0_50px_var(--glow)] p-6 text-center transform scale-95 transition-transform duration-200 pointer-events-auto">
+            <h3 class="text-xl font-bold text-[var(--primary)] orbitron mb-4 tracking-widest">DECRYPTION REQUIRED</h3>
+            <p class="text-[10px] text-[var(--text-muted)] font-mono mb-4 uppercase">ENTER SHIFT KEY (NUMBER)</p>
+            <input type="number" id="passwordModalInput" class="w-full bg-[var(--bg-body)] border border-[var(--border)] text-[var(--primary)] p-3 rounded mb-6 text-center font-mono focus:border-[var(--primary)] outline-none transition-all" placeholder="e.g. 3" autocomplete="off">
+            <div class="flex gap-3">
+                <button type="button" id="passwordModalCancel" class="flex-1 py-2 border border-red-900/50 text-red-500 rounded font-bold hover:bg-red-900/20 text-xs tracking-widest font-mono cursor-pointer">CANCEL</button>
+                <button type="button" id="passwordModalSubmit" class="flex-1 py-2 bg-[var(--primary)] text-black rounded font-bold hover:bg-white text-xs tracking-widest shadow-[0_0_10px_var(--glow)] font-mono cursor-pointer">UNLOCK</button>
+            </div>
+        </div>
+    </div>
+
     <canvas id="procCanvas" class="hidden"></canvas>
 
     <script>
-        // --- THEME LOGIC ADDED HERE ---
+        // --- CUSTOM TOAST NOTIFICATION SYSTEM ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
+            let icon = 'ℹ️';
+            
+            if (type === 'error') {
+                colorClass = 'border-red-500 text-red-500 bg-red-900/10';
+                icon = '⚠️';
+            } else if (type === 'success') {
+                colorClass = 'border-green-500 text-green-500 bg-green-900/10';
+                icon = '✅';
+            } else {
+                colorClass = 'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
+            }
+
+            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- THEME LOGIC ---
         const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
@@ -1222,7 +1446,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         }
         initTheme();
 
-        // --- 0. SOUND SYSTEM ---
+        // --- SOUND SYSTEM ---
         const SoundFX = {
             ctx: new (window.AudioContext || window.webkitAudioContext)(),
             muted: false,
@@ -1279,9 +1503,39 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         let activeUsersMap = {}; 
         const myRSA = new JSEncrypt({ default_key_size: 1024 });
         
-        // --- STEGO LOGIC ---
-        let selectedImage = null;
+        // --- PROMPT MODAL WRAPPER FOR CAESAR ---
+        function askShift() {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('passwordModal');
+                const content = modal.firstElementChild; 
+                const input = document.getElementById('passwordModalInput');
+                const submitBtn = document.getElementById('passwordModalSubmit');
+                const cancelBtn = document.getElementById('passwordModalCancel');
 
+                modal.classList.remove('hidden', 'pointer-events-none');
+                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+                input.value = ''; input.focus();
+
+                const cleanup = () => {
+                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
+                    submitBtn.onclick = null; cancelBtn.onclick = null; input.onkeydown = null;
+                };
+
+                const resolvePass = () => {
+                    const val = input.value;
+                    if(!val) { input.classList.add('border-red-500', 'animate-pulse'); setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500); return; }
+                    cleanup(); resolve(val);
+                };
+                const resolveCancel = () => { cleanup(); resolve(null); };
+
+                submitBtn.onclick = resolvePass;
+                cancelBtn.onclick = resolveCancel;
+                input.onkeydown = (e) => { if (e.key === 'Enter') resolvePass(); if (e.key === 'Escape') resolveCancel(); };
+            });
+        }
+
+        let selectedImage = null;
         function handleFileSelect(input) {
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -1294,7 +1548,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             }
         }
 
-        // --- CACHE & KEYS ---
         function saveToLocalCache(cipher, plain) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); c[cipher] = plain; localStorage.setItem('sent_cache', JSON.stringify(c)); } catch(e){} }
         function getFromLocalCache(cipher) { try { let c = JSON.parse(localStorage.getItem('sent_cache') || '{}'); return c[cipher]; } catch(e) { return null; } }
 
@@ -1323,8 +1576,12 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             currentReceiver = user;
             document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active-user'));
             el.classList.add('active-user');
+            
             const statusText = el.querySelector('.status-text');
-            if(statusText.innerText.includes("MSG")) statusText.innerText = "ONLINE";
+            if(statusText.innerText.includes("MSG")) {
+                statusText.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1 shadow-[0_0_5px_#22c55e] animate-pulse"></span><span class="text-green-500 font-bold">ONLINE</span>`;
+            }
+
             document.getElementById('emptyState').classList.add('hidden');
             document.getElementById('chatHeader').classList.remove('hidden');
             document.getElementById('messagesArea').classList.remove('hidden');
@@ -1357,7 +1614,16 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     activeUsersMap[u._id] = u;
                     const div = document.createElement('div');
                     div.className = 'user-card p-3 cursor-pointer hover:bg-[var(--bg-body)] flex items-center gap-3 border-l-2 border-transparent transition-all';
-                    div.innerHTML = `<div class="w-8 h-8 rounded bg-[var(--bg-body)] flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron border border-[var(--border)]">${u.username.substring(0,2).toUpperCase()}</div><div><div class="text-sm font-bold text-[var(--text-main)]">${u.username}</div><div class="text-[9px] text-[var(--text-muted)] mono status-text" data-id="${u._id}">OFFLINE</div></div>`;
+                    
+                    div.innerHTML = `
+                    <div class="w-8 h-8 rounded bg-[var(--bg-body)] flex items-center justify-center text-[var(--primary)] font-bold text-xs orbitron border border-[var(--border)]">${u.username.substring(0,2).toUpperCase()}</div>
+                    <div>
+                        <div class="text-sm font-bold text-[var(--text-main)]">${u.username}</div>
+                        <div class="text-[9px] mono status-text flex items-center mt-0.5" data-id="${u._id}">
+                            <span class="w-1.5 h-1.5 rounded-full bg-gray-600 inline-block mr-1"></span><span class="text-[var(--text-muted)]">OFFLINE</span>
+                        </div>
+                    </div>`;
+                    
                     div.onclick = () => selectUser(u, div);
                     list.appendChild(div);
                 });
@@ -1365,13 +1631,11 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         }
         fetchUsers();
 
-        // --- COMMAND LINE INTERFACE (CLI) LOGIC ---
         function handleCommand(cmd) {
             const args = cmd.split(' ');
             const main = args[0].toLowerCase();
             const area = document.getElementById('messagesArea');
 
-            // Helper to add system message
             const sysMsg = (text, isError=false) => {
                 const div = document.createElement('div');
                 div.className = "text-[10px] font-mono p-2 my-2 border-l-2 " + (isError ? "border-red-500 text-red-400 bg-red-900/10" : "border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]");
@@ -1381,38 +1645,28 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             };
 
             switch(main) {
-                case '/clear':
-                    area.innerHTML = '';
-                    sysMsg("TERMINAL BUFFER CLEARED.");
-                    break;
+                case '/clear': area.innerHTML = ''; sysMsg("TERMINAL BUFFER CLEARED."); break;
                 case '/burn':
                     const msgs = document.querySelectorAll('.msg-enter');
                     if(msgs.length === 0) { sysMsg("NO TARGETS FOUND.", true); return; }
                     SoundFX.burn();
                     sysMsg(`INITIATING MASS DELETE SEQUENCE (${msgs.length} OBJECTS)...`);
-                    msgs.forEach((el, i) => {
-                        setTimeout(() => {
-                            el.classList.add('burn-anim');
-                            setTimeout(() => el.remove(), 1000);
-                        }, i * 100);
-                    });
+                    msgs.forEach((el, i) => { setTimeout(() => { el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1000); }, i * 100); });
                     break;
                 case '/id':
                     const pubKey = localStorage.getItem('rsa_pub') || "UNKNOWN";
                     const shortKey = pubKey.substring(30, 60) + "...";
-                    sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`);
-                    break;
-                case '/help':
-                    sysMsg(`AVAILABLE COMMANDS:<br>• /clear - Wipe local screen<br>• /burn - Destroy visible msgs<br>• /id - Show identity info<br>• /help - Show this menu`);
-                    break;
-                default:
-                    sysMsg(`UNKNOWN COMMAND: ${main}`, true);
+                    sysMsg(`SESSION ID: ${myId}<br>FINGERPRINT: ${shortKey}`); break;
+                case '/help': sysMsg(`AVAILABLE COMMANDS:<br>• /clear - Wipe local screen<br>• /burn - Destroy visible msgs<br>• /id - Show identity info<br>• /help - Show this menu`); break;
+                default: sysMsg(`UNKNOWN COMMAND: ${main}`, true);
             }
         }
 
-        // --- SEND LOGIC ---
         function sendMessage(text, forcedMethod = null, isBurn = false) {
-            if(!currentReceiver) return alert("Select a user first!");
+            if(!currentReceiver) {
+                showToast("Select an agent first!", "error");
+                return;
+            }
             const method = forcedMethod || document.getElementById('cipherMethod').value;
             
             if (selectedImage) {
@@ -1437,12 +1691,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     ctx.putImageData(imgData, 0, 0);
                     const stegoDataUrl = cvs.toDataURL(); 
 
-                    const payload = {
-                        senderId: myId, receiverId: currentReceiver._id,
-                        text: stegoDataUrl, 
-                        cipherType: 'steganography', 
-                        isBurn: isBurn, timestamp: new Date()
-                    };
+                    const payload = { senderId: myId, receiverId: currentReceiver._id, text: stegoDataUrl, cipherType: 'steganography', isBurn: isBurn, timestamp: new Date() };
                     socket.emit("private_message", payload);
                     SoundFX.send();
                     
@@ -1455,15 +1704,20 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 return; 
             }
 
-            // NORMAL PATH
             let cipherText = text;
             if (method === 'rsa') {
                 const partnerData = activeUsersMap[currentReceiver._id];
-                if (!partnerData || !partnerData.publicKey) return alert("User key missing.");
+                if (!partnerData || !partnerData.publicKey) {
+                    showToast("User key missing.", "error");
+                    return;
+                }
                 const encryptor = new JSEncrypt();
                 encryptor.setPublicKey(partnerData.publicKey);
                 cipherText = encryptor.encrypt(text);
-                if(!cipherText) return alert("Message too long for RSA.");
+                if(!cipherText) {
+                    showToast("Message too long for RSA.", "error");
+                    return;
+                }
                 saveToLocalCache(cipherText, text);
             } 
             else if (method === 'caesar') {
@@ -1474,10 +1728,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 });
             }
 
-            const payload = {
-                senderId: myId, receiverId: currentReceiver._id,
-                text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date()
-            };
+            const payload = { senderId: myId, receiverId: currentReceiver._id, text: cipherText, cipherType: method, isBurn: isBurn, timestamp: new Date() };
             socket.emit("private_message", payload);
             SoundFX.send();
         }
@@ -1489,14 +1740,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             const val = input.value.trim();
             
             if(!val) return;
-
-            // --- CLI CHECK ---
-            if (val.startsWith('/')) {
-                handleCommand(val);
-                input.value = '';
-                return;
-            }
-
+            if (val.startsWith('/')) { handleCommand(val); input.value = ''; return; }
             sendMessage(val, null, burn);
             input.value = '';
             document.getElementById('burnCheck').checked = false;
@@ -1505,13 +1749,16 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         socket.on("receive_message", (data) => {
             const senderString = String(data.senderId || data.sender);
             const activeReceiverString = currentReceiver ? String(currentReceiver._id) : null;
+            
             if (activeReceiverString && (senderString === activeReceiverString || senderString === String(myId))) {
                 displayMessage(data);
                 if (senderString !== String(myId)) SoundFX.receive();
             } else if (senderString !== String(myId)) {
                 SoundFX.receive();
                 const userStatus = document.querySelector(`.status-text[data-id="${senderString}"]`);
-                if(userStatus) { userStatus.innerText = "📩 NEW MSG"; userStatus.classList.add('text-[var(--primary)]', 'animate-pulse'); }
+                if(userStatus) { 
+                    userStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)] inline-block mr-1 shadow-[0_0_5px_var(--primary)] animate-pulse"></span><span class="text-[var(--primary)] font-bold animate-pulse">📩 NEW MSG</span>`; 
+                }
             }
         });
 
@@ -1520,6 +1767,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             if(el) { SoundFX.burn(); el.classList.add('burn-anim'); setTimeout(() => el.remove(), 1500); }
         });
 
+        // --- RENDER INCOMING CHAT MESSAGES ---
         function displayMessage(msg) {
             const area = document.getElementById('messagesArea');
             const senderString = String(msg.sender || msg.senderId);
@@ -1542,10 +1790,9 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
             const div = document.createElement('div');
             div.id = `msg-${msgId}`; 
-            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter`;
+            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} msg-enter relative z-10`;
             if (isBurn) div.dataset.burn = "true";
 
-            // THEME-AWARE COLORS
             const color = isBurn ? 'border-red-500/50 text-red-200' : 'border-[var(--border)] text-[var(--text-main)]';
             const bgStyle = isMe ? 'background-color: var(--msg-sent)' : 'background-color: var(--msg-recv)';
 
@@ -1553,11 +1800,13 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
             if (method === 'steganography') {
                 innerHTML = `
-                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-gray-700"></div>
-                    <button onclick="scanImage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
-                        <span>🔍 SCAN FOR HIDDEN DATA</span>
-                    </button>
-                    <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                    <div class="mb-2"><img src="${content}" class="max-w-[200px] rounded border border-[var(--border)]"></div>
+                    <div class="w-full mt-2 relative z-10">
+                        <button type="button" onclick="scanImage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+                            <span>🔍 SCAN FOR HIDDEN DATA</span>
+                        </button>
+                    </div>
+                    <div id="plain-${msgId}" class="hidden text-xs font-mono text-[var(--text-main)] break-all mt-2 border-t border-[var(--border)] pt-2"></div>
                 `;
             } 
             else if (method === 'rsa') {
@@ -1570,39 +1819,110 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 if (isLocked) {
                     innerHTML = `
                         <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content.substring(0, 20)}...[ENCRYPTED]</div>
-                        <button onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-white/20 text-[var(--primary)] text-[10px] py-1 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2">
-                            <span>🔓 UNLOCK DATA</span>
-                        </button>
-                        <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-white/10 pt-2"></div>
+                        <div class="w-full mt-2 relative z-10">
+                            <button type="button" onclick="unlockMessage('${msgId}', '${content}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2 cursor-pointer pointer-events-auto">
+                                <span>🔓 UNLOCK DATA</span>
+                            </button>
+                        </div>
+                        <div id="plain-${msgId}" class="hidden text-xs font-mono text-[var(--text-main)] break-all mt-2 border-t border-[var(--border)] pt-2"></div>
+                    `;
+                } else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
+            } 
+            else if (method === 'caesar') {
+                let isLocked = !isMe;
+                if (isMe) {
+                    const cached = getFromLocalCache(content) || msg.originalText;
+                    if(cached) { content = cached; isLocked = false; } else { isLocked = true; }
+                }
+
+                if (isLocked) {
+                    innerHTML = `
+                        <div class="encrypted-text mb-2 break-all" id="cipher-${msgId}">${content}</div>
+                        
+                        <div id="btn-${msgId}" class="w-full mt-2 relative z-20">
+                            <button type="button" onclick="unlockCaesar('${msgId}')" class="w-full bg-[var(--bg-panel)] hover:bg-[var(--primary)] hover:text-black border border-[var(--border)] text-[var(--primary)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-2 cursor-pointer pointer-events-auto shadow-md">
+                                <span>🔓 DECRYPT SHIFT</span>
+                            </button>
+                        </div>
+                        
+                        <div id="plain-${msgId}" class="hidden text-xs font-mono text-green-400 break-all mt-2 border-t border-[var(--border)] pt-2"></div>
                     `;
                 } else {
                     innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
                 }
-            } else {
-                innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`;
-            }
-
-            const clickAction = (method === 'caesar' && !isMe) ? `onclick="const k=prompt('Shift Key?'); if(k) this.innerText=decryptCaesar(this.innerText, k)"` : '';
+            } 
+            else { innerHTML = `<div class="text-xs font-mono break-all">${content}</div>`; }
 
             div.innerHTML = `
-                <div class="max-w-[75%] rounded-lg p-3 border shadow-lg relative" style="${bgStyle}; ${color.includes('border') ? '' : 'border-color: var(--border)'}" ${clickAction}>
-                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4 text-[var(--text-muted)]">
+                <div class="max-w-[75%] rounded-lg p-3 border shadow-lg relative z-0" style="${bgStyle}; ${color.includes('border') ? '' : 'border-color: var(--border)'}">
+                    <div class="text-[9px] mb-1 opacity-50 flex justify-between gap-4 text-[var(--text-muted)] pointer-events-none">
                         <span>${isMe ? 'YOU' : (currentReceiver ? currentReceiver.username : 'Partner')}</span>
                         <span>${isBurn ? '🔥 10s' : new Date().toLocaleTimeString()}</span>
                     </div>
                     ${innerHTML}
-                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase">🔒 ${method}</div>` : ''}
+                    ${method !== 'plain' ? `<div class="mt-1 pt-1 border-t border-white/5 text-[9px] text-[var(--accent)] font-bold uppercase pointer-events-none">🔒 ${method}</div>` : ''}
                 </div>
             `;
             
             area.appendChild(div);
             setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
-
-            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') {
-                socket.emit("message_seen", msgId);
-            }
+            if (isBurn && !isMe && method !== 'rsa' && method !== 'steganography') socket.emit("message_seen", msgId);
         }
         
+        function decryptCaesar(text, shift) {
+            let s = parseInt(shift);
+            if(isNaN(s)) return text;
+            s = ((s % 26) + 26) % 26; 
+            let decryptShift = (26 - s) % 26;
+            return text.replace(/[a-zA-Z]/g, c => {
+                const b = c >= 'a' ? 97 : 65;
+                return String.fromCharCode(((c.charCodeAt(0) - b + decryptShift) % 26) + b);
+            });
+        }
+
+        // --- UPDATED UX: CAESAR UNLOCK DUAL-BUTTON ---
+        async function unlockCaesar(id) {
+            const shiftVal = await askShift();
+            if(!shiftVal) return;
+            const cipherEl = document.getElementById(`cipher-${id}`);
+            if(!cipherEl) return;
+            
+            const shift = parseInt(shiftVal);
+            const decrypted = decryptCaesar(cipherEl.innerText, shift);
+            SoundFX.decrypt();
+            
+            const plainEl = document.getElementById(`plain-${id}`);
+            plainEl.innerHTML = `<span class="text-[var(--text-muted)] text-[9px] mr-2">SHIFT [${shift}]:</span><span class="text-green-400">${decrypted}</span>`;
+            plainEl.classList.remove('hidden');
+            
+            const btn = document.getElementById(`btn-${id}`);
+            if(btn) {
+                btn.outerHTML = `
+                <div id="btn-${id}" class="flex gap-2 w-full mt-2 relative z-20">
+                    <button type="button" onclick="acceptDecryption('${id}')" class="flex-1 bg-green-900/20 hover:bg-green-500 hover:text-black border border-green-500/50 text-green-500 text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><span>✅</span> <span>ACCEPT</span></button>
+                    <button type="button" onclick="unlockCaesar('${id}')" class="flex-1 bg-[var(--bg-panel)] hover:bg-[var(--accent)] hover:text-black border border-[var(--accent)] text-[var(--accent)] text-[10px] py-2 rounded transition-all font-bold tracking-widest flex items-center justify-center gap-1 cursor-pointer pointer-events-auto"><span>🔄</span> <span>RETRY</span></button>
+                </div>`;
+            }
+            
+            const container = document.getElementById(`msg-${id}`); 
+            if (container && container.dataset.burn === "true" && !container.dataset.seenFired) {
+                socket.emit("message_seen", id);
+                container.dataset.seenFired = "true";
+            }
+        }
+
+        function acceptDecryption(id) {
+            const btn = document.getElementById(`btn-${id}`);
+            if(btn) btn.remove();
+            
+            const cipherEl = document.getElementById(`cipher-${id}`);
+            const plainEl = document.getElementById(`plain-${id}`);
+            if(cipherEl && plainEl) {
+                saveToLocalCache(cipherEl.innerText, plainEl.innerText);
+            }
+            showToast("Decryption locked & saved.", "success");
+        }
+
         function scanImage(id, imgSrc) {
             const img = new Image();
             img.onload = () => {
@@ -1611,7 +1931,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 cvs.width = img.width; cvs.height = img.height;
                 ctx.drawImage(img, 0, 0);
                 const data = ctx.getImageData(0,0,img.width,img.height).data;
-                
                 let bin = "", res = "";
                 for(let i=0; i<data.length; i++) {
                     if(i%4===3) continue;
@@ -1622,15 +1941,11 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                         bin = "";
                     }
                 }
-                
                 document.getElementById(`plain-${id}`).innerText = "HIDDEN MSG: " + res;
                 document.getElementById(`plain-${id}`).classList.remove('hidden');
                 SoundFX.decrypt();
-
                 const container = document.getElementById(`msg-${id}`);
-                if (container && container.dataset.burn === "true") {
-                    socket.emit("message_seen", id);
-                }
+                if (container && container.dataset.burn === "true") socket.emit("message_seen", id);
             };
             img.src = imgSrc;
         }
@@ -1641,19 +1956,19 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 const decryptor = new JSEncrypt();
                 decryptor.setPrivateKey(myPriv);
                 const decrypted = decryptor.decrypt(cipherText);
-                
                 if (decrypted) {
                     SoundFX.decrypt();
                     document.getElementById(`plain-${id}`).innerText = decrypted;
                     document.getElementById(`plain-${id}`).classList.remove('hidden');
                     document.getElementById(`cipher-${id}`).classList.add('hidden');
-                    
                     const container = document.getElementById(`msg-${id}`); 
-                    if (container && container.dataset.burn === "true") {
-                        socket.emit("message_seen", id);
-                    }
-                } else { alert("Decryption Failed."); }
-            } catch(e) { alert("Decryption Error"); }
+                    if (container && container.dataset.burn === "true") socket.emit("message_seen", id);
+                } else { 
+                    showToast("Decryption Failed.", "error"); 
+                }
+            } catch(e) { 
+                showToast("Decryption Error", "error"); 
+            }
         }
 
         function toggleSpyTools() {
@@ -1661,13 +1976,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             el.classList.toggle('open');
             document.getElementById('toolArrow').innerText = el.classList.contains('open') ? '▲' : '▼';
         }
-        function decryptCaesar(text, shift) {
-             const s = (26 - parseInt(shift)) % 26;
-             return text.replace(/[a-zA-Z]/g, c => {
-                const b = c >= 'a' ? 97 : 65;
-                return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26) + b);
-            });
-        }
+
         async function loadHistory(partnerId) {
             try {
                 const res = await fetch(`/api/messages/${myId}/${partnerId}`);
@@ -1675,18 +1984,21 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 msgs.forEach(displayMessage);
             } catch(e) {}
         }
+        
         socket.on('connect', () => {
             socket.emit("login", myId);
-            document.getElementById('statusDot').className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]";
-            document.getElementById('statusText').innerText = "ONLINE";
-            document.getElementById('statusText').className = "text-green-500";
         });
+
         socket.on('get_users', (onlineIds) => {
             document.querySelectorAll('.status-text').forEach(el => {
                 const uid = el.getAttribute('data-id');
                 if(onlineIds.includes(uid)) {
-                    if (!el.innerText.includes("MSG")) { el.innerText = "ONLINE"; el.classList.replace('text-gray-600', 'text-[var(--primary)]'); }
-                } else { el.innerText = "OFFLINE"; el.classList.replace('text-[var(--primary)]', 'text-gray-600'); }
+                    if (!el.innerText.includes("MSG")) { 
+                        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block mr-1 shadow-[0_0_5px_#22c55e] animate-pulse"></span><span class="text-green-500 font-bold">ONLINE</span>`; 
+                    }
+                } else { 
+                    el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-gray-600 inline-block mr-1"></span><span class="text-[var(--text-muted)]">OFFLINE</span>`; 
+                }
             });
         });
     </script>
@@ -1709,97 +2021,60 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;900&family=Rajdhani:wght@500;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;900&display=swap');
+        
+        /* EXACT PIGPEN FONT - Matches your reference image perfectly */
+        @import url('https://fonts.cdnfonts.com/css/pigpen-cipher');
 
         /* --- THEME SYSTEM --- */
-        
-        /* 1. RETRO (Warm/Eye-Friendly) */
         :root[data-theme="retro"] { 
-            --bg-body: #1c1b1a;       
-            --bg-panel: #262422;      
-            --primary: #ffb347;       
-            --accent: #d48839;        
-            --border: #57534e;        
-            --text-main: #e7e5e4;     
-            --text-muted: #a8a29e;
-            --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
-            --overlay: rgba(28, 27, 26, 0.8);
-            --shadow-3d: 8px 8px 0px #443f3c; /* 3D Effect */
+            --bg-body: #1c1b1a; --bg-panel: #262422; --primary: #ffb347; --accent: #d48839; --border: #57534e; 
+            --text-main: #e7e5e4; --text-muted: #a8a29e; --glow: 0 0 15px rgba(255, 179, 71, 0.15); 
+            --overlay: rgba(28, 27, 26, 0.8); --shadow-3d: 8px 8px 0px #443f3c; 
         }
-
-        /* 2. ZEN (Cool/Low Contrast) */
         :root[data-theme="zen"] { 
-            --bg-body: #0f172a;       
-            --bg-panel: #1e293b;      
-            --primary: #38bdf8;       
-            --accent: #818cf8;        
-            --border: #475569; 
-            --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
-            --glow: none;
-            --overlay: rgba(15, 23, 42, 0.8);
+            --bg-body: #0f172a; --bg-panel: #1e293b; --primary: #38bdf8; --accent: #818cf8; --border: #475569; 
+            --text-main: #f1f5f9; --text-muted: #94a3b8; --glow: none; --overlay: rgba(15, 23, 42, 0.8); 
             --shadow-3d: 8px 8px 0px #334155; 
         }
-
-        /* 3. LIGHT (New - High Visibility) */
         :root[data-theme="light"] { 
-            --bg-body: #e5e5e5;       
-            --bg-panel: #ffffff;      
-            --primary: #2563eb;       
-            --accent: #db2777;        
-            --border: #a3a3a3;        
-            --text-main: #171717;     
-            --text-muted: #525252;
-            --glow: 0 4px 6px rgba(0,0,0,0.1);
-            --overlay: rgba(255, 255, 255, 0.9);
-            --shadow-3d: 8px 8px 0px #737373; 
+            --bg-body: #e5e5e5; --bg-panel: #ffffff; --primary: #2563eb; --accent: #db2777; --border: #a3a3a3; 
+            --text-main: #171717; --text-muted: #525252; --glow: 0 4px 6px rgba(0,0,0,0.1); 
+            --overlay: rgba(255, 255, 255, 0.9); --shadow-3d: 8px 8px 0px #737373; 
         }
-
-        /* 4. VOID (Original Neon) */
         :root[data-theme="void"] { 
-            --bg-body: #050508; 
-            --bg-panel: #0f1015; 
-            --primary: #00f3ff; 
-            --accent: #bc13fe; 
-            --border: #334155; 
-            --text-main: #e2e8f0;
-            --text-muted: #64748b;
-            --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
-            --overlay: rgba(0, 0, 0, 0.85);
-            --shadow-3d: 8px 8px 0px #1e293b; 
+            --bg-body: #050508; --bg-panel: #0f1015; --primary: #00f3ff; --accent: #bc13fe; --border: #334155; 
+            --text-main: #e2e8f0; --text-muted: #64748b; --glow: 0 0 20px rgba(0, 243, 255, 0.2); 
+            --overlay: rgba(0, 0, 0, 0.85); --shadow-3d: 8px 8px 0px #1e293b; 
         }
         
         body { 
-            background-color: var(--bg-body); 
-            color: var(--text-main); 
-            font-family: 'Inter', sans-serif; 
-            background-image: radial-gradient(var(--border) 1px, transparent 1px); 
-            background-size: 30px 30px;
+            background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; 
+            background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 30px 30px;
             transition: all 0.5s ease;
         }
 
-        /* --- UI STYLES --- */
         .orbitron { font-family: 'Orbitron', sans-serif; } 
         .mono { font-family: 'Space Mono', monospace; }
+        
+        /* CLASS TO APPLY TRUE PIGPEN SHAPES */
+        .font-pigpen { font-family: 'Pigpen Cipher', sans-serif !important; letter-spacing: 4px; font-weight: normal; }
+
         .card-inner { transform-style: preserve-3d; }
         .perspective-container { perspective: 1200px; }
 
-        /* THE 3D CARD EFFECT */
-        #mainCard {
-            border: 2px solid var(--border); /* Thicker Border */
-            box-shadow: var(--shadow-3d);    /* The 3D Pop */
-            transition: all 0.3s ease;
-        }
+        #mainCard { border: 2px solid var(--border); box-shadow: var(--shadow-3d); transition: all 0.3s ease; }
 
         ::-webkit-scrollbar { width: 8px; } 
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; } 
         ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
         .modal-bg { background: rgba(0, 0, 0, 0.85); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
-        
         * { transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col overflow-hidden">
+
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <nav class="fixed top-0 w-full p-4 flex justify-between items-center z-50 bg-[var(--bg-panel)]/95 backdrop-blur border-b border-[var(--border)]">
         <div class="flex items-center gap-4">
@@ -1817,10 +2092,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             </a>
         </div>
         <div class="flex items-center gap-4">
-            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] transition-all" title="Switch Theme">
-                🎨
-            </button>
-
+            <button onclick="cycleTheme()" class="w-10 h-10 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--primary)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] transition-all" title="Switch Theme">🎨</button>
             <h1 class="text-2xl font-black tracking-widest hidden xl:block orbitron">Crypt<span class="text-[var(--primary)]">Pact</span></h1>
             <button onclick="logout()" class="px-4 py-2 border border-red-900/50 text-red-500 rounded text-xs font-bold hover:bg-red-900/20">LOGOUT</button>
         </div>
@@ -1841,13 +2113,12 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-0 flex-grow overflow-hidden">
-                
                 <div class="p-6 space-y-6 border-r border-[var(--border)] relative overflow-y-auto">
                     <div>
                         <label for="algoSelect" class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Algorithm Selection</label>
                         <select id="algoSelect" title="Select Algorithm" aria-label="Select Algorithm" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded text-sm font-bold focus:border-[var(--primary)] outline-none transition-colors text-[var(--text-main)] font-mono">
                             <optgroup label="Classical Ciphers">
-                                <option value="atbash">1. Atbash Cipher</option>
+                                <option value="atbash" selected>1. Atbash Cipher</option>
                                 <option value="caesar">2. Caesar Cipher</option>
                                 <option value="playfair">3. Playfair Cipher</option>
                                 <option value="vigenere">4. Vigenère Cipher</option>
@@ -1855,7 +2126,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                                 <option value="pigpen">6. Pigpen Cipher</option>
                             </optgroup>
                             <optgroup label="Modern Encryption">
-                                <option value="aes" selected>7. AES-256 (Standard)</option>
+                                <option value="aes">7. AES-256 (Standard)</option>
                                 <option value="rsa">8. RSA (Asymmetric)</option>
                                 <option value="ecc">9. ECC (Elliptic Curve)</option>
                             </optgroup>
@@ -1868,7 +2139,10 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     <div id="dynamicInputs" class="space-y-4">
                         <div id="stdInputGroup">
                             <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Input Data</label>
-                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)]" placeholder="Enter text..."></textarea>
+                            <textarea id="mainInput" title="Enter Text to Encrypt" aria-label="Enter Text to Encrypt" class="w-full h-32 bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-sm focus:border-[var(--primary)] outline-none resize-none text-[var(--text-main)] placeholder-[var(--text-muted)] transition-all" placeholder="Enter text..."></textarea>
+                            
+                            <div id="pigpenKeyboard" class="hidden mt-3 grid-cols-7 gap-1 p-3 rounded-lg border border-[var(--border)] bg-[var(--overlay)] shadow-inner">
+                                </div>
                         </div>
 
                         <div id="stegoInputGroup" class="hidden">
@@ -1881,9 +2155,8 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                         </div>
 
                         <div id="keyGroup">
-                            <label class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
+                            <label id="keyLabel" class="text-[10px] font-bold text-[var(--text-muted)] uppercase mb-2 block font-mono">Encryption Key</label>
                             <input id="keyInput" type="text" title="Enter Encryption Key" aria-label="Enter Encryption Key" class="w-full bg-[var(--bg-body)] border border-[var(--border)] p-3 rounded mono text-[var(--primary)] focus:border-[var(--primary)] outline-none placeholder-[var(--text-muted)] text-[var(--text-main)]" placeholder="Key / Shift / Password">
-                            
                             <textarea id="rsaKeyInput" title="RSA Key Input" aria-label="RSA Key Input" class="hidden w-full h-24 bg-[var(--bg-body)] border border-[var(--border)] p-2 rounded mono text-[10px] text-[var(--primary)] focus:border-[var(--primary)] outline-none" placeholder="Paste Key Here... (Leave empty to Auto-Generate on Encrypt)"></textarea>
                         </div>
 
@@ -1900,7 +2173,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                             <span>COPY RESULT</span>
                         </button>
                     </div>
-                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm text-[var(--accent)] break-all whitespace-pre-wrap overflow-y-auto relative">
+                    <div class="flex-grow bg-[var(--bg-body)] border border-[var(--border)] rounded p-4 mono text-sm text-[var(--accent)] break-all whitespace-pre-wrap overflow-y-auto relative transition-all" id="outputWrapper">
                         <div id="outputDisplay">// WAITING FOR INPUT...</div>
                         <canvas id="stegoCanvas" class="hidden"></canvas>
                     </div>
@@ -1915,7 +2188,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 <h2 class="text-4xl orbitron text-[var(--primary)] mb-2 tracking-widest">CIPHER <span class="text-[var(--text-main)]">ARSENAL</span></h2>
                 <p class="text-[var(--text-muted)] font-mono text-xs tracking-[0.3em]">VIDEO TUTORIAL DATABASE</p>
             </div>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                 <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">1. ATBASH</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Atbash Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/zt5Ax2TmZJI" frameborder="0" allowfullscreen></iframe></div></div>
                 <div class="border border-[var(--border)] bg-[var(--overlay)] p-4 rounded-xl hover:border-[var(--primary)]"><h3 class="text-lg orbitron text-[var(--text-main)] mb-2">2. CAESAR</h3><div class="aspect-video w-full border border-gray-700 bg-black"><iframe title="Caesar Tutorial" class="w-full h-full" src="https://www.youtube.com/embed/JtbKh_12ctg" frameborder="0" allowfullscreen></iframe></div></div>
@@ -1973,13 +2245,75 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         </div>
     </div>
 
+    <div id="confirmModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden opacity-0 transition-opacity duration-300 pointer-events-none modal-bg">
+        <div class="relative bg-[var(--bg-panel)] border border-red-500 w-96 rounded-xl shadow-[0_0_50px_rgba(239,68,68,0.2)] p-6 text-center transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-red-500 orbitron mb-4 tracking-widest">SYSTEM ALERT</h3>
+            <p id="confirmModalText" class="text-xs text-[var(--text-main)] font-mono mb-6 uppercase">Are you sure?</p>
+            <div class="flex gap-3">
+                <button id="confirmModalCancel" class="flex-1 py-2 border border-[var(--border)] text-[var(--text-muted)] rounded font-bold hover:bg-[var(--bg-body)] text-xs tracking-widest font-mono transition-all">CANCEL</button>
+                <button id="confirmModalSubmit" class="flex-1 py-2 bg-red-600 text-white rounded font-bold hover:bg-red-500 text-xs tracking-widest shadow-[0_0_10px_rgba(239,68,68,0.5)] font-mono transition-all">CONFIRM</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // --- AUTH CHECK ---
         const token = localStorage.getItem('auth-token');
         if (!token) window.location.href = '/login.html';
         function logout() { localStorage.removeItem('auth-token'); window.location.href = '/login.html'; }
 
-        // --- THEME LOGIC ---
+        // --- CUSTOM TOAST NOTIFICATION SYSTEM ---
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let colorClass = 'border-[var(--primary)] text-[var(--primary)]';
+            let icon = 'ℹ️';
+            
+            if (type === 'error') {
+                colorClass = 'border-red-500 text-red-500 bg-red-900/10';
+                icon = '⚠️';
+            } else if (type === 'success') {
+                colorClass = 'border-green-500 text-green-500 bg-green-900/10';
+                icon = '✅';
+            } else {
+                colorClass = 'border-[var(--primary)] text-[var(--primary)] bg-[var(--bg-body)]';
+            }
+
+            toast.className = `bg-[var(--bg-panel)] border ${colorClass} p-3 rounded shadow-[0_0_15px_currentColor] font-mono text-xs flex items-center gap-3 transform translate-x-[120%] transition-transform duration-300 pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<span class="text-lg">${icon}</span> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-x-[120%]');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- CUSTOM CONFIRMATION PROMPT ---
+        function askConfirm(msg) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirmModal');
+                const content = modal.firstElementChild; 
+                const text = document.getElementById('confirmModalText');
+                const submitBtn = document.getElementById('confirmModalSubmit');
+                const cancelBtn = document.getElementById('confirmModalCancel');
+
+                text.innerText = msg;
+                modal.classList.remove('hidden', 'pointer-events-none');
+                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
+
+                const cleanup = () => {
+                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
+                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
+                    submitBtn.onclick = null; cancelBtn.onclick = null;
+                };
+
+                submitBtn.onclick = () => { cleanup(); resolve(true); };
+                cancelBtn.onclick = () => { cleanup(); resolve(false); };
+            });
+        }
+
         const themes = ['retro', 'light', 'zen', 'void'];
         let currentThemeIndex = 0;
 
@@ -1998,11 +2332,9 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         }
         initTheme();
 
-        // --- GLOBAL STATE ---
         let mode = 'encrypt';
         const keyCache = { rsa: null, aes: null };
 
-        // --- DOM REFERENCES ---
         const DOM = {
             card: document.getElementById('mainCard'),
             algo: document.getElementById('algoSelect'),
@@ -2010,6 +2342,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             keyIn: document.getElementById('keyInput'),
             rsaKeyIn: document.getElementById('rsaKeyInput'),
             out: document.getElementById('outputDisplay'),
+            outWrap: document.getElementById('outputWrapper'),
             swapBtn: document.getElementById('swapModeBtn'),
             modeTitle: document.getElementById('modeTitle'),
             btnText: document.getElementById('swapBtnText'),
@@ -2017,45 +2350,23 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             stdGroup: document.getElementById('stdInputGroup'),
             stegoGroup: document.getElementById('stegoInputGroup'),
             keyGroup: document.getElementById('keyGroup'),
+            keyLabel: document.getElementById('keyLabel'),
+            pigpenKb: document.getElementById('pigpenKeyboard'),
             stegoFile: document.getElementById('stegoFile'),
             stegoPayload: document.getElementById('stegoPayload'),
             stegoTextCont: document.getElementById('stegoTextContainer'),
             memStatus: document.getElementById('memoryStatus')
         };
 
-        // --- PROMPT MODAL WRAPPER ---
-        function askPassword() {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('passwordModal');
-                const content = modal.firstElementChild; 
-                const input = document.getElementById('passwordModalInput');
-                const submitBtn = document.getElementById('passwordModalSubmit');
-                const cancelBtn = document.getElementById('passwordModalCancel');
+        // --- BUILD PIGPEN VIRTUAL KEYBOARD (Uses A-Z and true font CSS) ---
+        let kbHTML = `<div class="col-span-7 text-[9px] text-[var(--primary)] font-mono text-center mb-2 uppercase tracking-widest border-b border-[var(--border)] pb-2">Virtual Symbol Pad</div>`;
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(sym => {
+            kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += '${sym}'" class="p-2 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-[var(--bg-body)] rounded-md text-2xl transition-all flex items-center justify-center font-pigpen shadow-md h-12">${sym}</button>`;
+        });
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value += ' '" class="col-span-4 p-2 mt-1 bg-[var(--bg-body)] border border-[var(--border)] hover:bg-[var(--primary)] hover:text-black rounded text-xs font-mono transition-all font-bold tracking-widest h-10">SPACE</button>`;
+        kbHTML += `<button type="button" onclick="document.getElementById('mainInput').value = document.getElementById('mainInput').value.slice(0, -1)" class="col-span-3 p-2 mt-1 bg-[var(--bg-body)] border border-red-900/50 text-red-500 hover:bg-red-500 hover:text-white rounded text-xs font-mono transition-all font-bold tracking-widest h-10">⌫ DEL</button>`;
+        DOM.pigpenKb.innerHTML = kbHTML;
 
-                modal.classList.remove('hidden', 'pointer-events-none');
-                setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); content.classList.add('scale-100'); }, 10);
-                input.value = ''; input.focus();
-
-                const cleanup = () => {
-                    modal.classList.add('opacity-0'); content.classList.remove('scale-100'); content.classList.add('scale-95');
-                    setTimeout(() => { modal.classList.add('hidden', 'pointer-events-none'); }, 300);
-                    submitBtn.onclick = null; cancelBtn.onclick = null; input.onkeydown = null;
-                };
-
-                const resolvePass = () => {
-                    const val = input.value;
-                    if(!val) { input.classList.add('border-red-500', 'animate-pulse'); setTimeout(() => input.classList.remove('border-red-500', 'animate-pulse'), 500); return; }
-                    cleanup(); resolve(val);
-                };
-                const resolveCancel = () => { cleanup(); resolve(null); };
-
-                submitBtn.onclick = resolvePass;
-                cancelBtn.onclick = resolveCancel;
-                input.onkeydown = (e) => { if (e.key === 'Enter') resolvePass(); if (e.key === 'Escape') resolveCancel(); };
-            });
-        }
-
-        // --- NAVIGATION LOGIC ---
         function showPage(page) {
             const term = document.getElementById('terminalPage');
             const lib = document.getElementById('libraryPage');
@@ -2075,7 +2386,6 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             }
         }
 
-        // --- ANIMATION ENGINE ---
         const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
         function animateText(element, finalState) {
             let iterations = 0;
@@ -2089,14 +2399,12 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             }, 5);
         }
 
-        // --- UPDATE MEMORY UI ---
         function updateMemoryStatus() {
             if (keyCache.rsa || keyCache.aes) {
                 DOM.memStatus.innerText = "ACTIVE"; DOM.memStatus.className = "text-green-500 font-bold animate-pulse";
             } else { DOM.memStatus.innerText = "OFFLINE"; DOM.memStatus.className = "text-red-500 font-bold"; }
         }
 
-        // --- FLIP CARD LOGIC ---
         DOM.swapBtn.onclick = () => {
             gsap.to(DOM.card, { rotationY: 90, duration: 0.2, onComplete: () => {
                 mode = mode === 'encrypt' ? 'decrypt' : 'encrypt';
@@ -2107,13 +2415,13 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 DOM.processBtn.style.backgroundColor = mode === 'encrypt' ? "var(--primary)" : "#ff2a2a";
                 DOM.out.innerText = "// WAITING FOR INPUT...";
                 
-                if (DOM.algo.value === 'steganography') {
-                    if (mode === 'encrypt') { DOM.stegoTextCont.classList.remove('hidden'); DOM.processBtn.innerText = "ENCODE & DOWNLOAD"; } 
-                    else { DOM.stegoTextCont.classList.add('hidden'); DOM.processBtn.innerText = "DECODE IMAGE"; }
-                }
-                
-                if (DOM.algo.value === 'rsa') DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key..." : "Paste Private Key...");
-                if (DOM.algo.value === 'aes' && mode === 'decrypt' && keyCache.aes) DOM.keyIn.placeholder = "[ACCESSING CACHED KEY...]";
+                DOM.mainIn.value = "";
+                DOM.keyIn.value = "";
+                DOM.rsaKeyIn.value = "";
+                DOM.stegoPayload.value = "";
+                DOM.stegoFile.value = "";
+
+                DOM.algo.dispatchEvent(new Event('change'));
 
                 gsap.to(DOM.card, { rotationY: 0, duration: 0.3 });
             }});
@@ -2123,32 +2431,80 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
             const val = DOM.algo.value;
             const isStego = val === 'steganography';
             const isRSA = val === 'rsa';
-            const isAsym = ['rsa', 'ecc'].includes(val);
+            
+            const noKeyCiphers = ['atbash', 'pigpen', 'ecc', 'steganography', 'rsa'];
             
             DOM.stdGroup.classList.toggle('hidden', isStego);
             DOM.stegoGroup.classList.toggle('hidden', !isStego);
-            DOM.keyGroup.classList.toggle('hidden', isStego || (isAsym && !isRSA));
             
-            if (isRSA) { DOM.keyIn.classList.add('hidden'); DOM.rsaKeyIn.classList.remove('hidden'); } 
-            else { DOM.keyIn.classList.remove('hidden'); DOM.rsaKeyIn.classList.add('hidden'); }
+            if (noKeyCiphers.includes(val) && !isRSA) {
+                DOM.keyGroup.classList.add('hidden');
+            } else {
+                DOM.keyGroup.classList.remove('hidden');
+            }
+            
+            // Apply True Pigpen Font CSS Based on Mode
+            if (val === 'pigpen') {
+                if (mode === 'decrypt') {
+                    DOM.pigpenKb.classList.remove('hidden'); DOM.pigpenKb.classList.add('grid');
+                    DOM.mainIn.classList.add('font-pigpen', 'text-2xl');
+                    DOM.mainIn.placeholder = ""; 
+                    DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
+                } else {
+                    DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                    DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
+                    DOM.mainIn.placeholder = "Enter text to convert to symbols...";
+                    DOM.outWrap.classList.add('font-pigpen', 'text-3xl');
+                }
+            } else {
+                DOM.pigpenKb.classList.add('hidden'); DOM.pigpenKb.classList.remove('grid');
+                DOM.mainIn.classList.remove('font-pigpen', 'text-2xl');
+                DOM.mainIn.placeholder = "Enter text...";
+                DOM.outWrap.classList.remove('font-pigpen', 'text-3xl');
+            }
+
+            if (isRSA) { 
+                DOM.keyIn.classList.add('hidden'); 
+                DOM.rsaKeyIn.classList.remove('hidden'); 
+                DOM.keyLabel.innerText = "RSA PUBLIC/PRIVATE KEY";
+                DOM.rsaKeyIn.placeholder = (mode === 'decrypt' && keyCache.rsa) ? "[ACCESSING CACHED PRIVATE KEY...]" : (mode === 'encrypt' ? "Paste Public Key... (Leave blank to Auto-Generate)" : "Paste Private Key...");
+            } else { 
+                DOM.keyIn.classList.remove('hidden'); 
+                DOM.rsaKeyIn.classList.add('hidden'); 
+            }
+
+            if (val === 'caesar') { DOM.keyLabel.innerText = "SHIFT VALUE (NUMBER)"; DOM.keyIn.placeholder = "e.g., 3"; } 
+            else if (val === 'vigenere' || val === 'playfair') { DOM.keyLabel.innerText = "KEYWORD (LETTERS ONLY)"; DOM.keyIn.placeholder = "e.g., SECRET"; } 
+            else if (val === 'rail_fence') { DOM.keyLabel.innerText = "NUMBER OF RAILS (NUMBER > 1)"; DOM.keyIn.placeholder = "e.g., 3"; } 
+            else if (val === 'aes') { DOM.keyLabel.innerText = "ENCRYPTION PASSWORD / KEY"; DOM.keyIn.placeholder = (mode === 'decrypt' && keyCache.aes) ? "[ACCESSING CACHED KEY...]" : "Enter secure password..."; }
 
             DOM.out.innerText = "// WAITING...";
             if(val === 'ecc') DOM.processBtn.innerText = "GENERATE CURVE KEYS (SIMULATION)";
+            else if (isStego) DOM.processBtn.innerText = mode === 'encrypt' ? "ENCODE & DOWNLOAD" : "DECODE IMAGE";
             else DOM.processBtn.innerText = mode === 'encrypt' ? "EXECUTE ENCRYPTION" : "EXECUTE DECRYPTION";
             
             DOM.modeTitle.innerText = isStego ? "STEGANOGRAPHY LAB" : (mode === 'encrypt' ? "ENCRYPTION MODE" : "DECRYPTION MODE");
             DOM.modeTitle.style.color = isStego ? "var(--accent)" : (mode === 'encrypt' ? "var(--primary)" : "#ff2a2a");
         });
 
-        // --- ENCRYPTION ENGINE ---
+        DOM.algo.dispatchEvent(new Event('change'));
+
         DOM.processBtn.onclick = () => {
             const algo = DOM.algo.value;
-            
+            const txt = DOM.mainIn.value;
+            let key = DOM.keyIn.value;
+            let res = "";
+
+            if (!txt && algo !== 'steganography') {
+                showToast("Input text is required.", "error");
+                return;
+            }
+
             if (algo === 'steganography') {
                 const cvs = document.getElementById('stegoCanvas');
                 const ctx = cvs.getContext('2d');
                 if (mode === 'encrypt') {
-                    if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return alert("Image and Text required!");
+                    if(!DOM.stegoFile.files[0] || !DOM.stegoPayload.value) return showToast("Image and Text required!", "error");
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = new Image();
@@ -2159,16 +2515,17 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                             const msg = DOM.stegoPayload.value;
                             let bin = ""; for(let i=0; i<msg.length; i++) bin += msg.charCodeAt(i).toString(2).padStart(8,'0');
                             bin += "00000000";
-                            if(bin.length > imgData.data.length/4) return alert("Message too long");
+                            if(bin.length > imgData.data.length/4) return showToast("Message too long", "error");
                             let dIdx = 0;
                             for(let i=0; i<bin.length; i++) { if(dIdx%4===3) dIdx++; imgData.data[dIdx] = (imgData.data[dIdx] & 254) | parseInt(bin[i]); dIdx++; }
                             ctx.putImageData(imgData, 0, 0);
                             const link = document.createElement('a'); link.download = 'secret_stego.png'; link.href = cvs.toDataURL(); link.click();
-                            animateText(DOM.out, "SUCCESS: Encoded Image Downloaded.");
+                            DOM.out.innerText = "SUCCESS: Encoded Image Downloaded.";
+                            showToast("Encoded Image Downloaded.", "success");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 } else {
-                    if(!DOM.stegoFile.files[0]) return alert("Select Image");
+                    if(!DOM.stegoFile.files[0]) return showToast("Select Image", "error");
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const img = new Image();
@@ -2176,18 +2533,15 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                             cvs.width = img.width; cvs.height = img.height;
                             ctx.drawImage(img, 0, 0);
                             const data = ctx.getImageData(0,0,img.width,img.height).data;
-                            let bin = "", res = "";
-                            for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; res += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
-                            animateText(DOM.out, "DECODED SECRET:\n" + res);
+                            let bin = "", resText = "";
+                            for(let i=0; i<data.length; i++) { if(i%4===3) continue; bin += (data[i]&1).toString(); if(bin.length===8) { if(bin==="00000000") break; resText += String.fromCharCode(parseInt(bin, 2)); bin = ""; } }
+                            animateText(DOM.out, "DECODED SECRET:\n" + resText);
+                            showToast("Image Decoded.", "success");
                         }; img.src = e.target.result;
                     }; reader.readAsDataURL(DOM.stegoFile.files[0]);
                 }
                 return;
             }
-
-            const txt = DOM.mainIn.value;
-            let key = DOM.keyIn.value;
-            let res = "";
 
             if (algo === 'rsa') {
                 const encryptor = new JSEncrypt({default_key_size: 512});
@@ -2199,36 +2553,148 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                     else { encryptor.setPublicKey(pubKey); }
                     const enc = encryptor.encrypt(txt);
                     res = enc ? "CIPHERTEXT:\n" + enc + extra : "FAILED";
+                    if(enc) showToast("Encryption Successful", "success"); else showToast("Encryption Failed", "error");
                 } else {
                     let privKey = rsaKeyVal || keyCache.rsa;
-                    if(!privKey) return alert("Private Key Required");
+                    if(!privKey) return showToast("Private Key Required", "error");
                     encryptor.setPrivateKey(privKey);
                     const dec = encryptor.decrypt(txt);
                     res = dec ? "DECRYPTED:\n" + dec : "FAILED";
+                    if(dec) showToast("Decryption Successful", "success"); else showToast("Decryption Failed", "error");
                 }
             } 
             else if (algo === 'aes') {
                 if (mode === 'encrypt') {
-                    if(!key) return alert("Key Required");
+                    if(!key) return showToast("Password/Key Required", "error");
                     keyCache.aes = key; updateMemoryStatus();
                     res = CryptoJS.AES.encrypt(txt, key).toString();
+                    showToast("Encryption Successful", "success");
                 } else {
                     let useKey = key || keyCache.aes;
-                    if(!useKey) return alert("Key Required");
-                    try { const bytes = CryptoJS.AES.decrypt(txt, useKey); res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)"; } catch(e) { res = "INVALID"; }
+                    if(!useKey) return showToast("Password/Key Required", "error");
+                    try { 
+                        const bytes = CryptoJS.AES.decrypt(txt, useKey); 
+                        res = bytes.toString(CryptoJS.enc.Utf8) || "FAILED (Wrong Key)";
+                        if(res !== "FAILED (Wrong Key)") showToast("Decryption Successful", "success"); else showToast("Wrong Key", "error");
+                    } catch(e) { 
+                        res = "INVALID"; 
+                        showToast("Decryption Failed", "error");
+                    }
                 }
             }
-            else {
-                if(algo === 'caesar') {
-                    const shift = parseInt(key) || 3;
-                    const s = mode==='encrypt' ? shift : -shift;
-                    res = txt.replace(/[a-zA-Z]/g, c => { const b = c>='a'?97:65; return String.fromCharCode(((c.charCodeAt(0)-b+s)%26+26)%26+b); });
-                } else { res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}`; }
+            else if (algo === 'caesar') {
+                const shift = parseInt(key) || 3;
+                const s = mode === 'encrypt' ? shift : -shift;
+                res = txt.replace(/[a-zA-Z]/g, c => { const b = c >= 'a' ? 97 : 65; return String.fromCharCode(((c.charCodeAt(0) - b + s) % 26 + 26) % 26 + b); });
             }
-            animateText(DOM.out, res);
+            else if (algo === 'atbash') {
+                res = txt.replace(/[a-zA-Z]/g, c => {
+                    const base = c >= 'a' ? 97 : 65;
+                    return String.fromCharCode(base + 25 - (c.charCodeAt(0) - base));
+                });
+            }
+            else if (algo === 'vigenere') {
+                if (!key) { res = "ERROR: KEY REQUIRED FOR VIGENERE"; showToast("Keyword Required", "error"); }
+                else {
+                    let k = key.toUpperCase().replace(/[^A-Z]/g, '');
+                    if (!k) { res = "ERROR: INVALID KEY"; showToast("Letters Only", "error"); } else {
+                        let kIdx = 0;
+                        res = txt.replace(/[a-zA-Z]/g, c => {
+                            const base = c >= 'a' ? 97 : 65;
+                            const shift = k.charCodeAt(kIdx % k.length) - 65;
+                            const s = mode === 'encrypt' ? shift : -shift;
+                            kIdx++;
+                            return String.fromCharCode(((c.charCodeAt(0) - base + s) % 26 + 26) % 26 + base);
+                        });
+                    }
+                }
+            }
+            else if (algo === 'rail_fence') {
+                let rails = parseInt(key);
+                if (isNaN(rails) || rails < 2) { res = "ERROR: KEY MUST BE A NUMBER > 1 FOR RAIL FENCE"; showToast("Number > 1 Required", "error"); }
+                else {
+                    if (mode === 'encrypt') {
+                        let fence = Array.from({length: rails}, () => []);
+                        let r = 0, dir = 1;
+                        for (let char of txt) { fence[r].push(char); r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
+                        res = fence.map(row => row.join('')).join('');
+                    } else {
+                        let fence = Array.from({length: rails}, () => Array(txt.length).fill(null));
+                        let r = 0, dir = 1;
+                        for (let i = 0; i < txt.length; i++) { fence[r][i] = '*'; r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
+                        let idx = 0;
+                        for (let row = 0; row < rails; row++) {
+                            for (let c = 0; c < txt.length; c++) {
+                                if (fence[row][c] === '*' && idx < txt.length) { fence[row][c] = txt[idx++]; }
+                            }
+                        }
+                        let resText = ''; r = 0; dir = 1;
+                        for (let c = 0; c < txt.length; c++) { resText += fence[r][c]; r += dir; if (r === 0 || r === rails - 1) dir = -dir; }
+                        res = resText;
+                    }
+                }
+            }
+            else if (algo === 'playfair') {
+                if (!key) { res = "ERROR: KEY REQUIRED FOR PLAYFAIR"; showToast("Keyword Required", "error"); }
+                else {
+                    let k = key.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
+                    let alphabet = "ABCDEFGHIKLMNOPQRSTUVWXYZ";
+                    let gridStr = Array.from(new Set((k + alphabet).split(''))).join('');
+                    let grid = [];
+                    for (let i=0; i<5; i++) grid.push(gridStr.slice(i*5, i*5+5).split(''));
+                    let findPos = (char) => { for (let r=0; r<5; r++) for (let c=0; c<5; c++) if (grid[r][c]===char) return [r,c]; return [0,0]; };
+
+                    let pt = txt.toUpperCase().replace(/[^A-Z]/g, '').replace(/J/g, 'I');
+                    if (mode === 'encrypt') {
+                        let pairs = [];
+                        for(let i=0; i<pt.length; i++) {
+                            let a = pt[i], b = pt[i+1];
+                            if(b && a===b) { pairs.push([a, 'X']); }
+                            else if (b) { pairs.push([a, b]); i++; }
+                            else { pairs.push([a, 'X']); }
+                        }
+                        pt = pairs;
+                    } else {
+                        let pairs = [];
+                        for(let i=0; i<pt.length; i+=2) pairs.push([pt[i], pt[i+1] || 'X']);
+                        pt = pairs;
+                    }
+                    res = "";
+                    let shift = mode === 'encrypt' ? 1 : -1;
+                    for (let [a,b] of pt) {
+                        let [r1,c1] = findPos(a); let [r2,c2] = findPos(b);
+                        if (r1===r2) { res += grid[r1][(c1+shift+5)%5] + grid[r2][(c2+shift+5)%5]; }
+                        else if (c1===c2) { res += grid[(r1+shift+5)%5][c1] + grid[(r2+shift+5)%5][c2]; }
+                        else { res += grid[r1][c2] + grid[r2][c1]; }
+                    }
+                    if (mode === 'decrypt') {
+                        let cleanedRes = "";
+                        for (let i = 0; i < res.length; i++) {
+                            if (res[i] === 'X' && i > 0 && i < res.length - 1 && res[i-1] === res[i+1]) continue; 
+                            if (res[i] === 'X' && i === res.length - 1) continue;
+                            cleanedRes += res[i];
+                        }
+                        res = cleanedRes;
+                    }
+                }
+            }
+            else if (algo === 'pigpen') {
+                res = txt.toUpperCase(); // True font handles visual translation
+            }
+            else { 
+                res = `[SIMULATION] ${algo.toUpperCase()} RESULT FOR:\n${txt}\n\n(Requires advanced external math library not loaded in this pure JS environment)`; 
+            }
+
+            // Disable flashing matrix animation for Pigpen shapes, else use animation
+            if (algo === 'pigpen' && !res.includes("ERROR")) {
+                DOM.out.innerText = res;
+            } else if (!res.includes("ERROR")) {
+                animateText(DOM.out, res);
+            } else {
+                DOM.out.innerText = res;
+            }
         };
 
-        // --- VAULT LOGIC ---
         const vaultModal = document.getElementById('vaultModal');
         
         function toggleVault(show) {
@@ -2239,7 +2705,9 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
         async function uploadEncryptedFile() {
             const fi = document.getElementById('vaultInput'); 
             const pw = document.getElementById('vaultPass').value;
-            if(!fi.files[0] || !pw) return alert("File and Password required!");
+            if(!fi.files[0] || !pw) return showToast("File and Password required!", "error");
+            
+            showToast("Encrypting file...", "info");
             
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -2250,8 +2718,10 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 try {
                     await fetch('/api/vault/upload', { method:'POST', headers:{'auth-token':token}, body:fd });
                     loadFiles();
-                    alert("File Encrypted & Uploaded to Vault.");
-                } catch(err) { alert("Upload Failed"); }
+                    showToast("File Encrypted & Uploaded to Vault.", "success");
+                    fi.value = "";
+                    document.getElementById('vaultPass').value = "";
+                } catch(err) { showToast("Upload Failed", "error"); }
             }; 
             reader.readAsDataURL(fi.files[0]);
         }
@@ -2275,7 +2745,7 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                         </div>
                     </div>`; 
                 });
-            } catch(e){ console.log("Vault Load Error", e); }
+            } catch(e){ showToast("Vault Load Error", "error"); }
         }
 
         async function downloadAndDecrypt(fname, og) {
@@ -2289,18 +2759,29 @@ server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
                 const dec = CryptoJS.AES.decrypt(txt, pw).toString(CryptoJS.enc.Utf8);
                 if(!dec.startsWith('data:')) throw new Error("Decryption failed");
                 const a = document.createElement('a'); a.href = dec; a.download = og.replace('.enc',''); a.click();
-            } catch(e) { alert("ACCESS DENIED: INCORRECT PASSWORD"); }
+                showToast("File Decrypted & Downloaded.", "success");
+            } catch(e) { showToast("ACCESS DENIED: INCORRECT PASSWORD", "error"); }
         }
 
         async function deleteFile(id) {
-            if(!confirm("⚠️ PERMANENTLY DELETE THIS FILE?")) return;
+            const proceed = await askConfirm("WARNING: PERMANENTLY DELETE THIS FILE?");
+            if(!proceed) return;
+            
             try {
                 const res = await fetch(`/api/vault/delete/${id}`, { method: 'DELETE', headers: {'auth-token': token} });
-                if(res.ok) { loadFiles(); } else { alert("Delete Failed"); }
-            } catch(e) { console.error(e); alert("System Error"); }
+                if(res.ok) { 
+                    loadFiles(); 
+                    showToast("File Deleted.", "success"); 
+                } else { 
+                    showToast("Delete Failed", "error"); 
+                }
+            } catch(e) { showToast("System Error", "error"); }
         }
         
-        document.getElementById('copyBtn').onclick = () => navigator.clipboard.writeText(DOM.out.innerText);
+        document.getElementById('copyBtn').onclick = () => {
+            navigator.clipboard.writeText(DOM.out.innerText);
+            showToast("Copied to clipboard!", "success");
+        };
     </script>
 </body>
 </html>
